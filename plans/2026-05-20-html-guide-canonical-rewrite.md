@@ -103,10 +103,13 @@ squash-merged into `main`, then the next task starts from refreshed `main`.
   opt-out, FileVault notes, firewall, time sync, UPS. HTML guide gets a
   new "Part 0 · macOS prep" section with the minimum required commands
   and a link to the full doc.
-- [ ] **07 — Launchd autostart for M1 + M2.** Create
-  `configs/launchd/com.localai.{developer,reviewer}.plist.template`. Add
-  `scripts/install-launchd-machine{1,2}.sh` to render templates with real
-  `$HOME` and `launchctl bootstrap`. New HTML guide section.
+- [x] **07 — Launchd autostart for M1 + M2.** Chose single
+  `com.localai.workers.plist.template` (M2) rather than per-server plists
+  to match the existing M1 pattern; both invoke their respective
+  start-script. Added `scripts/install-launchd-machine{1,2}.sh` that
+  substitute `__HOME__`, write to `~/Library/LaunchAgents/`, and
+  bootstrap into `gui/$(id -u)/`. New "Part VII · Autostart on boot"
+  section in the HTML guide.
 - [ ] **08 — True end-to-end verification section.** From a sample
   project repo, invoke `/delegate-local` (or `local-exec-plan`) on a tiny
   plan, confirm worktree, confirm reviewer JSON. Add to HTML guide.
@@ -118,8 +121,8 @@ squash-merged into `main`, then the next task starts from refreshed `main`.
 
 ### Supporting (group c)
 
-- [ ] **11 — Missing M2 launchd plists.** Covered by task 07.
-- [ ] **12 — `scripts/install-launchd-machine{1,2}.sh`.** Covered by task 07.
+- [x] **11 — Missing M2 launchd plists.** Covered by task 07.
+- [x] **12 — `scripts/install-launchd-machine{1,2}.sh`.** Covered by task 07.
 - [ ] **13 — `scripts/preflight.sh`.** TB Bridge ping + SSH to M2 + `hf`
   auth + three endpoints up. Wire into HTML guide post-install step.
 - [ ] **14 — `scripts/render-html.sh` (deferred).** Long-term drift risk
