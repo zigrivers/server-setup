@@ -1,15 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- Template: replace __HOME__ with the absolute path of the user's home
+     directory before installing into ~/Library/LaunchAgents/. The
+     scripts/install-launchd-machine1.sh helper does this substitution
+     for you. -->
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
   <key>Label</key><string>com.localai.orchestrator</string>
   <key>ProgramArguments</key>
   <array>
-    <string>/Users/admin/ai/local-ai-stack/scripts/start-orchestrator.sh</string>
+    <string>__HOME__/ai/local-ai-stack/scripts/start-orchestrator.sh</string>
   </array>
   <key>RunAtLoad</key><true/>
   <key>KeepAlive</key><false/>
-  <key>StandardOutPath</key><string>/Users/admin/ai/logs/orchestrator-launchd.out</string>
-  <key>StandardErrorPath</key><string>/Users/admin/ai/logs/orchestrator-launchd.err</string>
+  <key>StandardOutPath</key><string>__HOME__/ai/logs/orchestrator-launchd.out</string>
+  <key>StandardErrorPath</key><string>__HOME__/ai/logs/orchestrator-launchd.err</string>
 </dict>
 </plist>

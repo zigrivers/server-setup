@@ -441,13 +441,13 @@ curl http://10.10.10.2:8003/v1/models</code></pre>
 
   <h3>Current model paths</h3>
   <pre><code># Machine 1
-/Users/admin/ai/models/orchestrator-qwen36-35b-a3b-heretic-bf16
-/Users/admin/ai/models/orchestrator-qwen36-35b-a3b-heretic-mixed9   # optional fallback
+$HOME/ai/models/orchestrator-qwen36-35b-a3b-heretic-bf16
+$HOME/ai/models/orchestrator-qwen36-35b-a3b-heretic-mixed9   # optional fallback
 
 # Machine 2
-/Users/admin/ai/models/developer-qwen36-27b-heretic2-mixed94
-/Users/admin/ai/models/reviewer-qwen36-27b-heretic-bf16
-/Users/admin/ai/models/reviewer-llmfan46-qwen36-27b-heretic-v2-bf16 # optional converted reviewer</code></pre>
+$HOME/ai/models/developer-qwen36-27b-heretic2-mixed94
+$HOME/ai/models/reviewer-qwen36-27b-heretic-bf16
+$HOME/ai/models/reviewer-llmfan46-qwen36-27b-heretic-v2-bf16 # optional converted reviewer</code></pre>
 
   <div class="callout danger">
     <strong>Important:</strong> with <code>mlx_lm.server</code>, do not use model aliases such as
@@ -519,9 +519,9 @@ Use high-bit quantization where throughput and concurrency matter.</code></pre>
 DEV_BASE_URL=http://10.10.10.2:8002/v1
 REVIEW_BASE_URL=http://10.10.10.2:8003/v1
 
-ORCH_MODEL=/Users/admin/ai/models/orchestrator-qwen36-35b-a3b-heretic-bf16
-DEV_MODEL=/Users/admin/ai/models/developer-qwen36-27b-heretic2-mixed94
-REVIEW_MODEL=/Users/admin/ai/models/reviewer-qwen36-27b-heretic-bf16
+ORCH_MODEL=$HOME/ai/models/orchestrator-qwen36-35b-a3b-heretic-bf16
+DEV_MODEL=$HOME/ai/models/developer-qwen36-27b-heretic2-mixed94
+REVIEW_MODEL=$HOME/ai/models/reviewer-qwen36-27b-heretic-bf16
 
 LOCAL_API_KEY=not-needed
 
@@ -909,9 +909,9 @@ tail -100 ~/ai/logs/orchestrator.log</code></pre>
     The server tried to resolve it as a Hugging Face repo.
   </p>
   <pre><code># Fix .env:
-ORCH_MODEL=/Users/admin/ai/models/orchestrator-qwen36-35b-a3b-heretic-bf16
-DEV_MODEL=/Users/admin/ai/models/developer-qwen36-27b-heretic2-mixed94
-REVIEW_MODEL=/Users/admin/ai/models/reviewer-qwen36-27b-heretic-bf16</code></pre>
+ORCH_MODEL=$HOME/ai/models/orchestrator-qwen36-35b-a3b-heretic-bf16
+DEV_MODEL=$HOME/ai/models/developer-qwen36-27b-heretic2-mixed94
+REVIEW_MODEL=$HOME/ai/models/reviewer-qwen36-27b-heretic-bf16</code></pre>
 
   <h3><code>mlx_lm.generate</code> or <code>mlx_lm.server</code> not found</h3>
   <pre><code>cd ~/ai

@@ -7,9 +7,9 @@ Cause: request used `"model": "local"` or `"model": "default"` against `mlx_lm.s
 Fix: use the full model path as seen by the server machine.
 
 ```text
-ORCH_MODEL=/Users/admin/ai/models/orchestrator-qwen36-35b-a3b-heretic-bf16
-DEV_MODEL=/Users/admin/ai/models/developer-qwen36-27b-heretic2-mixed94
-REVIEW_MODEL=/Users/admin/ai/models/reviewer-qwen36-27b-heretic-bf16
+ORCH_MODEL=$HOME/ai/models/orchestrator-qwen36-35b-a3b-heretic-bf16
+DEV_MODEL=$HOME/ai/models/developer-qwen36-27b-heretic2-mixed94
+REVIEW_MODEL=$HOME/ai/models/reviewer-qwen36-27b-heretic-bf16
 ```
 
 ## `zsh: no matches found: huggingface_hub[hf_xet]`
