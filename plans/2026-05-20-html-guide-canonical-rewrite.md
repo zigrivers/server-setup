@@ -156,8 +156,8 @@ squash-merged into `main`, then the next task starts from refreshed `main`.
   callout explaining `mtplx` is the *runtime binary's* self-identifier,
   not a `mlx_lm.server` alias. Also shows the fallback if you serve
   with stock `mlx_lm.server` instead.
-- [ ] **18 — Remove `Local AI Multi-Agent Setup.zip`** from working dir
-  (already git-ignored; just delete the file).
+- [x] **18 — Removed `Local AI Multi-Agent Setup.zip` from working
+  dir.** Already git-ignored; never tracked. File is no longer present.
 - [ ] **19 — Status `m1-ai-status.sh` MTP port parity.** Either add 8004
   to M1 status or remove from M2 status; pick "add to M1" since M1 is the
   status hub.
