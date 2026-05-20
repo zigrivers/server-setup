@@ -57,13 +57,17 @@ section{margin-bottom:64px;scroll-margin-top:88px}.section-num{font-family:ui-mo
     <li><a href="#register-mcp"><span class="num">16</span>Register MCP</a></li>
     <li><a href="#per-project"><span class="num">17</span>Per-project</a></li>
   </ul></div>
+  <div class="sidebar-section"><div class="sidebar-label">Part VII · Autostart</div><ul class="sidebar-toc">
+    <li><a href="#autostart-m1"><span class="num">18</span>M1 launchd</a></li>
+    <li><a href="#autostart-m2"><span class="num">19</span>M2 launchd</a></li>
+  </ul></div>
   <div class="sidebar-section"><div class="sidebar-label">Optional + reference</div><ul class="sidebar-toc">
-    <li><a href="#mtp-experimental"><span class="num">18</span>MTP lane</a></li>
-    <li><a href="#benchmarks"><span class="num">19</span>Benchmarks</a></li>
-    <li><a href="#daily-workflow"><span class="num">20</span>Daily flow</a></li>
-    <li><a href="#troubleshooting"><span class="num">21</span>Troubleshooting</a></li>
-    <li><a href="#security-rules"><span class="num">22</span>Security</a></li>
-    <li><a href="#appendix-paths"><span class="num">23</span>Paths</a></li>
+    <li><a href="#mtp-experimental"><span class="num">20</span>MTP lane</a></li>
+    <li><a href="#benchmarks"><span class="num">21</span>Benchmarks</a></li>
+    <li><a href="#daily-workflow"><span class="num">22</span>Daily flow</a></li>
+    <li><a href="#troubleshooting"><span class="num">23</span>Troubleshooting</a></li>
+    <li><a href="#security-rules"><span class="num">24</span>Security</a></li>
+    <li><a href="#appendix-paths"><span class="num">25</span>Paths</a></li>
   </ul></div>
 </aside>
 <main class="content">
@@ -322,8 +326,30 @@ touch plans/.gitkeep
 git add AGENTS.md CLAUDE.md docs/ai/AI_WORKFLOW.md plans/.gitkeep
 git commit -m "Add hybrid AI workflow instructions"</pre></div></div></div>
 </section>
-<div class="part-divider"><div class="part-divider-line"></div><div class="part-divider-text">Part VII · Optional + reference</div><div class="part-divider-line"></div></div>
-<section id="mtp-experimental"><div class="section-num">18 / Optional</div><h2>Experimental MTP <em>lane</em></h2><p class="section-deck">Keep this behind a separate endpoint until benchmarks prove it wins for your tasks. See <code>docs/EXPERIMENTAL_MTP.md</code> for the full rationale.</p>
+<div class="part-divider"><div class="part-divider-line"></div><div class="part-divider-text">Part VII · Autostart on boot</div><div class="part-divider-line"></div></div>
+<section id="autostart-m1"><div class="section-num">18 / Machine 1</div><h2>Launchd autostart <em>Machine 1</em></h2><p class="section-deck">Install the Orchestrator as a per-user LaunchAgent so it starts after first login on each reboot. KeepAlive is off — if the server crashes, you'll see it in <code>m1-ai-status.sh</code> and can restart manually.</p>
+<div class="step" data-step="autostart-m1"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Install the Machine 1 LaunchAgent</h3>
+<div class="code-block"><div class="code-header"><span class="code-lang">bash · on Machine 1</span><button class="copy-btn">Copy</button></div><pre>cd ~/ai/local-ai-stack
+scripts/install-launchd-machine1.sh</pre></div>
+<p>The script renders <code>configs/launchd/com.localai.orchestrator.plist.template</code> with your real <code>$HOME</code>, writes it to <code>~/Library/LaunchAgents/com.localai.orchestrator.plist</code>, and <code>launchctl bootstrap</code>s it. Re-run it any time you want to reload the agent.</p>
+<div class="verify"><div class="verify-header">Verify</div><div class="verify-body"><code>launchctl print gui/$(id -u)/com.localai.orchestrator</code> shows the agent loaded.</div></div></div></div>
+</section>
+
+<section id="autostart-m2"><div class="section-num">19 / Machine 2</div><h2>Launchd autostart <em>Machine 2</em></h2><p class="section-deck">Install the workers LaunchAgent so Developer and Reviewer start after first login.</p>
+<div class="step" data-step="autostart-m2"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Install the Machine 2 LaunchAgent</h3>
+<div class="code-block"><div class="code-header"><span class="code-lang">bash · on Machine 2</span><button class="copy-btn">Copy</button></div><pre>cd ~/ai/local-ai-stack
+scripts/install-launchd-machine2.sh</pre></div>
+<p>Same pattern: substitutes <code>__HOME__</code>, writes <code>~/Library/LaunchAgents/com.localai.workers.plist</code>, bootstraps it. The plist invokes <code>scripts/start-worker-models.sh</code>, which starts both Developer (8002) and Reviewer (8003) and handles port-collision detection.</p>
+<div class="callout callout-note"><div class="callout-label">FileVault note</div><p>LaunchAgents start on first user login after reboot, not at boot time. If Machine 2 reboots while FileVault is locked, the workers won't start until someone logs in.</p></div></div></div>
+<div class="step" data-step="autostart-uninstall"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Uninstall (when needed)</h3>
+<div class="code-block"><div class="code-header"><span class="code-lang">bash · Machine 1</span><button class="copy-btn">Copy</button></div><pre>launchctl bootout gui/$(id -u)/com.localai.orchestrator
+rm ~/Library/LaunchAgents/com.localai.orchestrator.plist</pre></div>
+<div class="code-block"><div class="code-header"><span class="code-lang">bash · Machine 2</span><button class="copy-btn">Copy</button></div><pre>launchctl bootout gui/$(id -u)/com.localai.workers
+rm ~/Library/LaunchAgents/com.localai.workers.plist</pre></div></div></div>
+</section>
+
+<div class="part-divider"><div class="part-divider-line"></div><div class="part-divider-text">Part VIII · Optional + reference</div><div class="part-divider-line"></div></div>
+<section id="mtp-experimental"><div class="section-num">20 / Optional</div><h2>Experimental MTP <em>lane</em></h2><p class="section-deck">Keep this behind a separate endpoint until benchmarks prove it wins for your tasks. See <code>docs/EXPERIMENTAL_MTP.md</code> for the full rationale.</p>
 <div class="step" data-step="mtp-download"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Download the candidate (Machine 2)</h3>
 <div class="code-block"><div class="code-header"><span class="code-lang">bash · on Machine 2</span><button class="copy-btn">Copy</button></div><pre>cd ~/ai/local-ai-stack
 source .venv/bin/activate
@@ -343,7 +369,7 @@ mlx_lm.server \
 <div class="callout callout-warn"><div class="callout-label">Experimental</div><p>Stock <code>mlx_lm.server</code> may not use native MTP heads. Treat this as a quality comparison first, not a speed path.</p></div></div></div>
 </section>
 
-<section id="benchmarks"><div class="section-num">19 / Optional</div><h2>Benchmark <em>endpoints</em></h2><p class="section-deck">Compare model quality and latency with checked-in prompts under <code>benchmarks/prompts/</code>.</p>
+<section id="benchmarks"><div class="section-num">21 / Optional</div><h2>Benchmark <em>endpoints</em></h2><p class="section-deck">Compare model quality and latency with checked-in prompts under <code>benchmarks/prompts/</code>.</p>
 <div class="step" data-step="bench-run"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Run a benchmark prompt</h3>
 <div class="code-block"><div class="code-header"><span class="code-lang">bash · on Machine 1</span><button class="copy-btn">Copy</button></div><pre>cd ~/ai/local-ai-stack
 bench-chat-endpoint.sh \
@@ -353,7 +379,7 @@ bench-chat-endpoint.sh \
 <p>JSON payload is built via Python, so multiline prompts work correctly.</p></div></div>
 </section>
 
-<section id="daily-workflow"><div class="section-num">20 / Daily</div><h2>Daily operating <em>rhythm</em></h2><p class="section-deck">Start servers, plan with frontier models, execute locally, review, and merge. Detail in <code>docs/OPERATIONS.md</code>.</p>
+<section id="daily-workflow"><div class="section-num">22 / Daily</div><h2>Daily operating <em>rhythm</em></h2><p class="section-deck">Start servers, plan with frontier models, execute locally, review, and merge. Detail in <code>docs/OPERATIONS.md</code>.</p>
 <div class="step" data-step="daily-start"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Start the stack</h3>
 <div class="code-block"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn">Copy</button></div><pre># On Machine 1
 start-orchestrator.sh
@@ -381,7 +407,7 @@ git -C ../&lt;repo&gt;-local-feature-* status
 ssh admin@10.10.10.2 'stop-worker-models.sh'  # or run on M2 directly</pre></div></div></div>
 </section>
 
-<section id="troubleshooting"><div class="section-num">21 / Reference</div><h2>Trouble<em>shooting</em></h2><p class="section-deck">Common failures and exact fixes. Long version: <code>docs/TROUBLESHOOTING.md</code>.</p>
+<section id="troubleshooting"><div class="section-num">23 / Reference</div><h2>Trouble<em>shooting</em></h2><p class="section-deck">Common failures and exact fixes. Long version: <code>docs/TROUBLESHOOTING.md</code>.</p>
 <div class="cheat">
 <div class="cheat-card"><h4>HF 404: <code>local</code>/<code>default</code></h4><p>Your <code>.env</code> uses an alias. Replace with full paths on the serving machine.</p></div>
 <div class="cheat-card"><h4>Cannot reach Machine 2</h4><p><code>ping 10.10.10.2</code>. If it fails, check Thunderbolt Bridge IPs and cable.</p></div>
@@ -398,7 +424,7 @@ tail -100 ~/ai/logs/orchestrator.log
 ssh admin@10.10.10.2 'tail -100 ~/ai/logs/developer.log; tail -100 ~/ai/logs/reviewer.log'</pre></div>
 </section>
 
-<section id="security-rules"><div class="section-num">22 / Reference</div><h2>Security <em>rules</em></h2><p class="section-deck">Guardrails that keep the local stack useful without letting agents damage the machine. Full list: <code>docs/SECURITY.md</code>.</p>
+<section id="security-rules"><div class="section-num">24 / Reference</div><h2>Security <em>rules</em></h2><p class="section-deck">Guardrails that keep the local stack useful without letting agents damage the machine. Full list: <code>docs/SECURITY.md</code>.</p>
 <ol>
 <li>Never expose <code>mlx_lm.server</code>, LM Studio, MTPLX, or MCP servers to the public internet.</li>
 <li>Use <code>127.0.0.1</code> for the Machine 1 Orchestrator and <code>10.10.10.2</code> for Machine 2 worker servers.</li>
@@ -411,7 +437,7 @@ ssh admin@10.10.10.2 'tail -100 ~/ai/logs/developer.log; tail -100 ~/ai/logs/rev
 </ol>
 </section>
 
-<section id="appendix-paths"><div class="section-num">23 / Reference</div><h2>Final path <em>checklist</em></h2><p class="section-deck">Use this when handing the setup to another human or AI agent.</p>
+<section id="appendix-paths"><div class="section-num">25 / Reference</div><h2>Final path <em>checklist</em></h2><p class="section-deck">Use this when handing the setup to another human or AI agent.</p>
 <div class="table-wrap"><table><thead><tr><th>Item</th><th>Expected path or URL</th></tr></thead><tbody>
 <tr><td>Repo on both Macs</td><td><code>~/ai/local-ai-stack</code></td></tr>
 <tr><td>Repo venv (both Macs)</td><td><code>~/ai/local-ai-stack/.venv</code></td></tr>
