@@ -110,9 +110,12 @@ squash-merged into `main`, then the next task starts from refreshed `main`.
   substitute `__HOME__`, write to `~/Library/LaunchAgents/`, and
   bootstrap into `gui/$(id -u)/`. New "Part VII · Autostart on boot"
   section in the HTML guide.
-- [ ] **08 — True end-to-end verification section.** From a sample
-  project repo, invoke `/delegate-local` (or `local-exec-plan`) on a tiny
-  plan, confirm worktree, confirm reviewer JSON. Add to HTML guide.
+- [x] **08 — True end-to-end verification section.** New section
+  `#smoke-e2e` ("14b / End-to-end acceptance test") walks the user
+  through: create a disposable target repo, write a tiny plan, run it
+  with `local-exec-plan` (or `/delegate-local` once Part VI is done),
+  and verify four pass conditions including a worktree on its own
+  `ai/local/…` branch and a reviewer JSON with `"approved": true`.
 - [ ] **09 — Re-running / idempotency notes.** A short section in the
   HTML guide explaining what is safe to re-run vs what overwrites
   user-customized state (notably `.env`).
