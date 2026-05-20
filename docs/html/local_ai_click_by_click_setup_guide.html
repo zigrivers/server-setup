@@ -25,6 +25,9 @@ section{margin-bottom:64px;scroll-margin-top:88px}.section-num{font-family:ui-mo
     <li><a href="#overview"><span class="num">00</span>Overview</a></li>
     <li><a href="#final-stack"><span class="num">S</span>Final stack</a></li>
   </ul></div>
+  <div class="sidebar-section"><div class="sidebar-label">Part 0 · macOS prep</div><ul class="sidebar-toc">
+    <li><a href="#macos-prep"><span class="num">P0</span>macOS prep</a></li>
+  </ul></div>
   <div class="sidebar-section"><div class="sidebar-label">Part I · Hardware &amp; base</div><ul class="sidebar-toc">
     <li><a href="#hardware-network"><span class="num">01</span>Thunderbolt</a></li>
     <li><a href="#base-tools"><span class="num">02</span>Base tools</a></li>
@@ -102,6 +105,33 @@ Orchestrator BF16 127.0.0.1:8001
 </tbody></table></div>
 <div class="callout callout-warn"><div class="callout-label">Do not use model = local</div><p><code>mlx_lm.server</code> treats the <code>model</code> field as a real local path or Hugging Face repo ID. Sending <code>local</code> or <code>default</code> causes the server to try Hugging Face repos with those names and fail. Always use the full path visible on the serving machine.</p></div>
 </section>
+<div class="part-divider"><div class="part-divider-line"></div><div class="part-divider-text">Part 0 · macOS prep (do this first on both Macs)</div><div class="part-divider-line"></div></div>
+<section id="macos-prep"><div class="section-num">P0 / Both Macs</div><h2>macOS <em>prep</em></h2><p class="section-deck">Settings that the rest of this guide assumes are configured. Full detail and rationale in <code>docs/MACOS_PREP.md</code>; this section is the minimum required.</p>
+<div class="step" data-step="macos-name"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Set distinct hostnames</h3>
+<div class="code-block"><div class="code-header"><span class="code-lang">bash · on Machine 1</span><button class="copy-btn">Copy</button></div><pre>sudo scutil --set ComputerName  "mac-studio-1"
+sudo scutil --set HostName      "mac-studio-1.local"
+sudo scutil --set LocalHostName "mac-studio-1"</pre></div>
+<div class="code-block"><div class="code-header"><span class="code-lang">bash · on Machine 2</span><button class="copy-btn">Copy</button></div><pre>sudo scutil --set ComputerName  "mac-studio-2"
+sudo scutil --set HostName      "mac-studio-2.local"
+sudo scutil --set LocalHostName "mac-studio-2"</pre></div></div></div>
+<div class="step" data-step="macos-sleep"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Disable sleep on Machine 2</h3>
+<p>The worker Mac must not sleep — App Nap and display sleep can suspend <code>mlx_lm.server</code> jobs. Machine 1 can sleep its display.</p>
+<div class="code-block"><div class="code-header"><span class="code-lang">bash · on Machine 2</span><button class="copy-btn">Copy</button></div><pre>sudo pmset -a sleep 0 disksleep 0 displaysleep 0
+sudo pmset -a powernap 0 lidwake 0 womp 1</pre></div>
+<div class="code-block"><div class="code-header"><span class="code-lang">bash · on Machine 1</span><button class="copy-btn">Copy</button></div><pre>sudo pmset -c sleep 0 displaysleep 20 disksleep 0
+sudo pmset -c powernap 0</pre></div></div></div>
+<div class="step" data-step="macos-icloud"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Disable iCloud Desktop/Documents sync</h3>
+<p><strong>System Settings → [Apple ID] → iCloud Drive → Drive Folders…</strong> Turn off <em>Desktop &amp; Documents Folders</em> on both Macs. Keep <code>~/ai</code> outside any iCloud-synced folder; model weights and agent memory must never sync.</p></div></div>
+<div class="step" data-step="macos-time"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Sync time on both Macs</h3>
+<div class="code-block"><div class="code-header"><span class="code-lang">bash · on both Macs</span><button class="copy-btn">Copy</button></div><pre>sudo systemsetup -setusingnetworktime on
+sudo systemsetup -getnetworktimeserver</pre></div></div></div>
+<div class="step" data-step="macos-verify"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Quick verification</h3>
+<div class="code-block"><div class="code-header"><span class="code-lang">bash · run on each Mac</span><button class="copy-btn">Copy</button></div><pre>scutil --get LocalHostName
+pmset -g | grep ' sleep'
+sudo systemsetup -getremotelogin     # only required on Machine 2</pre></div>
+<div class="verify"><div class="verify-header">Pass condition</div><div class="verify-body">Hostnames are distinct, M2 sleep values are <code>0</code>, Remote Login is <code>On</code> on M2.</div></div></div></div>
+</section>
+
 <div class="part-divider"><div class="part-divider-line"></div><div class="part-divider-text">Part I · Hardware, network, and base tools</div><div class="part-divider-line"></div></div>
 <section id="hardware-network"><div class="section-num">01 / Both Macs</div><h2>Thunderbolt Bridge <em>network</em></h2><p class="section-deck">Create the private direct link between the two Mac Studios. Use one real Thunderbolt 4/5 cable first; two cables do not automatically double throughput.</p>
 <div class="step" data-step="network-cable"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Connect one Thunderbolt cable</h3>
