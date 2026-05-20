@@ -162,8 +162,12 @@ squash-merged into `main`, then the next task starts from refreshed `main`.
   8004 endpoint check to `m1-ai-status.sh` (with a `--max-time 2` and a
   friendly "expected unless experimental lane is running" message so the
   default case isn't confusing). M1 is now the status hub and matches M2.
-- [ ] **20 — Top-of-HTML-guide canonicity note.** Add a one-line banner
-  saying "this guide is the canonical setup; Markdown docs are reference."
+- [x] **20 — Top-of-HTML-guide canonicity banner.** Added a single
+  peach-on-dark banner strip above the sticky header (renders on both
+  light and dark themes) saying "CANONICAL · This page is the single
+  source of truth ... Markdown docs under docs/ are reference." The
+  hero callout from task 05 keeps the message visible once the banner
+  scrolls out of view.
 
 ## Acceptance criteria
 
