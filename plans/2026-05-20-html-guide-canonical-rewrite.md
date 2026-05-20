@@ -98,8 +98,11 @@ squash-merged into `main`, then the next task starts from refreshed `main`.
 
 ### Missing steps (group b)
 
-- [ ] **06 — macOS prep section + `docs/MACOS_PREP.md`.** Sleep,
-  iCloud, FileVault, hostname, `caffeinate` notes. Linked from HTML guide.
+- [x] **06 — macOS prep section + `docs/MACOS_PREP.md`.** New
+  `docs/MACOS_PREP.md` covers hostnames, `pmset`, iCloud Desktop/Docs
+  opt-out, FileVault notes, firewall, time sync, UPS. HTML guide gets a
+  new "Part 0 · macOS prep" section with the minimum required commands
+  and a link to the full doc.
 - [ ] **07 — Launchd autostart for M1 + M2.** Create
   `configs/launchd/com.localai.{developer,reviewer}.plist.template`. Add
   `scripts/install-launchd-machine{1,2}.sh` to render templates with real
