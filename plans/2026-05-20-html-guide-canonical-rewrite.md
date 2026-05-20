@@ -73,19 +73,19 @@ squash-merged into `main`, then the next task starts from refreshed `main`.
 
 ### Must-fix (group a)
 
-- [x] **01 — pyproject build-system + huggingface_hub.** Add explicit
+- [ ] **01 — pyproject build-system + huggingface_hub.** Add explicit
   `[build-system]` (hatchling). Move `huggingface_hub[hf_xet]` into base
   deps so `hf` CLI is available with any extra. Update `[all]` accordingly.
-- [x] **02 — Verify `local-exec-plan` console script.** Confirm
+- [ ] **02 — Verify `local-exec-plan` console script.** Confirm
   `src/local_ai_stack/local_exec_plan.py` has a `main()` function matching
   the `pyproject.toml` `[project.scripts]` entry. Add it if missing.
-- [x] **03 — Drop `/Users/admin/...` hardcoding.** Replace literals in
+- [ ] **03 — Drop `/Users/admin/...` hardcoding.** Replace literals in
   `configs/env.machine{1,2}.example` and HTML guide §09 with `$HOME` /
   templated paths.
-- [x] **04 — Fix `\n`-in-JSON bug.** Rewrite `bench-chat-endpoint.sh:19`
+- [ ] **04 — Fix `\n`-in-JSON bug.** Rewrite `bench-chat-endpoint.sh:19`
   and `smoke-test-endpoints.sh:15` to send real JSON (heredoc + `--data @-`
   or `python -c`).
-- [x] **05 — Layout reconciliation in HTML guide (BIG).** Rewrite the HTML
+- [ ] **05 — Layout reconciliation in HTML guide (BIG).** Rewrite the HTML
   guide to: clone repo first, run `scripts/install-symlinks.sh`,
   `pip install -e .[all]`, use console scripts, call
   `install-claude-skills.sh` and `register-mcp-{claude,codex}.sh` instead
@@ -93,48 +93,48 @@ squash-merged into `main`, then the next task starts from refreshed `main`.
 
 ### Missing steps (group b)
 
-- [x] **06 — macOS prep section + `docs/MACOS_PREP.md`.** Sleep,
+- [ ] **06 — macOS prep section + `docs/MACOS_PREP.md`.** Sleep,
   iCloud, FileVault, hostname, `caffeinate` notes. Linked from HTML guide.
-- [x] **07 — Launchd autostart for M1 + M2.** Create
+- [ ] **07 — Launchd autostart for M1 + M2.** Create
   `configs/launchd/com.localai.{developer,reviewer}.plist.template`. Add
   `scripts/install-launchd-machine{1,2}.sh` to render templates with real
   `$HOME` and `launchctl bootstrap`. New HTML guide section.
-- [x] **08 — True end-to-end verification section.** From a sample
+- [ ] **08 — True end-to-end verification section.** From a sample
   project repo, invoke `/delegate-local` (or `local-exec-plan`) on a tiny
   plan, confirm worktree, confirm reviewer JSON. Add to HTML guide.
-- [x] **09 — Re-running / idempotency notes.** A short section in the
+- [ ] **09 — Re-running / idempotency notes.** A short section in the
   HTML guide explaining what is safe to re-run vs what overwrites
   user-customized state (notably `.env`).
-- [x] **10 — Backup / disaster recovery doc.** `docs/BACKUP.md` covering
+- [ ] **10 — Backup / disaster recovery doc.** `docs/BACKUP.md` covering
   `~/ai/models/` (200+ GB, not in iCloud), `.env`, agent memory.
 
 ### Supporting (group c)
 
-- [x] **11 — Missing M2 launchd plists.** Covered by task 07.
-- [x] **12 — `scripts/install-launchd-machine{1,2}.sh`.** Covered by task 07.
-- [x] **13 — `scripts/preflight.sh`.** TB Bridge ping + SSH to M2 + `hf`
+- [ ] **11 — Missing M2 launchd plists.** Covered by task 07.
+- [ ] **12 — `scripts/install-launchd-machine{1,2}.sh`.** Covered by task 07.
+- [ ] **13 — `scripts/preflight.sh`.** TB Bridge ping + SSH to M2 + `hf`
   auth + three endpoints up. Wire into HTML guide post-install step.
-- [x] **14 — `scripts/render-html.sh` (deferred).** Long-term drift risk
+- [ ] **14 — `scripts/render-html.sh` (deferred).** Long-term drift risk
   if HTML and Markdown diverge. Either build an MD→HTML renderer or add a
   manual cross-check checklist. Decision recorded in this plan as
   "checklist not renderer" to avoid scope creep.
 
 ### Nice-to-haves (group d)
 
-- [x] **15 — Delete or regenerate `REPO_FILE_MANIFEST.md`.** Currently
+- [ ] **15 — Delete or regenerate `REPO_FILE_MANIFEST.md`.** Currently
   lists `.pyc` files (drift). Delete unless there's a strong reason to
   keep a hand-maintained index.
-- [x] **16 — `docs/MCP.md`.** Narrative doc for the MCP bridge so it
+- [ ] **16 — `docs/MCP.md`.** Narrative doc for the MCP bridge so it
   isn't only described inside the HTML guide.
-- [x] **17 — Document `MTP35_MODEL=mtplx` exception** in
+- [ ] **17 — Document `MTP35_MODEL=mtplx` exception** in
   `docs/EXPERIMENTAL_MTP.md` so the alias doesn't look like a contradiction
   to the "never use aliases" rule.
-- [x] **18 — Remove `Local AI Multi-Agent Setup.zip`** from working dir
+- [ ] **18 — Remove `Local AI Multi-Agent Setup.zip`** from working dir
   (already git-ignored; just delete the file).
-- [x] **19 — Status `m1-ai-status.sh` MTP port parity.** Either add 8004
+- [ ] **19 — Status `m1-ai-status.sh` MTP port parity.** Either add 8004
   to M1 status or remove from M2 status; pick "add to M1" since M1 is the
   status hub.
-- [x] **20 — Top-of-HTML-guide canonicity note.** Add a one-line banner
+- [ ] **20 — Top-of-HTML-guide canonicity note.** Add a one-line banner
   saying "this guide is the canonical setup; Markdown docs are reference."
 
 ## Acceptance criteria
