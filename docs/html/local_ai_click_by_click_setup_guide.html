@@ -273,7 +273,11 @@ m1-ai-status.sh</pre></div>
 <p>Logs land at <code>~/ai/logs/orchestrator.log</code>.</p></div></div>
 </section>
 <div class="part-divider"><div class="part-divider-line"></div><div class="part-divider-text">Part V · Smoke tests</div><div class="part-divider-line"></div></div>
-<section id="smoke-endpoints"><div class="section-num">13 / Machine 1</div><h2>Endpoint smoke <em>test</em></h2><p class="section-deck">Hit all three endpoints with a tiny chat request and confirm each one responds with the expected acknowledgement string.</p>
+<section id="smoke-endpoints"><div class="section-num">13 / Machine 1</div><h2>Endpoint smoke <em>test</em></h2><p class="section-deck">First a quick infrastructure preflight, then hit all three endpoints with a real chat request.</p>
+<div class="step" data-step="preflight"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Run <code>preflight.sh</code></h3>
+<div class="code-block"><div class="code-header"><span class="code-lang">bash · on Machine 1</span><button class="copy-btn">Copy</button></div><pre>cd ~/ai/local-ai-stack
+preflight.sh</pre></div>
+<p>Checks Thunderbolt ping, SSH to M2, <code>hf</code> auth, the M1 venv, all three endpoint URLs, and that <code>.env</code> has the six required keys. Exit code is 0 only when every line is <code>[ok]</code>.</p></div></div>
 <div class="step" data-step="smoke-endpoints-run"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Run <code>smoke-test-endpoints.sh</code></h3>
 <div class="code-block"><div class="code-header"><span class="code-lang">bash · on Machine 1</span><button class="copy-btn">Copy</button></div><pre>cd ~/ai/local-ai-stack
 smoke-test-endpoints.sh</pre></div>
