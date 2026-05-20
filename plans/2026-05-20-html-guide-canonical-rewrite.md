@@ -73,7 +73,7 @@ squash-merged into `main`, then the next task starts from refreshed `main`.
 
 ### Must-fix (group a)
 
-- [ ] **01 — pyproject build-system + huggingface_hub.** Add explicit
+- [x] **01 — pyproject build-system + huggingface_hub.** Add explicit
   `[build-system]` (hatchling). Move `huggingface_hub[hf_xet]` into base
   deps so `hf` CLI is available with any extra. Update `[all]` accordingly.
 - [ ] **02 — Verify `local-exec-plan` console script.** Confirm
