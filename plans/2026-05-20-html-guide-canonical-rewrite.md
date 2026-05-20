@@ -135,10 +135,12 @@ squash-merged into `main`, then the next task starts from refreshed `main`.
   required keys) and exits non-zero on any failure. Linked from
   `install-symlinks.sh` and from a new HTML guide step preceding the
   endpoint smoke test.
-- [ ] **14 — `scripts/render-html.sh` (deferred).** Long-term drift risk
-  if HTML and Markdown diverge. Either build an MD→HTML renderer or add a
-  manual cross-check checklist. Decision recorded in this plan as
-  "checklist not renderer" to avoid scope creep.
+- [x] **14 — Drift checklist (not a renderer).** New
+  `docs/HTML_GUIDE_DRIFT_CHECKLIST.md` lists the checks to run when
+  modifying the HTML guide vs the Markdown docs, scripts, configs, or
+  models. Decision: a Markdown→HTML pipeline would cost the rich
+  callouts/copy-buttons/progress UI and add a build step requiring its
+  own tests; a one-page checklist costs ~5 minutes per PR.
 
 ### Nice-to-haves (group d)
 
