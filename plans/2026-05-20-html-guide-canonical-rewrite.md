@@ -130,8 +130,11 @@ squash-merged into `main`, then the next task starts from refreshed `main`.
 
 - [x] **11 — Missing M2 launchd plists.** Covered by task 07.
 - [x] **12 — `scripts/install-launchd-machine{1,2}.sh`.** Covered by task 07.
-- [ ] **13 — `scripts/preflight.sh`.** TB Bridge ping + SSH to M2 + `hf`
-  auth + three endpoints up. Wire into HTML guide post-install step.
+- [x] **13 — `scripts/preflight.sh`.** New script runs 8 checks
+  (TB ping, SSH, `hf auth`, venv import, three endpoints, `.env`
+  required keys) and exits non-zero on any failure. Linked from
+  `install-symlinks.sh` and from a new HTML guide step preceding the
+  endpoint smoke test.
 - [ ] **14 — `scripts/render-html.sh` (deferred).** Long-term drift risk
   if HTML and Markdown diverge. Either build an MD→HTML renderer or add a
   manual cross-check checklist. Decision recorded in this plan as
