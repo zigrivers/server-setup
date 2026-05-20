@@ -378,7 +378,7 @@ ls ~/.claude/skills</pre></div>
 <p>Restart Claude Code, then run <code>/skills</code> to confirm <code>delegate-local</code>, <code>local-review</code>, and <code>local-ai-status</code> show up.</p></div></div>
 </section>
 
-<section id="register-mcp"><div class="section-num">16 / Machine 1</div><h2>Register the <em>MCP bridge</em></h2><p class="section-deck">The MCP server lives at <code>mcp/local_delegate_mcp/server.py</code>. The register scripts wire it into Claude Code and Codex with sane allowed-roots.</p>
+<section id="register-mcp"><div class="section-num">16 / Machine 1</div><h2>Register the <em>MCP bridge</em></h2><p class="section-deck">The MCP server lives at <code>mcp/local_delegate_mcp/server.py</code>. The register scripts wire it into Claude Code and Codex with sane allowed-roots. Full reference: <code>docs/MCP.md</code>.</p>
 <div class="step" data-step="register-claude"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Register with Claude Code</h3>
 <div class="code-block"><div class="code-header"><span class="code-lang">bash · on Machine 1</span><button class="copy-btn">Copy</button></div><pre>cd ~/ai/local-ai-stack
 scripts/register-mcp-claude.sh

@@ -147,8 +147,11 @@ squash-merged into `main`, then the next task starts from refreshed `main`.
 - [x] **15 — Deleted `REPO_FILE_MANIFEST.md`.** Hand-maintained file
   index that had already drifted (listed `.pyc` cache files). `find` /
   `git ls-files` are authoritative.
-- [ ] **16 — `docs/MCP.md`.** Narrative doc for the MCP bridge so it
-  isn't only described inside the HTML guide.
+- [x] **16 — `docs/MCP.md`.** New doc covering the three tools
+  (`local_ai_status`, `git_local_summary`, `run_local_plan`), allowed
+  roots, endpoint config, controller lookup order, registration with
+  Claude Code and Codex, smoke testing, and security. HTML guide §16
+  links to it; `AGENTS.md` now points readers at it.
 - [ ] **17 — Document `MTP35_MODEL=mtplx` exception** in
   `docs/EXPERIMENTAL_MTP.md` so the alias doesn't look like a contradiction
   to the "never use aliases" rule.

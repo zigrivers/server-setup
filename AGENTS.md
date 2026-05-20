@@ -9,6 +9,9 @@ Read these files before substantial work:
 - `docs/SETUP.md`
 - `docs/OPERATIONS.md`
 - `docs/TROUBLESHOOTING.md`
+- `docs/MCP.md`
+- `docs/MACOS_PREP.md`
+- `docs/BACKUP.md`
 
 ## Default behavior for Codex
 
