@@ -121,8 +121,10 @@ squash-merged into `main`, then the next task starts from refreshed `main`.
   table covering every install command in the guide: which are safe to
   rerun, which require a pre-step (e.g., `claude mcp remove ...`),
   which destroy user edits (`.env`).
-- [ ] **10 — Backup / disaster recovery doc.** `docs/BACKUP.md` covering
-  `~/ai/models/` (200+ GB, not in iCloud), `.env`, agent memory.
+- [x] **10 — Backup / disaster recovery doc.** New `docs/BACKUP.md`
+  with: a path taxonomy (what to back up, what to skip), an explicit
+  decision tree for `~/ai/models/` (200+ GB), and an 8-step disaster
+  recovery rebuild order. Linked from the HTML guide Security section.
 
 ### Supporting (group c)
 

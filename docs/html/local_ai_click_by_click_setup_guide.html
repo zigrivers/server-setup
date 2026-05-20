@@ -498,7 +498,7 @@ tail -100 ~/ai/logs/orchestrator.log
 ssh admin@10.10.10.2 'tail -100 ~/ai/logs/developer.log; tail -100 ~/ai/logs/reviewer.log'</pre></div>
 </section>
 
-<section id="security-rules"><div class="section-num">24 / Reference</div><h2>Security <em>rules</em></h2><p class="section-deck">Guardrails that keep the local stack useful without letting agents damage the machine. Full list: <code>docs/SECURITY.md</code>.</p>
+<section id="security-rules"><div class="section-num">24 / Reference</div><h2>Security <em>rules</em></h2><p class="section-deck">Guardrails that keep the local stack useful without letting agents damage the machine. Full list: <code>docs/SECURITY.md</code>. Backup considerations are in <code>docs/BACKUP.md</code>.</p>
 <ol>
 <li>Never expose <code>mlx_lm.server</code>, LM Studio, MTPLX, or MCP servers to the public internet.</li>
 <li>Use <code>127.0.0.1</code> for the Machine 1 Orchestrator and <code>10.10.10.2</code> for Machine 2 worker servers.</li>
