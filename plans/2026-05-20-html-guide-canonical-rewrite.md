@@ -158,9 +158,10 @@ squash-merged into `main`, then the next task starts from refreshed `main`.
   with stock `mlx_lm.server` instead.
 - [x] **18 — Removed `Local AI Multi-Agent Setup.zip` from working
   dir.** Already git-ignored; never tracked. File is no longer present.
-- [ ] **19 — Status `m1-ai-status.sh` MTP port parity.** Either add 8004
-  to M1 status or remove from M2 status; pick "add to M1" since M1 is the
-  status hub.
+- [x] **19 — Status `m1-ai-status.sh` MTP port parity.** Added the
+  8004 endpoint check to `m1-ai-status.sh` (with a `--max-time 2` and a
+  friendly "expected unless experimental lane is running" message so the
+  default case isn't confusing). M1 is now the status hub and matches M2.
 - [ ] **20 — Top-of-HTML-guide canonicity note.** Add a one-line banner
   saying "this guide is the canonical setup; Markdown docs are reference."
 
