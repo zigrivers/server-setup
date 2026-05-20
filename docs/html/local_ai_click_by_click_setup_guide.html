@@ -51,6 +51,7 @@ section{margin-bottom:64px;scroll-margin-top:88px}.section-num{font-family:ui-mo
   <div class="sidebar-section"><div class="sidebar-label">Part V · Smoke tests</div><ul class="sidebar-toc">
     <li><a href="#smoke-endpoints"><span class="num">13</span>Endpoints</a></li>
     <li><a href="#smoke-agents"><span class="num">14</span>Three-agent</a></li>
+    <li><a href="#smoke-e2e"><span class="num">14b</span>End-to-end</a></li>
   </ul></div>
   <div class="sidebar-section"><div class="sidebar-label">Part VI · Frontier handoff</div><ul class="sidebar-toc">
     <li><a href="#install-skills"><span class="num">15</span>Claude skills</a></li>
@@ -291,6 +292,78 @@ git diff
 cat README.md</pre></div>
 <div class="verify"><div class="verify-header">Pass condition</div><div class="verify-body">README.md exists and mentions the split-machine system; reviewer JSON shows <code>"approved": true</code> or stops at the max-loops cap with constructive feedback.</div></div></div></div>
 </section>
+
+<section id="smoke-e2e"><div class="section-num">14b / Machine 1</div><h2>End-to-end acceptance <em>test</em></h2><p class="section-deck">Run the full frontier-to-local handoff once before considering setup complete. This exercises the MCP bridge, <code>local-exec-plan</code>, the worktree creation flow, and the reviewer's approval JSON — the actual user-visible outcome of all this setup.</p>
+<div class="callout callout-info"><div class="callout-label">When to run this</div><p>After Part VI is done (skills installed, MCP registered). If you do it earlier, the <code>/delegate-local</code> path doesn't exist yet — you can still drive the same flow via the <code>local-exec-plan</code> console script.</p></div>
+
+<div class="step" data-step="e2e-make-repo"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Create a disposable target repo</h3>
+<div class="code-block"><div class="code-header"><span class="code-lang">bash · on Machine 1</span><button class="copy-btn">Copy</button></div><pre>mkdir -p ~/ai/workspaces/e2e-acceptance
+cd ~/ai/workspaces/e2e-acceptance
+git init -q
+git config user.email "local-agent@example.local"
+git config user.name  "Local AI Agent"
+
+cat &gt; README.md &lt;&lt;'EOF'
+# E2E acceptance target
+EOF
+
+mkdir -p plans docs/ai
+cp ~/ai/local-ai-stack/docs/repo-templates/AGENTS.md      ./AGENTS.md
+cp ~/ai/local-ai-stack/docs/repo-templates/CLAUDE.md      ./CLAUDE.md
+cp ~/ai/local-ai-stack/docs/repo-templates/AI_WORKFLOW.md ./docs/ai/AI_WORKFLOW.md
+
+git add . &amp;&amp; git commit -q -m "Initial commit"</pre></div></div></div>
+
+<div class="step" data-step="e2e-write-plan"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Write a tiny plan file</h3>
+<div class="code-block"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn">Copy</button></div><pre>cat &gt; plans/$(date -u +%Y-%m-%d)-e2e-smoke.md &lt;&lt;'EOF'
+# E2E smoke plan
+
+## Goal
+Update README.md to add a section titled "E2E acceptance" that states the
+split-machine multi-agent stack ran a real plan against a real repo.
+
+## Non-goals
+Do not modify any other file. Do not add dependencies.
+
+## Files expected to change
+- README.md
+
+## Tasks
+1. Open README.md.
+2. Append a section "## E2E acceptance" with one sentence noting the test
+   ran successfully.
+
+## Acceptance criteria
+- README.md contains the heading "## E2E acceptance".
+- git diff is limited to README.md.
+
+## Test plan
+git diff -- README.md
+EOF
+git add plans/*.md &amp;&amp; git commit -q -m "Add e2e smoke plan"</pre></div></div></div>
+
+<div class="step" data-step="e2e-execute"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Execute the plan locally</h3>
+<div class="code-block"><div class="code-header"><span class="code-lang">bash · on Machine 1</span><button class="copy-btn">Copy</button></div><pre>cd ~/ai/local-ai-stack
+source .venv/bin/activate
+cd ~/ai/workspaces/e2e-acceptance
+local-exec-plan "$(ls -1 plans/*.md | tail -1)" --workspace .</pre></div>
+<p>Or from inside Claude Code (after restart with skills + MCP loaded):</p>
+<div class="code-block"><div class="code-header"><span class="code-lang">text · inside Claude Code</span><button class="copy-btn">Copy</button></div><pre>/delegate-local execute the plan in plans/ in a separate worktree</pre></div></div></div>
+
+<div class="step" data-step="e2e-verify"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Verify the result</h3>
+<div class="code-block"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn">Copy</button></div><pre>git worktree list
+WT="$(git worktree list --porcelain | awk '/^worktree/{print $2}' | grep e2e-acceptance-local)"
+echo "Worktree: $WT"
+git -C "$WT" status --short
+git -C "$WT" log --oneline -5
+git -C "$WT" diff main -- README.md
+grep "E2E acceptance" "$WT/README.md"
+cat "$WT/.agent_memory.jsonl" | tail -1 | python3 -m json.tool</pre></div>
+<div class="verify"><div class="verify-header">Pass conditions (all must hold)</div><div class="verify-body"><ol style="margin:0;padding-left:18px"><li>A new worktree exists under <code>~/ai/workspaces/e2e-acceptance-local-…</code> on its own <code>ai/local/…</code> branch.</li><li><code>README.md</code> in that worktree contains the heading <code>## E2E acceptance</code>.</li><li>The diff is limited to <code>README.md</code> — no unrelated files changed.</li><li>The last entry in <code>.agent_memory.jsonl</code> is a reviewer event with <code>"approved": true</code>, or a graceful stop at the max-loops cap with actionable feedback.</li></ol></div></div>
+
+<p>If any of the four fail, do not proceed to autostart. Check <code>m1-ai-status.sh</code>, <code>m2-ai-status.sh</code>, and <code>tail ~/ai/logs/*.log</code> — the issue is almost always an endpoint that came up sluggish or a model path that doesn't exist on the target machine.</p></div></div>
+</section>
+
 <div class="part-divider"><div class="part-divider-line"></div><div class="part-divider-text">Part VI · Frontier handoff (Claude Code, Codex, MCP)</div><div class="part-divider-line"></div></div>
 <section id="install-skills"><div class="section-num">15 / Machine 1</div><h2>Install Claude <em>skills</em></h2><p class="section-deck">The repo ships three Claude skills under <code>skills/claude/</code>. Install them into <code>~/.claude/skills/</code> with the helper.</p>
 <div class="step" data-step="install-skills"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Run the installer</h3>
