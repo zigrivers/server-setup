@@ -10,13 +10,34 @@ fi
 BASE_URL="$1"
 MODEL="$2"
 PROMPT_FILE="$3"
-PROMPT="$(cat "$PROMPT_FILE")"
+
+if [ ! -f "$PROMPT_FILE" ]; then
+  echo "Prompt file not found: $PROMPT_FILE" >&2
+  exit 1
+fi
 
 START="$(date +%s)"
 
+# Build the JSON payload via Python so the prompt is properly escaped
+# (handles newlines, quotes, and backslashes correctly).
+export MODEL PROMPT_FILE
+PAYLOAD="$(python3 -c '
+import json, os
+payload = {
+    "model": os.environ["MODEL"],
+    "messages": [
+        {"role": "system", "content": "Answer directly. Be precise. Do not include hidden reasoning traces."},
+        {"role": "user", "content": open(os.environ["PROMPT_FILE"]).read()},
+    ],
+    "max_tokens": 4096,
+    "temperature": 0.3,
+}
+print(json.dumps(payload))
+')"
+
 curl -s "$BASE_URL/chat/completions" \
   -H "Content-Type: application/json" \
-  -d "{\n    \"model\": \"$MODEL\",\n    \"messages\": [\n      {\"role\": \"system\", \"content\": \"Answer directly. Be precise. Do not include hidden reasoning traces.\"},\n      {\"role\": \"user\", \"content\": $(python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))' <<< "$PROMPT")}\n    ],\n    \"max_tokens\": 4096,\n    \"temperature\": 0.3\n  }"
+  --data-binary "$PAYLOAD"
 
 END="$(date +%s)"
 echo
