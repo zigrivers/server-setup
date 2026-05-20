@@ -152,9 +152,10 @@ squash-merged into `main`, then the next task starts from refreshed `main`.
   roots, endpoint config, controller lookup order, registration with
   Claude Code and Codex, smoke testing, and security. HTML guide §16
   links to it; `AGENTS.md` now points readers at it.
-- [ ] **17 — Document `MTP35_MODEL=mtplx` exception** in
-  `docs/EXPERIMENTAL_MTP.md` so the alias doesn't look like a contradiction
-  to the "never use aliases" rule.
+- [x] **17 — Documented `MTP35_MODEL=mtplx` exception.** Added a
+  callout explaining `mtplx` is the *runtime binary's* self-identifier,
+  not a `mlx_lm.server` alias. Also shows the fallback if you serve
+  with stock `mlx_lm.server` instead.
 - [ ] **18 — Remove `Local AI Multi-Agent Setup.zip`** from working dir
   (already git-ignored; just delete the file).
 - [ ] **19 — Status `m1-ai-status.sh` MTP port parity.** Either add 8004
