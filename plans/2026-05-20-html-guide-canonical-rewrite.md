@@ -76,9 +76,11 @@ squash-merged into `main`, then the next task starts from refreshed `main`.
 - [x] **01 — pyproject build-system + huggingface_hub.** Add explicit
   `[build-system]` (hatchling). Move `huggingface_hub[hf_xet]` into base
   deps so `hf` CLI is available with any extra. Update `[all]` accordingly.
-- [ ] **02 — Verify `local-exec-plan` console script.** Confirm
-  `src/local_ai_stack/local_exec_plan.py` has a `main()` function matching
-  the `pyproject.toml` `[project.scripts]` entry. Add it if missing.
+- [x] **02 — Verify `local-exec-plan` console script.** Confirmed both
+  console-script entries resolve: `local-ai-agents` →
+  `src/local_ai_stack/local_agents.py:main` (line 528), and
+  `local-exec-plan` → `src/local_ai_stack/local_exec_plan.py:main`
+  (line 57). No code change required.
 - [ ] **03 — Drop `/Users/admin/...` hardcoding.** Replace literals in
   `configs/env.machine{1,2}.example` and HTML guide §09 with `$HOME` /
   templated paths.
