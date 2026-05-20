@@ -68,7 +68,8 @@ section{margin-bottom:64px;scroll-margin-top:88px}.section-num{font-family:ui-mo
     <li><a href="#daily-workflow"><span class="num">22</span>Daily flow</a></li>
     <li><a href="#troubleshooting"><span class="num">23</span>Troubleshooting</a></li>
     <li><a href="#security-rules"><span class="num">24</span>Security</a></li>
-    <li><a href="#appendix-paths"><span class="num">25</span>Paths</a></li>
+    <li><a href="#rerun-idempotency"><span class="num">25</span>Re-running</a></li>
+    <li><a href="#appendix-paths"><span class="num">26</span>Paths</a></li>
   </ul></div>
 </aside>
 <main class="content">
@@ -510,7 +511,23 @@ ssh admin@10.10.10.2 'tail -100 ~/ai/logs/developer.log; tail -100 ~/ai/logs/rev
 </ol>
 </section>
 
-<section id="appendix-paths"><div class="section-num">25 / Reference</div><h2>Final path <em>checklist</em></h2><p class="section-deck">Use this when handing the setup to another human or AI agent.</p>
+<section id="rerun-idempotency"><div class="section-num">25 / Reference</div><h2>Re-running <em>this guide</em></h2><p class="section-deck">If you hit an error and want to resume, here's what is safe to rerun and what would overwrite your customizations.</p>
+<div class="table-wrap"><table><thead><tr><th>Step</th><th>Safe to rerun?</th><th>Notes</th></tr></thead><tbody>
+<tr><td><code>git clone</code> in Part II</td><td><strong>No — already cloned</strong></td><td>Use <code>git pull</code> in the existing repo instead.</td></tr>
+<tr><td><code>uv venv .venv --python 3.12</code></td><td>Yes (no-op if exists)</td><td>Does not delete the venv. To rebuild, <code>rm -rf .venv</code> first.</td></tr>
+<tr><td><code>uv pip install -e '.[all]'</code></td><td>Yes</td><td>Reinstalls in-place. Safe.</td></tr>
+<tr><td><code>scripts/install-symlinks.sh</code></td><td>Yes</td><td>Uses <code>ln -sfn</code>; overwrites stale links cleanly.</td></tr>
+<tr><td><code>scripts/install-claude-skills.sh</code></td><td>Yes</td><td><strong>Deletes</strong> any prior <code>~/.claude/skills/{delegate-local,local-review,local-ai-status}</code> and recopies. Don't hand-edit those skills under <code>~/.claude/</code>; edit the source under <code>skills/claude/</code> and rerun.</td></tr>
+<tr><td><code>scripts/register-mcp-{claude,codex}.sh</code></td><td>Mostly</td><td><code>claude mcp add</code> errors if the server name is already registered. Remove first with <code>claude mcp remove local-ai-delegate</code>, then rerun.</td></tr>
+<tr><td><code>scripts/download-models-machine{1,2}.sh</code></td><td>Yes</td><td><code>hf download</code> resumes; partial files are completed.</td></tr>
+<tr><td><code>scripts/install-launchd-machine{1,2}.sh</code></td><td>Yes</td><td>Idempotent — bootouts first if already loaded, then bootstraps.</td></tr>
+<tr><td><code>cp configs/env.machine1.example .env</code></td><td><strong>No — overwrites your edits</strong></td><td>Diff first: <code>diff configs/env.machine1.example .env</code>. Only re-copy if you want to discard your local edits.</td></tr>
+<tr><td><code>start-orchestrator.sh</code> / <code>start-worker-models.sh</code></td><td>Yes</td><td>Refuses to start if the port is already in use. Stop with the matching stop script first.</td></tr>
+</tbody></table></div>
+<div class="callout callout-warn"><div class="callout-label">When you're not sure</div><p>Run <code>git -C ~/ai/local-ai-stack status</code> first. If there are no local-only edits, everything in this guide is safe to rerun. If there are edits to <code>.env</code> or anything else, decide before overwriting.</p></div>
+</section>
+
+<section id="appendix-paths"><div class="section-num">26 / Reference</div><h2>Final path <em>checklist</em></h2><p class="section-deck">Use this when handing the setup to another human or AI agent.</p>
 <div class="table-wrap"><table><thead><tr><th>Item</th><th>Expected path or URL</th></tr></thead><tbody>
 <tr><td>Repo on both Macs</td><td><code>~/ai/local-ai-stack</code></td></tr>
 <tr><td>Repo venv (both Macs)</td><td><code>~/ai/local-ai-stack/.venv</code></td></tr>
