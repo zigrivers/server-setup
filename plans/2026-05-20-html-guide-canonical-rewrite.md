@@ -88,11 +88,13 @@ squash-merged into `main`, then the next task starts from refreshed `main`.
 - [x] **04 — Fix `\n`-in-JSON bug.** Both scripts now build the JSON
   payload via Python (`json.dumps`) and pipe it into `curl --data-binary`,
   so newlines/quotes/backslashes in prompts are correctly escaped.
-- [ ] **05 — Layout reconciliation in HTML guide (BIG).** Rewrite the HTML
-  guide to: clone repo first, run `scripts/install-symlinks.sh`,
-  `pip install -e .[all]`, use console scripts, call
-  `install-claude-skills.sh` and `register-mcp-{claude,codex}.sh` instead
-  of inline `cat > ...` blocks. Reduce file substantially.
+- [x] **05 — Layout reconciliation in HTML guide (BIG).** Rewrote
+  `docs/html/local_ai_click_by_click_setup_guide.html` from 1,736 lines
+  to 424. Steps now: (i) clone repo to `~/ai/local-ai-stack` on both
+  Macs, (ii) `uv pip install -e '.[all|mlx]'`, (iii) `scripts/install-symlinks.sh`
+  to put helpers on PATH, (iv) use the console scripts (`local-ai-agents`,
+  `local-exec-plan`, `smoke-test-endpoints.sh`, etc.) and the register-mcp
+  / install-skills helpers. Zero `cat > ...` blocks remain.
 
 ### Missing steps (group b)
 
