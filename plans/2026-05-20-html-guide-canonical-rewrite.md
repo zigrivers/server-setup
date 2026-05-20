@@ -144,9 +144,9 @@ squash-merged into `main`, then the next task starts from refreshed `main`.
 
 ### Nice-to-haves (group d)
 
-- [ ] **15 — Delete or regenerate `REPO_FILE_MANIFEST.md`.** Currently
-  lists `.pyc` files (drift). Delete unless there's a strong reason to
-  keep a hand-maintained index.
+- [x] **15 — Deleted `REPO_FILE_MANIFEST.md`.** Hand-maintained file
+  index that had already drifted (listed `.pyc` cache files). `find` /
+  `git ls-files` are authoritative.
 - [ ] **16 — `docs/MCP.md`.** Narrative doc for the MCP bridge so it
   isn't only described inside the HTML guide.
 - [ ] **17 — Document `MTP35_MODEL=mtplx` exception** in
