@@ -81,9 +81,10 @@ squash-merged into `main`, then the next task starts from refreshed `main`.
   `src/local_ai_stack/local_agents.py:main` (line 528), and
   `local-exec-plan` → `src/local_ai_stack/local_exec_plan.py:main`
   (line 57). No code change required.
-- [ ] **03 — Drop `/Users/admin/...` hardcoding.** Replace literals in
-  `configs/env.machine{1,2}.example` and HTML guide §09 with `$HOME` /
-  templated paths.
+- [x] **03 — Drop `/Users/admin/...` hardcoding.** Replaced literals in
+  env examples, both HTML files, troubleshooting, smoke/bench scripts.
+  Plist template now uses `__HOME__` placeholder (substituted by the
+  task-07 install scripts).
 - [ ] **04 — Fix `\n`-in-JSON bug.** Rewrite `bench-chat-endpoint.sh:19`
   and `smoke-test-endpoints.sh:15` to send real JSON (heredoc + `--data @-`
   or `python -c`).

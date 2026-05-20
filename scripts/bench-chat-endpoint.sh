@@ -3,7 +3,7 @@ set -euo pipefail
 
 if [ "$#" -lt 3 ]; then
   echo "Usage: $0 BASE_URL MODEL PROMPT_FILE"
-  echo "Example: $0 http://127.0.0.1:8001/v1 /Users/admin/ai/models/orch-bf16 benchmarks/prompts/01_architecture_plan.md"
+  echo "Example: $0 http://127.0.0.1:8001/v1 \$HOME/ai/models/orch-bf16 benchmarks/prompts/01_architecture_plan.md"
   exit 1
 fi
 

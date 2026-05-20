@@ -2,8 +2,8 @@
 set -euo pipefail
 
 ORCH_MODEL="${ORCH_MODEL:-$HOME/ai/models/orchestrator-qwen36-35b-a3b-heretic-bf16}"
-DEV_MODEL="${DEV_MODEL:-/Users/admin/ai/models/developer-qwen36-27b-heretic2-mixed94}"
-REVIEW_MODEL="${REVIEW_MODEL:-/Users/admin/ai/models/reviewer-qwen36-27b-heretic-bf16}"
+DEV_MODEL="${DEV_MODEL:-$HOME/ai/models/developer-qwen36-27b-heretic2-mixed94}"
+REVIEW_MODEL="${REVIEW_MODEL:-$HOME/ai/models/reviewer-qwen36-27b-heretic-bf16}"
 
 call_model() {
   local name="$1"

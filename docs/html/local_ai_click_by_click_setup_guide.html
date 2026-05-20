@@ -91,9 +91,9 @@ Orchestrator BF16 127.0.0.1:8001
 </div>
 <section id="final-stack"><div class="section-num">00 / Start here</div><h2>Final stack <em>map</em></h2><p class="section-deck">Confirm the exact topology before installing. This page assumes the split-machine layout below.</p>
 <div class="table-wrap"><table><thead><tr><th>Role</th><th>Machine</th><th>Endpoint</th><th>Model path</th></tr></thead><tbody>
-<tr><td><strong>Orchestrator</strong></td><td>Machine 1</td><td><code>http://127.0.0.1:8001/v1</code></td><td><code>/Users/admin/ai/models/orchestrator-qwen36-35b-a3b-heretic-bf16</code></td></tr>
-<tr><td><strong>Developer</strong></td><td>Machine 2</td><td><code>http://10.10.10.2:8002/v1</code></td><td><code>/Users/admin/ai/models/developer-qwen36-27b-heretic2-mixed94</code></td></tr>
-<tr><td><strong>Reviewer</strong></td><td>Machine 2</td><td><code>http://10.10.10.2:8003/v1</code></td><td><code>/Users/admin/ai/models/reviewer-qwen36-27b-heretic-bf16</code></td></tr>
+<tr><td><strong>Orchestrator</strong></td><td>Machine 1</td><td><code>http://127.0.0.1:8001/v1</code></td><td><code>$HOME/ai/models/orchestrator-qwen36-35b-a3b-heretic-bf16</code></td></tr>
+<tr><td><strong>Developer</strong></td><td>Machine 2</td><td><code>http://10.10.10.2:8002/v1</code></td><td><code>$HOME/ai/models/developer-qwen36-27b-heretic2-mixed94</code></td></tr>
+<tr><td><strong>Reviewer</strong></td><td>Machine 2</td><td><code>http://10.10.10.2:8003/v1</code></td><td><code>$HOME/ai/models/reviewer-qwen36-27b-heretic-bf16</code></td></tr>
 <tr><td><strong>Optional MTP / Security</strong></td><td>Machine 2</td><td><code>http://10.10.10.2:8004/v1</code></td><td>experimental</td></tr>
 </tbody></table></div>
 <div class="callout callout-warn"><div class="callout-label">Do not use model = local</div><p><code>mlx_lm.server</code> treats the <code>model</code> field as a real local path or Hugging Face repo ID. Sending <code>local</code> or <code>default</code> causes the server to try Hugging Face repos with those names and fail. Always use the full path visible on the serving machine.</p></div>
@@ -310,9 +310,9 @@ ORCH_BASE_URL=http://127.0.0.1:8001/v1
 DEV_BASE_URL=http://10.10.10.2:8002/v1
 REVIEW_BASE_URL=http://10.10.10.2:8003/v1
 
-ORCH_MODEL=/Users/admin/ai/models/orchestrator-qwen36-35b-a3b-heretic-bf16
-DEV_MODEL=/Users/admin/ai/models/developer-qwen36-27b-heretic2-mixed94
-REVIEW_MODEL=/Users/admin/ai/models/reviewer-qwen36-27b-heretic-bf16
+ORCH_MODEL=$HOME/ai/models/orchestrator-qwen36-35b-a3b-heretic-bf16
+DEV_MODEL=$HOME/ai/models/developer-qwen36-27b-heretic2-mixed94
+REVIEW_MODEL=$HOME/ai/models/reviewer-qwen36-27b-heretic-bf16
 
 LOCAL_API_KEY=not-needed
 
@@ -1634,7 +1634,7 @@ cat &gt; ~/ai/benchmarks/prompts/01_architecture_plan.md &lt;&lt;&#x27;EOF&#x27;
 Create a detailed implementation plan for adding API key rotation with audit logs, admin-only authorization, tests, rollback, and documentation updates. Include file paths, edge cases, and exact test commands.
 EOF
 
-bench-chat-endpoint.sh   http://127.0.0.1:8001/v1   /Users/admin/ai/models/orchestrator-qwen36-35b-a3b-heretic-bf16   ~/ai/benchmarks/prompts/01_architecture_plan.md</pre></div></div></div></section><div class="part-divider"><div class="part-divider-line"></div><div class="part-divider-text">Part VIII · Daily operations and troubleshooting</div><div class="part-divider-line"></div></div><section id="daily-workflow"><div class="section-num">17 / Daily</div><h2>Daily operating <em>rhythm</em></h2><p class="section-deck">Start servers, plan with frontier models, execute locally, review, and merge.</p><div class="step" data-step="daily-start"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Start the stack</h3><div class="code-block"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn">Copy</button></div><pre># On Machine 1
+bench-chat-endpoint.sh   http://127.0.0.1:8001/v1   $HOME/ai/models/orchestrator-qwen36-35b-a3b-heretic-bf16   ~/ai/benchmarks/prompts/01_architecture_plan.md</pre></div></div></div></section><div class="part-divider"><div class="part-divider-line"></div><div class="part-divider-text">Part VIII · Daily operations and troubleshooting</div><div class="part-divider-line"></div></div><section id="daily-workflow"><div class="section-num">17 / Daily</div><h2>Daily operating <em>rhythm</em></h2><p class="section-deck">Start servers, plan with frontier models, execute locally, review, and merge.</p><div class="step" data-step="daily-start"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Start the stack</h3><div class="code-block"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn">Copy</button></div><pre># On Machine 1
 start-orchestrator.sh
 m1-ai-status.sh
 
