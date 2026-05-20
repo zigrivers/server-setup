@@ -85,9 +85,9 @@ squash-merged into `main`, then the next task starts from refreshed `main`.
   env examples, both HTML files, troubleshooting, smoke/bench scripts.
   Plist template now uses `__HOME__` placeholder (substituted by the
   task-07 install scripts).
-- [ ] **04 — Fix `\n`-in-JSON bug.** Rewrite `bench-chat-endpoint.sh:19`
-  and `smoke-test-endpoints.sh:15` to send real JSON (heredoc + `--data @-`
-  or `python -c`).
+- [x] **04 — Fix `\n`-in-JSON bug.** Both scripts now build the JSON
+  payload via Python (`json.dumps`) and pipe it into `curl --data-binary`,
+  so newlines/quotes/backslashes in prompts are correctly escaped.
 - [ ] **05 — Layout reconciliation in HTML guide (BIG).** Rewrite the HTML
   guide to: clone repo first, run `scripts/install-symlinks.sh`,
   `pip install -e .[all]`, use console scripts, call
