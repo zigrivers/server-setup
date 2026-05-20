@@ -116,9 +116,11 @@ squash-merged into `main`, then the next task starts from refreshed `main`.
   with `local-exec-plan` (or `/delegate-local` once Part VI is done),
   and verify four pass conditions including a worktree on its own
   `ai/local/…` branch and a reviewer JSON with `"approved": true`.
-- [ ] **09 — Re-running / idempotency notes.** A short section in the
-  HTML guide explaining what is safe to re-run vs what overwrites
-  user-customized state (notably `.env`).
+- [x] **09 — Re-running / idempotency notes.** New section
+  `#rerun-idempotency` ("25 / Reference · Re-running this guide") with a
+  table covering every install command in the guide: which are safe to
+  rerun, which require a pre-step (e.g., `claude mcp remove ...`),
+  which destroy user edits (`.env`).
 - [ ] **10 — Backup / disaster recovery doc.** `docs/BACKUP.md` covering
   `~/ai/models/` (200+ GB, not in iCloud), `.env`, agent memory.
 
