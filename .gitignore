@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.venv/
+
+# Local environment
+.env
+.env.*.local
+*.log
+logs/
+
+# macOS
+.DS_Store
+
+# AI runtime / generated artifacts
+.agent_memory.jsonl
+.local-ai/
+*.sqlite
+*.db
+
+# Model files are never committed
+models/
+*.safetensors
+*.gguf
+*.mlx
+*.bin
+*.pt
+*.pth
+*.onnx
+
+# Worktrees / scratch
+workspaces/
+tmp/
+
+# Keep docs/html included intentionally
+!docs/html/*.html

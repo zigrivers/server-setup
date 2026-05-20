@@ -1,0 +1,1 @@
+Create a detailed implementation plan for adding API key rotation with audit logs, admin-only authorization, tests, rollback, and documentation updates. Include file paths, edge cases, and exact test commands.

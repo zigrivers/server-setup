@@ -1,0 +1,1737 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Local AI Stack · Click-by-Click Setup Guide</title>
+<style>
+:root{--bg:#1e1e2e;--mantle:#181825;--crust:#11111b;--surface0:#313244;--surface1:#45475a;--surface2:#585b70;--overlay0:#6c7086;--overlay1:#7f849c;--subtext0:#a6adc8;--subtext1:#bac2de;--text:#cdd6f4;--peach:#fab387;--green:#a6e3a1;--yellow:#f9e2af;--red:#f38ba8;--blue:#89b4fa;--mauve:#cba6f7;--teal:#94e2d5;--rule:rgba(205,214,244,.08);--rule-strong:rgba(205,214,244,.18)}
+[data-theme="light"]{--bg:#eff1f5;--mantle:#e6e9ef;--crust:#dce0e8;--surface0:#ccd0da;--surface1:#bcc0cc;--surface2:#acb0be;--overlay0:#9ca0b0;--overlay1:#8c8fa1;--subtext0:#6c6f85;--subtext1:#5c5f77;--text:#4c4f69;--peach:#fe640b;--green:#40a02b;--yellow:#df8e1d;--red:#d20f39;--blue:#1e66f5;--mauve:#8839ef;--teal:#179299;--rule:rgba(76,79,105,.1);--rule-strong:rgba(76,79,105,.22)}
+*{box-sizing:border-box;margin:0;padding:0}html{scroll-behavior:smooth;scroll-padding-top:88px}body{font-family:Georgia, 'Times New Roman', serif;background:var(--bg);color:var(--text);line-height:1.65;font-size:17px;-webkit-font-smoothing:antialiased}::selection{background:var(--peach);color:var(--bg)}
+header.site-header{position:sticky;top:0;z-index:50;background:rgba(30,30,46,.86);backdrop-filter:saturate(180%) blur(12px);border-bottom:1px solid var(--rule)}[data-theme="light"] header.site-header{background:rgba(239,241,245,.88)}.header-inner{max-width:1480px;margin:0 auto;padding:18px 32px;display:flex;align-items:center;justify-content:space-between;gap:24px}.brand{display:flex;align-items:baseline;gap:14px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;letter-spacing:.04em;color:var(--subtext0)}.brand-mark{color:var(--peach);font-weight:700;letter-spacing:.08em;text-transform:uppercase}.brand-sep{color:var(--overlay0)}.header-controls{display:flex;align-items:center;gap:18px}.progress-tag{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;color:var(--subtext0);padding:6px 12px;background:var(--surface0);border-radius:4px;border:1px solid var(--rule-strong)}.progress-tag b{color:var(--peach)}.theme-btn{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;letter-spacing:.05em;background:transparent;color:var(--subtext0);border:1px solid var(--rule-strong);border-radius:4px;padding:6px 12px;cursor:pointer}.theme-btn:hover{color:var(--peach);border-color:var(--peach)}
+.layout{max-width:1480px;margin:0 auto;padding:0 32px;display:grid;grid-template-columns:300px 1fr;gap:64px}@media(max-width:1050px){.layout{grid-template-columns:1fr;gap:32px;padding:0 22px}aside.sidebar{display:none}}aside.sidebar{position:sticky;top:88px;align-self:start;max-height:calc(100vh - 100px);overflow-y:auto;padding:36px 0 80px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}.sidebar-label{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--overlay0);margin-bottom:16px;padding-left:14px}.sidebar-section{margin-bottom:28px}.sidebar-toc{list-style:none;display:flex;flex-direction:column;gap:2px}.sidebar-toc a{display:block;padding:6px 14px;font-size:13px;color:var(--subtext0);text-decoration:none;border-left:2px solid transparent}.sidebar-toc a:hover{color:var(--text);border-left-color:var(--rule-strong)}.sidebar-toc a.active{color:var(--peach);border-left-color:var(--peach);background:linear-gradient(90deg,rgba(250,179,135,.06),transparent)}.sidebar-toc a .num{display:inline-block;width:34px;color:var(--overlay0);font-size:11px}.sidebar-toc a.active .num{color:var(--peach)}
+main.content{padding:48px 0 160px;max-width:900px;min-width:0;overflow-x:hidden}.hero{margin-bottom:80px;padding-bottom:56px;border-bottom:1px solid var(--rule)}.hero-eyebrow{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--peach);margin-bottom:24px}.hero h1{font-family:Georgia,'Times New Roman',serif;font-weight:400;font-size:clamp(46px,8vw,72px);line-height:1.05;letter-spacing:-.035em;margin-bottom:10px}.hero h1 em{font-style:italic;color:var(--peach)}.hero-sub{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:14px;color:var(--subtext0);margin-bottom:32px}.hero-lead{font-size:19px;color:var(--subtext1);max-width:760px;margin-bottom:36px}.spec-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-top:32px}.spec{padding:14px 16px;background:var(--mantle);border-left:2px solid var(--peach);border-radius:3px}.spec-label{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--overlay0);margin-bottom:6px}.spec-value{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;color:var(--text);font-weight:500}.part-divider{margin:96px 0 64px;display:flex;align-items:center;gap:24px}.part-divider-line{flex:1;height:1px;background:var(--rule-strong)}.part-divider-text{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;letter-spacing:.2em;color:var(--peach);text-transform:uppercase;white-space:nowrap}
+section{margin-bottom:64px;scroll-margin-top:88px}.section-num{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;color:var(--peach);letter-spacing:.08em;margin-bottom:8px}h2{font-family:Georgia,'Times New Roman',serif;font-weight:400;font-size:42px;line-height:1.15;letter-spacing:-.015em;margin-bottom:12px}h2 em{font-style:italic;color:var(--subtext0)}.section-deck{color:var(--subtext0);font-size:17px;margin-bottom:32px;max-width:760px}h3{font-family:Georgia,'Times New Roman',serif;font-weight:400;font-size:26px;letter-spacing:-.01em;margin:40px 0 14px;color:var(--text)}h4{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--subtext0);margin:28px 0 12px;font-weight:500}p{margin-bottom:16px}a{color:var(--peach);text-decoration:underline;text-underline-offset:3px}code:not(pre code){font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.88em;background:var(--surface0);color:var(--peach);padding:2px 6px;border-radius:3px;border:1px solid var(--rule)}ul,ol{margin:14px 0 20px 0;padding-left:24px}li{margin-bottom:8px}li::marker{color:var(--peach)}
+.code-block{margin:20px 0;background:var(--mantle);border:1px solid var(--rule-strong);border-radius:6px;overflow:hidden;position:relative}.code-header{display:flex;justify-content:space-between;align-items:center;padding:8px 14px;background:var(--crust);border-bottom:1px solid var(--rule-strong);gap:12px}.code-lang{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--overlay0);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.copy-btn{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;background:transparent;color:var(--subtext0);border:1px solid var(--rule-strong);border-radius:3px;padding:3px 10px;cursor:pointer}.copy-btn:hover{color:var(--peach);border-color:var(--peach)}.copy-btn.copied{color:var(--green);border-color:var(--green)}.code-block pre{margin:0;padding:16px 18px;overflow-x:auto;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13.5px;line-height:1.6;color:var(--subtext1);white-space:pre}.step{display:flex;gap:16px;padding:20px 0;border-bottom:1px solid var(--rule)}.step:last-child{border-bottom:none}.step-check{flex-shrink:0;margin-top:6px}.step-check input{appearance:none;-webkit-appearance:none;width:22px;height:22px;border:1.5px solid var(--overlay0);border-radius:4px;cursor:pointer;position:relative;background:transparent}.step-check input:hover{border-color:var(--peach)}.step-check input:checked{background:var(--peach);border-color:var(--peach)}.step-check input:checked::after{content:'';position:absolute;left:6px;top:2px;width:6px;height:11px;border:solid var(--bg);border-width:0 2px 2px 0;transform:rotate(45deg)}.step-body{flex:1;min-width:0}.step-body h3{margin-top:0;margin-bottom:8px;font-size:22px}.step.done .step-body h3{color:var(--overlay1);text-decoration:line-through;text-decoration-color:var(--overlay0)}
+.callout{margin:20px 0;padding:16px 20px;border-left:3px solid;border-radius:0 4px 4px 0;font-size:15px}.callout-label{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-weight:500;margin-bottom:6px}.callout-note{border-color:var(--blue);background:rgba(137,180,250,.06)}.callout-note .callout-label{color:var(--blue)}.callout-warn{border-color:var(--yellow);background:rgba(249,226,175,.06)}.callout-warn .callout-label{color:var(--yellow)}.callout-tip{border-color:var(--green);background:rgba(166,227,161,.06)}.callout-tip .callout-label{color:var(--green)}.callout-info{border-color:var(--peach);background:rgba(250,179,135,.06)}.callout-info .callout-label{color:var(--peach)}.verify{margin:20px 0;padding:16px 20px;background:var(--surface0);border-radius:4px;border:1px solid var(--rule)}.verify-header{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--green);margin-bottom:8px}.verify-body{font-size:15px;color:var(--subtext1)}
+.table-wrap{margin:24px 0;overflow-x:auto;border:1px solid var(--rule-strong);border-radius:6px}table{width:100%;border-collapse:collapse;font-size:14px}thead{background:var(--crust)}th{text-align:left;padding:10px 14px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--subtext0);font-weight:500;border-bottom:1px solid var(--rule-strong)}td{padding:12px 14px;border-bottom:1px solid var(--rule);color:var(--subtext1);vertical-align:top}tbody tr:last-child td{border-bottom:none}.pipeline-diagram{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;line-height:1.5;color:var(--subtext0);background:var(--mantle);border:1px solid var(--rule-strong);border-radius:6px;padding:24px;margin:24px 0;white-space:pre;overflow-x:auto}.pipeline-diagram .nd{color:var(--peach);font-weight:700}.pipeline-diagram .ar{color:var(--overlay1)}.cheat{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:24px 0}@media(max-width:740px){.cheat{grid-template-columns:1fr}}.cheat-card{padding:18px 20px;background:var(--mantle);border-radius:6px;border:1px solid var(--rule)}.cheat-card h4{margin-top:0;margin-bottom:10px;color:var(--peach)}.cheat-card p{font-size:14px;margin-bottom:0;color:var(--subtext1)}.script-detail{margin:12px 0;background:var(--mantle);border:1px solid var(--rule-strong);border-radius:6px;overflow:hidden}.script-detail[open]{border-color:rgba(250,179,135,.3)}.script-summary{padding:12px 16px;cursor:pointer;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;color:var(--subtext1);list-style:none;display:flex;align-items:center;gap:10px;user-select:none}.script-summary::-webkit-details-marker{display:none}.script-summary::before{content:'▸';display:inline-block;color:var(--peach);width:12px;transition:transform .15s;font-size:11px}.script-detail[open] .script-summary::before{transform:rotate(90deg)}.script-summary:hover{background:var(--surface0)}.script-summary code{background:var(--crust);color:var(--peach);padding:2px 8px;border-radius:3px;border:1px solid var(--rule);font-weight:500}.script-summary-desc{font-family:Georgia,'Times New Roman',serif;color:var(--subtext0);font-size:14px;font-style:italic}.script-detail .code-block{margin:0;border-radius:0;border:none;border-top:1px solid var(--rule)}.script-detail .code-block pre{max-height:460px}.kbd{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--crust);border:1px solid var(--rule-strong);border-radius:4px;padding:2px 7px;color:var(--subtext1)}footer{margin-top:120px;padding:48px 0 64px;border-top:1px solid var(--rule);text-align:center;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;color:var(--overlay0);letter-spacing:.06em}footer .signature{color:var(--peach)}
+</style>
+</head>
+<body>
+<header class="site-header"><div class="header-inner"><div class="brand"><span class="brand-mark">local-ai-stack</span><span class="brand-sep">/</span><span>click-by-click setup</span></div><div class="header-controls"><span class="progress-tag" id="progress-tag"><b>0</b> / <span id="total-steps">0</span> setup complete</span><button class="theme-btn" id="theme-toggle">☾ dark</button></div></div></header>
+<div class="layout">
+<aside class="sidebar">
+  <div class="sidebar-section"><div class="sidebar-label">Start</div><ul class="sidebar-toc">
+    <li><a href="#overview"><span class="num">00</span>Overview</a></li>
+    <li><a href="#final-stack"><span class="num">S</span>Final stack</a></li>
+  </ul></div>
+  <div class="sidebar-section"><div class="sidebar-label">Part I · Hardware</div><ul class="sidebar-toc">
+    <li><a href="#hardware-network"><span class="num">01</span>Thunderbolt</a></li>
+    <li><a href="#base-tools"><span class="num">02</span>Base tools</a></li>
+  </ul></div>
+  <div class="sidebar-section"><div class="sidebar-label">Part II · Machine 2</div><ul class="sidebar-toc">
+    <li><a href="#machine2-dirs"><span class="num">03</span>M2 dirs</a></li>
+    <li><a href="#machine2-models"><span class="num">04</span>M2 models</a></li>
+    <li><a href="#machine2-servers"><span class="num">05</span>M2 servers</a></li>
+  </ul></div>
+  <div class="sidebar-section"><div class="sidebar-label">Part III · Machine 1</div><ul class="sidebar-toc">
+    <li><a href="#machine1-dirs"><span class="num">06</span>M1 dirs</a></li>
+    <li><a href="#machine1-model"><span class="num">07</span>Orchestrator</a></li>
+    <li><a href="#machine1-server"><span class="num">08</span>M1 server</a></li>
+  </ul></div>
+  <div class="sidebar-section"><div class="sidebar-label">Part IV · Agents</div><ul class="sidebar-toc">
+    <li><a href="#controller-venv"><span class="num">09</span>Controller env</a></li>
+    <li><a href="#controller-file"><span class="num">10</span>local_agents</a></li>
+  </ul></div>
+  <div class="sidebar-section"><div class="sidebar-label">Part V · Workflow</div><ul class="sidebar-toc">
+    <li><a href="#local-exec"><span class="num">11</span>local-exec</a></li>
+    <li><a href="#repo-workflow-files"><span class="num">12</span>Repo docs</a></li>
+  </ul></div>
+  <div class="sidebar-section"><div class="sidebar-label">Part VI · MCP</div><ul class="sidebar-toc">
+    <li><a href="#mcp-bridge"><span class="num">13</span>MCP bridge</a></li>
+    <li><a href="#claude-codex-mcp"><span class="num">14</span>Claude/Codex</a></li>
+  </ul></div>
+  <div class="sidebar-section"><div class="sidebar-label">Optional + Reference</div><ul class="sidebar-toc">
+    <li><a href="#mtp-experimental"><span class="num">15</span>MTP lane</a></li>
+    <li><a href="#benchmarks"><span class="num">16</span>Benchmarks</a></li>
+    <li><a href="#daily-workflow"><span class="num">17</span>Daily flow</a></li>
+    <li><a href="#troubleshooting"><span class="num">18</span>Troubleshooting</a></li>
+    <li><a href="#security-rules"><span class="num">19</span>Security</a></li>
+    <li><a href="#appendix-paths"><span class="num">20</span>Paths</a></li>
+  </ul></div>
+</aside>
+<main class="content">
+<div class="hero" id="overview">
+  <div class="hero-eyebrow">Two Mac Studio local AI · click-by-click setup</div>
+  <h1>Local AI <em>Setup Guide</em></h1>
+  <div class="hero-sub">$ cat ~/ai/SETUP.html — configure once, delegate forever.</div>
+  <p class="hero-lead">A complete, standalone setup manual for the two-machine Apple Silicon AI stack: Machine 1 as the cockpit and BF16 Orchestrator, Machine 2 as the inference worker for Developer and Reviewer, connected over Thunderbolt Bridge.</p>
+  <div class="spec-grid">
+    <div class="spec"><div class="spec-label">Machine 1</div><div class="spec-value">Orchestrator + controller</div></div>
+    <div class="spec"><div class="spec-label">Machine 2</div><div class="spec-value">Developer + Reviewer</div></div>
+    <div class="spec"><div class="spec-label">Network</div><div class="spec-value">Thunderbolt · 10.10.10.1 ⇄ 10.10.10.2</div></div>
+    <div class="spec"><div class="spec-label">Serving</div><div class="spec-value">MLX · mlx_lm.server</div></div>
+    <div class="spec"><div class="spec-label">Agents</div><div class="spec-value">LangGraph · local_agents.py</div></div>
+    <div class="spec"><div class="spec-label">Frontier bridge</div><div class="spec-value">Claude Code · Codex · MCP</div></div>
+  </div>
+  <h3>Architecture at a glance</h3>
+  <div class="pipeline-diagram"><span class="nd">Machine 1 / Daily Driver</span>                         <span class="nd">Machine 2 / Inference Server</span>
+Claude Code / Codex / Cursor
+LangGraph controller
+MCP bridge
+Orchestrator BF16 127.0.0.1:8001
+      <span class="ar">│</span>
+      <span class="ar">│ Thunderbolt Bridge</span>
+      <span class="ar">▼</span>
+10.10.10.1  <span class="ar">━━━━━━━━━━━━━━━━━━━━━━</span>  10.10.10.2
+                                                Developer 8002
+                                                Reviewer 8003
+                                                Optional MTP / Security 8004</div>
+  <p style="color:var(--subtext0);font-size:15px">The operating model is simple: frontier models write plans and final reviews; local open-source models execute the implementation loop. The plan file is the contract.</p>
+</div>
+<section id="final-stack"><div class="section-num">00 / Start here</div><h2>Final stack <em>map</em></h2><p class="section-deck">Confirm the exact topology before installing. This page assumes the split-machine layout below.</p>
+<div class="table-wrap"><table><thead><tr><th>Role</th><th>Machine</th><th>Endpoint</th><th>Model path</th></tr></thead><tbody>
+<tr><td><strong>Orchestrator</strong></td><td>Machine 1</td><td><code>http://127.0.0.1:8001/v1</code></td><td><code>/Users/admin/ai/models/orchestrator-qwen36-35b-a3b-heretic-bf16</code></td></tr>
+<tr><td><strong>Developer</strong></td><td>Machine 2</td><td><code>http://10.10.10.2:8002/v1</code></td><td><code>/Users/admin/ai/models/developer-qwen36-27b-heretic2-mixed94</code></td></tr>
+<tr><td><strong>Reviewer</strong></td><td>Machine 2</td><td><code>http://10.10.10.2:8003/v1</code></td><td><code>/Users/admin/ai/models/reviewer-qwen36-27b-heretic-bf16</code></td></tr>
+<tr><td><strong>Optional MTP / Security</strong></td><td>Machine 2</td><td><code>http://10.10.10.2:8004/v1</code></td><td>experimental</td></tr>
+</tbody></table></div>
+<div class="callout callout-warn"><div class="callout-label">Do not use model = local</div><p><code>mlx_lm.server</code> treats the <code>model</code> field as a real local path or Hugging Face repo ID. Sending <code>local</code> or <code>default</code> causes the server to try Hugging Face repos with those names and fail. Always use the full path visible on the serving machine.</p></div>
+</section><div class="part-divider"><div class="part-divider-line"></div><div class="part-divider-text">Part I · Hardware, network, and prerequisites</div><div class="part-divider-line"></div></div><section id="hardware-network"><div class="section-num">01 / Setup</div><h2>Thunderbolt Bridge <em>network</em></h2><p class="section-deck">Create the private direct link between the two Mac Studios. Use one real Thunderbolt 4/5 cable first; two cables do not automatically double throughput.</p><div class="step" data-step="network-cable"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Connect one Thunderbolt cable</h3><ol><li>Use a real Thunderbolt cable, not a generic USB-C charging cable.</li><li>Connect Machine 1 to Machine 2.</li><li>Open <strong>System Settings → Network</strong> on both Macs.</li><li>Confirm <strong>Thunderbolt Bridge</strong> appears. If it does not, add it with <strong>… → Add Service → Thunderbolt Bridge</strong>.</li></ol></div></div><div class="step" data-step="network-static-ip"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Assign static Thunderbolt IPs</h3><p>On <strong>Machine 1</strong>: System Settings → Network → Thunderbolt Bridge → Details → TCP/IP.</p><ul><li>Configure IPv4: <strong>Manually</strong></li><li>IP Address: <code>10.10.10.1</code></li><li>Subnet Mask: <code>255.255.255.0</code></li><li>Router: leave blank</li></ul><p>On <strong>Machine 2</strong>, use <code>10.10.10.2</code> with the same subnet mask and blank router.</p><div class="code-block"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn">Copy</button></div><pre>ping 10.10.10.2
+# Press Control-C after you see replies.</pre></div></div></div><div class="step" data-step="network-remote-login"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Enable SSH on Machine 2</h3><ol><li>On Machine 2, open <strong>System Settings → General → Sharing</strong>.</li><li>Turn on <strong>Remote Login</strong>.</li><li>Allow access for your admin user.</li><li>Find the actual short username on Machine 2:</li></ol><div class="code-block"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn">Copy</button></div><pre>whoami</pre></div><p>From Machine 1, test SSH:</p><div class="code-block"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn">Copy</button></div><pre>ssh admin@10.10.10.2
+# Replace admin with the result of whoami on Machine 2.</pre></div></div></div><div class="step" data-step="network-file-sharing"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Optional: enable SMB sharing</h3><ol><li>On Machine 2, create <code>~/ai</code>.</li><li>System Settings → General → Sharing → File Sharing.</li><li>Add <code>~/ai</code> as a shared folder.</li><li>Enable SMB in Options.</li><li>From Machine 1 Finder, press <span class="kbd">⌘K</span> and connect to <code>smb://10.10.10.2</code>.</li></ol><div class="code-block"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn">Copy</button></div><pre>ssh admin@10.10.10.2 &#x27;mkdir -p ~/ai&#x27;</pre></div></div></div></section><section id="base-tools"><div class="section-num">02 / Both Macs</div><h2>Base software <em>on both machines</em></h2><p class="section-deck">Install command-line tools, Homebrew, Python, uv, Git LFS, and Hugging Face CLI support on both Machine 1 and Machine 2.</p><div class="step" data-step="base-xcode"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Install Xcode Command Line Tools</h3><div class="code-block"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn">Copy</button></div><pre>xcode-select --install</pre></div><p>Click <strong>Install</strong> in the dialog. If it says already installed, continue.</p></div></div><div class="step" data-step="base-homebrew"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Install Homebrew if needed</h3><div class="code-block"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn">Copy</button></div><pre>/bin/bash -c &quot;$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)&quot;
+
+echo &#x27;eval &quot;$(/opt/homebrew/bin/brew shellenv)&quot;&#x27; &gt;&gt; ~/.zprofile
+eval &quot;$(/opt/homebrew/bin/brew shellenv)&quot;</pre></div></div></div><div class="step" data-step="base-packages"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Install shared packages</h3><div class="code-block"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn">Copy</button></div><pre>brew update
+brew install git git-lfs wget jq cmake pkg-config htop tmux node python@3.12 uv iperf3
+brew install --cask lm-studio
+
+git lfs install</pre></div></div></div><div class="step" data-step="base-hf"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Authenticate Hugging Face</h3><div class="code-block"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn">Copy</button></div><pre>mkdir -p ~/ai
+cd ~/ai
+uv venv .venv --python 3.12
+source .venv/bin/activate
+uv pip install -U &#x27;huggingface_hub[hf_xet]&#x27;
+hf auth login
+hf auth whoami</pre></div><p>When asked to add the token as a git credential, type <code>y</code>.</p></div></div></section><div class="part-divider"><div class="part-divider-line"></div><div class="part-divider-text">Part II · Machine 2 inference worker</div><div class="part-divider-line"></div></div><section id="machine2-dirs"><div class="section-num">03 / Machine 2</div><h2>Create Machine 2 <em>directories and venv</em></h2><p class="section-deck">Machine 2 hosts the Developer and Reviewer model servers.</p><div class="step" data-step="m2-dirs"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Create the directory tree</h3><div class="code-block"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn">Copy</button></div><pre>mkdir -p ~/ai/{models,agents,logs,workspaces,config,bin}
+cd ~/ai
+uv venv .venv --python 3.12
+source .venv/bin/activate
+uv pip install -U pip wheel setuptools</pre></div></div></div><div class="step" data-step="m2-packages"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Install MLX serving packages</h3><div class="code-block"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn">Copy</button></div><pre>uv pip install -U   mlx   mlx-lm   mlx-vlm   &#x27;huggingface_hub[hf_xet]&#x27;   transformers   tokenizers   safetensors   openai   python-dotenv   pydantic   rich   typer</pre></div></div></div><div class="step" data-step="m2-verify-cli"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Verify MLX commands</h3><div class="code-block"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn">Copy</button></div><pre>which mlx_lm.server
+which mlx_lm.generate
+python -c &quot;import mlx, mlx_lm; print(&#x27;MLX OK&#x27;)&quot;</pre></div></div></div></section><section id="machine2-models"><div class="section-num">04 / Machine 2</div><h2>Download Machine 2 <em>models</em></h2><p class="section-deck">Download the Developer and Reviewer models. Keep model files local to Machine 2; do not serve model weights over SMB.</p><div class="step" data-step="m2-dev-model"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Download Developer model</h3><div class="code-block"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn">Copy</button></div><pre>cd ~/ai
+source .venv/bin/activate
+
+hf download   TheCluster/Qwen3.6-27B-Heretic2-Uncensored-Finetune-Thinking-MLX-mixed-9.4bit   --local-dir ~/ai/models/developer-qwen36-27b-heretic2-mixed94</pre></div></div></div><div class="step" data-step="m2-reviewer-model"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Download Reviewer fallback BF16 model</h3><div class="code-block"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn">Copy</button></div><pre>hf download   TheCluster/Qwen3.6-27B-Heretic-MLX-bf16   --local-dir ~/ai/models/reviewer-qwen36-27b-heretic-bf16</pre></div></div></div><div class="step" data-step="m2-reviewer-llmfan-optional"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Optional: convert llmfan46 Reviewer BF16</h3><div class="code-block"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn">Copy</button></div><pre>mlx_lm.convert   --hf-path llmfan46/Qwen3.6-27B-uncensored-heretic-v2   --mlx-path ~/ai/models/reviewer-llmfan46-qwen36-27b-heretic-v2-bf16   --trust-remote-code</pre></div><div class="callout callout-note"><div class="callout-label">Optional upgrade</div><p>Use this after the base system works. If conversion fails, keep the TheCluster BF16 reviewer.</p></div></div></div></section><section id="machine2-servers"><div class="section-num">05 / Machine 2</div><h2>Start Machine 2 <em>worker servers</em></h2><p class="section-deck">Run Developer on port 8002 and Reviewer on port 8003, bound to the Thunderbolt IP.</p><div class="step" data-step="m2-start-manual"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Start Developer and Reviewer manually first</h3><p>Use two Terminal tabs or tmux panes on Machine 2.</p><h4>Developer tab</h4><div class="code-block"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn">Copy</button></div><pre>cd ~/ai
+source .venv/bin/activate
+
+mlx_lm.server   --model ~/ai/models/developer-qwen36-27b-heretic2-mixed94   --host 10.10.10.2   --port 8002</pre></div><h4>Reviewer tab</h4><div class="code-block"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn">Copy</button></div><pre>cd ~/ai
+source .venv/bin/activate
+
+mlx_lm.server   --model ~/ai/models/reviewer-qwen36-27b-heretic-bf16   --host 10.10.10.2   --port 8003</pre></div></div></div><div class="step" data-step="m2-test-from-m1"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Test from Machine 1</h3><div class="code-block"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn">Copy</button></div><pre>curl http://10.10.10.2:8002/v1/models
+curl http://10.10.10.2:8003/v1/models</pre></div></div></div><div class="step" data-step="m2-launcher"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Create Machine 2 launcher scripts</h3><details class="script-detail"><summary class="script-summary"><code>start-worker-models.sh</code><span class="script-summary-desc">Starts Developer and Reviewer servers on Machine 2</span></summary><div class="code-block"><div class="code-header"><span class="code-lang">bash · paste into terminal</span><button class="copy-btn">Copy</button></div><pre>
+cat &gt; ~/ai/bin/start-worker-models.sh &lt;&lt;&#x27;SH&#x27;
+#!/usr/bin/env bash
+set -euo pipefail
+
+source &quot;$HOME/ai/.venv/bin/activate&quot;
+mkdir -p &quot;$HOME/ai/logs&quot;
+
+DEV_MODEL=&quot;$HOME/ai/models/developer-qwen36-27b-heretic2-mixed94&quot;
+REVIEW_MODEL=&quot;$HOME/ai/models/reviewer-qwen36-27b-heretic-bf16&quot;
+
+for PORT in 8002 8003; do
+  if lsof -nP -iTCP:${PORT} -sTCP:LISTEN &gt;/dev/null 2&gt;&amp;1; then
+    echo &quot;Port ${PORT} is already in use:&quot;
+    lsof -nP -iTCP:${PORT} -sTCP:LISTEN
+    exit 1
+  fi
+done
+
+echo &quot;Starting Developer on http://10.10.10.2:8002/v1&quot;
+nohup mlx_lm.server \
+  --model &quot;$DEV_MODEL&quot; \
+  --host 10.10.10.2 \
+  --port 8002 \
+  &gt; &quot;$HOME/ai/logs/developer.log&quot; 2&gt;&amp;1 &amp;
+
+echo &quot;Starting Reviewer on http://10.10.10.2:8003/v1&quot;
+nohup mlx_lm.server \
+  --model &quot;$REVIEW_MODEL&quot; \
+  --host 10.10.10.2 \
+  --port 8003 \
+  &gt; &quot;$HOME/ai/logs/reviewer.log&quot; 2&gt;&amp;1 &amp;
+
+echo &quot;Started worker models.&quot;
+SH
+chmod +x ~/ai/bin/start-worker-models.sh</pre></div></details><details class="script-detail"><summary class="script-summary"><code>stop-worker-models.sh</code><span class="script-summary-desc">Stops only ports 8002 and 8003</span></summary><div class="code-block"><div class="code-header"><span class="code-lang">bash · paste into terminal</span><button class="copy-btn">Copy</button></div><pre>
+cat &gt; ~/ai/bin/stop-worker-models.sh &lt;&lt;&#x27;SH&#x27;
+#!/usr/bin/env bash
+set -euo pipefail
+for PORT in 8002 8003; do
+  PIDS=&quot;$(lsof -tiTCP:${PORT} -sTCP:LISTEN || true)&quot;
+  if [ -n &quot;$PIDS&quot; ]; then
+    echo &quot;Stopping port $PORT PIDs: $PIDS&quot;
+    kill $PIDS
+  else
+    echo &quot;No process listening on $PORT&quot;
+  fi
+done
+SH
+chmod +x ~/ai/bin/stop-worker-models.sh</pre></div></details><details class="script-detail"><summary class="script-summary"><code>m2-ai-status.sh</code><span class="script-summary-desc">Checks worker ports, logs, and memory pressure</span></summary><div class="code-block"><div class="code-header"><span class="code-lang">bash · paste into terminal</span><button class="copy-btn">Copy</button></div><pre>
+cat &gt; ~/ai/bin/m2-ai-status.sh &lt;&lt;&#x27;SH&#x27;
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo &quot;=== Machine 2 AI status ===&quot;
+date
+
+echo
+echo &quot;=== Ports ===&quot;
+lsof -nP -iTCP:8002 -iTCP:8003 -sTCP:LISTEN || true
+
+echo
+echo &quot;=== APIs ===&quot;
+curl -s http://10.10.10.2:8002/v1/models || echo &quot;Developer unavailable&quot;
+echo
+curl -s http://10.10.10.2:8003/v1/models || echo &quot;Reviewer unavailable&quot;
+echo
+
+echo &quot;=== Memory pressure ===&quot;
+memory_pressure | tail -20 || true
+
+echo
+echo &quot;=== Recent logs ===&quot;
+for f in &quot;$HOME&quot;/ai/logs/developer.log &quot;$HOME&quot;/ai/logs/reviewer.log; do
+  [ -f &quot;$f&quot; ] || continue
+  echo &quot;--- $f ---&quot;
+  tail -20 &quot;$f&quot;
+done
+SH
+chmod +x ~/ai/bin/m2-ai-status.sh</pre></div></details><div class="code-block"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn">Copy</button></div><pre>echo &#x27;export PATH=&quot;$HOME/ai/bin:$PATH&quot;&#x27; &gt;&gt; ~/.zprofile
+source ~/.zprofile
+start-worker-models.sh
+m2-ai-status.sh</pre></div></div></div></section><div class="part-divider"><div class="part-divider-line"></div><div class="part-divider-text">Part III · Machine 1 control plane and Orchestrator</div><div class="part-divider-line"></div></div><section id="machine1-dirs"><div class="section-num">06 / Machine 1</div><h2>Create Machine 1 <em>directories and venv</em></h2><p class="section-deck">Machine 1 is your daily driver: Claude/Codex, LangGraph controller, MCP bridge, and local BF16 Orchestrator.</p><div class="step" data-step="m1-dirs"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Create the directory tree</h3><div class="code-block"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn">Copy</button></div><pre>mkdir -p ~/ai/{models,agents,logs,workspaces,config,bin}
+cd ~/ai
+uv venv .venv --python 3.12
+source .venv/bin/activate
+uv pip install -U pip wheel setuptools</pre></div></div></div><div class="step" data-step="m1-packages"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Install Machine 1 packages</h3><div class="code-block"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn">Copy</button></div><pre>uv pip install -U   mlx   mlx-lm   mlx-vlm   &#x27;huggingface_hub[hf_xet]&#x27;   transformers   tokenizers   safetensors   openai   python-dotenv   pydantic   rich   typer   langgraph   langgraph-checkpoint-sqlite   langchain   langchain-openai   mcp   fastmcp   httpx   &#x27;qwen-agent[gui,rag,code_interpreter,mcp]&#x27;
+
+which mlx_lm.server
+which hf</pre></div></div></div></section><section id="machine1-model"><div class="section-num">07 / Machine 1</div><h2>Download Orchestrator <em>BF16</em></h2><p class="section-deck">Use BF16 for Machine 1 daily Orchestrator if responsiveness is acceptable. Keep the 9-bit fallback available.</p><div class="step" data-step="m1-orch-bf16"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Download BF16 Orchestrator</h3><div class="code-block"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn">Copy</button></div><pre>cd ~/ai
+source .venv/bin/activate
+
+hf download   TheCluster/Qwen3.6-35B-A3B-Heretic-MLX-bf16   --local-dir ~/ai/models/orchestrator-qwen36-35b-a3b-heretic-bf16</pre></div></div></div><div class="step" data-step="m1-orch-9bit"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Optional: download 9-bit fallback</h3><div class="code-block"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn">Copy</button></div><pre>hf download   TheCluster/Qwen3.6-35B-A3B-Heretic-MLX-mixed-9bit   --local-dir ~/ai/models/orchestrator-qwen36-35b-a3b-heretic-mixed9</pre></div></div></div><div class="step" data-step="m1-orch-generate"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Test direct generation</h3><div class="code-block"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn">Copy</button></div><pre>mlx_lm.generate   --model ~/ai/models/orchestrator-qwen36-35b-a3b-heretic-bf16   --prompt &quot;Create a concise plan for setting up a local multi-agent coding system.&quot;   --max-tokens 512</pre></div></div></div></section><section id="machine1-server"><div class="section-num">08 / Machine 1</div><h2>Start Machine 1 <em>Orchestrator server</em></h2><p class="section-deck">The Orchestrator binds only to localhost because the controller is also on Machine 1.</p><div class="step" data-step="m1-start-orch"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Start manually first</h3><div class="code-block"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn">Copy</button></div><pre>cd ~/ai
+source .venv/bin/activate
+
+mlx_lm.server   --model ~/ai/models/orchestrator-qwen36-35b-a3b-heretic-bf16   --host 127.0.0.1   --port 8001</pre></div></div></div><div class="step" data-step="m1-test-orch"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Test Orchestrator API</h3><div class="code-block"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn">Copy</button></div><pre>MODEL_PATH=&quot;$HOME/ai/models/orchestrator-qwen36-35b-a3b-heretic-bf16&quot;
+
+curl http://127.0.0.1:8001/v1/chat/completions   -H &quot;Content-Type: application/json&quot;   -d &quot;{
+    &quot;model&quot;: &quot;$MODEL_PATH&quot;,
+    &quot;messages&quot;: [
+      {&quot;role&quot;: &quot;system&quot;, &quot;content&quot;: &quot;Answer directly and briefly. Do not show reasoning.&quot;},
+      {&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;Say exactly: Machine 1 Orchestrator BF16 OK&quot;}
+    ],
+    &quot;max_tokens&quot;: 256,
+    &quot;temperature&quot;: 0.1
+  }&quot;</pre></div></div></div><div class="step" data-step="m1-launcher"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Create Machine 1 launcher scripts</h3><details class="script-detail"><summary class="script-summary"><code>start-orchestrator.sh</code><span class="script-summary-desc">Starts Orchestrator BF16 on localhost:8001</span></summary><div class="code-block"><div class="code-header"><span class="code-lang">bash · paste into terminal</span><button class="copy-btn">Copy</button></div><pre>
+cat &gt; ~/ai/bin/start-orchestrator.sh &lt;&lt;&#x27;SH&#x27;
+#!/usr/bin/env bash
+set -euo pipefail
+
+source &quot;$HOME/ai/.venv/bin/activate&quot;
+mkdir -p &quot;$HOME/ai/logs&quot;
+MODEL=&quot;$HOME/ai/models/orchestrator-qwen36-35b-a3b-heretic-bf16&quot;
+
+if lsof -nP -iTCP:8001 -sTCP:LISTEN &gt;/dev/null 2&gt;&amp;1; then
+  echo &quot;Something is already listening on port 8001:&quot;
+  lsof -nP -iTCP:8001 -sTCP:LISTEN
+  exit 1
+fi
+
+echo &quot;Starting Machine 1 Orchestrator at http://127.0.0.1:8001/v1&quot;
+nohup mlx_lm.server \
+  --model &quot;$MODEL&quot; \
+  --host 127.0.0.1 \
+  --port 8001 \
+  &gt; &quot;$HOME/ai/logs/orchestrator.log&quot; 2&gt;&amp;1 &amp;
+
+echo &quot;Started. Log: $HOME/ai/logs/orchestrator.log&quot;
+SH
+chmod +x ~/ai/bin/start-orchestrator.sh</pre></div></details><details class="script-detail"><summary class="script-summary"><code>stop-orchestrator.sh</code><span class="script-summary-desc">Stops only port 8001</span></summary><div class="code-block"><div class="code-header"><span class="code-lang">bash · paste into terminal</span><button class="copy-btn">Copy</button></div><pre>
+cat &gt; ~/ai/bin/stop-orchestrator.sh &lt;&lt;&#x27;SH&#x27;
+#!/usr/bin/env bash
+set -euo pipefail
+PIDS=&quot;$(lsof -tiTCP:8001 -sTCP:LISTEN || true)&quot;
+if [ -z &quot;$PIDS&quot; ]; then
+  echo &quot;No process listening on port 8001.&quot;
+  exit 0
+fi
+echo &quot;Stopping Orchestrator PIDs: $PIDS&quot;
+kill $PIDS
+SH
+chmod +x ~/ai/bin/stop-orchestrator.sh</pre></div></details><details class="script-detail"><summary class="script-summary"><code>m1-ai-status.sh</code><span class="script-summary-desc">Checks all three APIs and memory pressure</span></summary><div class="code-block"><div class="code-header"><span class="code-lang">bash · paste into terminal</span><button class="copy-btn">Copy</button></div><pre>
+cat &gt; ~/ai/bin/m1-ai-status.sh &lt;&lt;&#x27;SH&#x27;
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo &quot;=== Machine 1 AI status ===&quot;
+date
+
+echo
+echo &quot;=== Orchestrator port ===&quot;
+lsof -nP -iTCP:8001 -sTCP:LISTEN || echo &quot;Nothing listening on 8001&quot;
+
+echo
+echo &quot;=== Orchestrator API ===&quot;
+curl -s http://127.0.0.1:8001/v1/models || echo &quot;Orchestrator unavailable&quot;
+echo
+
+echo &quot;=== Machine 2 Developer API ===&quot;
+curl -s http://10.10.10.2:8002/v1/models || echo &quot;Developer unavailable&quot;
+echo
+
+echo &quot;=== Machine 2 Reviewer API ===&quot;
+curl -s http://10.10.10.2:8003/v1/models || echo &quot;Reviewer unavailable&quot;
+echo
+
+echo &quot;=== Memory pressure ===&quot;
+memory_pressure | tail -20 || true
+SH
+chmod +x ~/ai/bin/m1-ai-status.sh</pre></div></details><div class="code-block"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn">Copy</button></div><pre>echo &#x27;export PATH=&quot;$HOME/ai/bin:$PATH&quot;&#x27; &gt;&gt; ~/.zprofile
+source ~/.zprofile
+start-orchestrator.sh
+m1-ai-status.sh</pre></div></div></div></section><div class="part-divider"><div class="part-divider-line"></div><div class="part-divider-text">Part IV · LangGraph controller</div><div class="part-divider-line"></div></div><section id="controller-venv"><div class="section-num">09 / Machine 1</div><h2>Create controller <em>environment</em></h2><p class="section-deck">This is the Python environment that runs LangGraph and talks to all three servers.</p><div class="step" data-step="controller-folder"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Create controller folder and venv</h3><div class="code-block"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn">Copy</button></div><pre>mkdir -p ~/ai/agents/three_agent_system
+cd ~/ai/agents/three_agent_system
+uv venv .venv --python 3.12
+source .venv/bin/activate
+
+uv pip install -U   openai   langgraph   langgraph-checkpoint-sqlite   python-dotenv   rich   pydantic</pre></div></div></div><div class="step" data-step="controller-env"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Create .env with split-machine endpoints</h3><div class="code-block"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn">Copy</button></div><pre>cat &gt; .env &lt;&lt;&#x27;EOF&#x27;
+ORCH_BASE_URL=http://127.0.0.1:8001/v1
+DEV_BASE_URL=http://10.10.10.2:8002/v1
+REVIEW_BASE_URL=http://10.10.10.2:8003/v1
+
+ORCH_MODEL=/Users/admin/ai/models/orchestrator-qwen36-35b-a3b-heretic-bf16
+DEV_MODEL=/Users/admin/ai/models/developer-qwen36-27b-heretic2-mixed94
+REVIEW_MODEL=/Users/admin/ai/models/reviewer-qwen36-27b-heretic-bf16
+
+LOCAL_API_KEY=not-needed
+
+WORKSPACE=$HOME/ai/workspaces/default_project
+MAX_REVIEW_LOOPS=3
+ALLOW_UNSAFE_TOOLS=0
+EOF
+
+cat .env</pre></div><div class="callout callout-info"><div class="callout-label">Path rule</div><p><code>ORCH_MODEL</code> is the path on Machine 1. <code>DEV_MODEL</code> and <code>REVIEW_MODEL</code> are paths on Machine 2 because those model strings are sent to Machine 2 servers.</p></div></div></div></section><section id="controller-file"><div class="section-num">10 / Machine 1</div><h2>Install <em>local_agents.py</em></h2><p class="section-deck">This is the three-agent LangGraph controller: Orchestrator → Developer → Reviewer → optional retry loop.</p><div class="step" data-step="controller-local-agents"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Write local_agents.py</h3><details class="script-detail"><summary class="script-summary"><code>local_agents.py</code><span class="script-summary-desc">Full hardened LangGraph controller with model-path validation</span></summary><div class="code-block"><div class="code-header"><span class="code-lang">bash · paste into terminal</span><button class="copy-btn">Copy</button></div><pre>cat &gt; ~/ai/agents/three_agent_system/local_agents.py &lt;&lt;&#x27;PY&#x27;
+
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import re
+import subprocess
+import time
+from pathlib import Path
+from typing import Any, Dict, List, TypedDict
+
+from dotenv import load_dotenv
+from openai import OpenAI
+from rich import print
+from langgraph.graph import StateGraph, END
+
+
+load_dotenv()
+
+
+class AgentState(TypedDict, total=False):
+    task: str
+    workspace: str
+    plan: str
+    developer_output: str
+    review_output: str
+    test_output: str
+    approved: bool
+    iteration: int
+    history: List[str]
+
+
+def required_env(name: str) -&gt; str:
+    value = os.getenv(name, &quot;&quot;).strip()
+    if not value:
+        raise RuntimeError(
+            f&quot;Missing required environment variable: {name}. &quot;
+            &quot;Check your .env file.&quot;
+        )
+    return value
+
+
+def make_client(base_url: str) -&gt; OpenAI:
+    return OpenAI(
+        base_url=base_url,
+        api_key=os.getenv(&quot;LOCAL_API_KEY&quot;, &quot;not-needed&quot;),
+    )
+
+
+# ---------------------------------------------------------------------
+# Required configuration
+# ---------------------------------------------------------------------
+# IMPORTANT:
+# mlx_lm.server does NOT understand model=&#x27;local&#x27; unless you build your
+# own aliasing layer. It treats the model field as a real local path or
+# Hugging Face repo ID. If you send &quot;local&quot;, it tries to resolve:
+#
+#   https://huggingface.co/local
+#
+# and returns a Repository Not Found / 404 error.
+#
+# Therefore ORCH_MODEL, DEV_MODEL, and REVIEW_MODEL must be the full
+# model paths as seen by the machine running that server.
+# ---------------------------------------------------------------------
+
+ORCH_BASE_URL = required_env(&quot;ORCH_BASE_URL&quot;)
+DEV_BASE_URL = required_env(&quot;DEV_BASE_URL&quot;)
+REVIEW_BASE_URL = required_env(&quot;REVIEW_BASE_URL&quot;)
+
+ORCH_MODEL = required_env(&quot;ORCH_MODEL&quot;)
+DEV_MODEL = required_env(&quot;DEV_MODEL&quot;)
+REVIEW_MODEL = required_env(&quot;REVIEW_MODEL&quot;)
+
+for env_name, model_name in {
+    &quot;ORCH_MODEL&quot;: ORCH_MODEL,
+    &quot;DEV_MODEL&quot;: DEV_MODEL,
+    &quot;REVIEW_MODEL&quot;: REVIEW_MODEL,
+}.items():
+    if model_name == &quot;local&quot; or model_name == &quot;default&quot;:
+        raise RuntimeError(
+            f&quot;{env_name}={model_name} will not work with mlx_lm.server. &quot;
+            &quot;Use the full model path on the serving Mac instead.&quot;
+        )
+
+LOCAL_API_KEY = os.getenv(&quot;LOCAL_API_KEY&quot;, &quot;not-needed&quot;)
+MAX_REVIEW_LOOPS = int(os.getenv(&quot;MAX_REVIEW_LOOPS&quot;, &quot;3&quot;))
+ALLOW_UNSAFE_TOOLS = os.getenv(&quot;ALLOW_UNSAFE_TOOLS&quot;, &quot;0&quot;) == &quot;1&quot;
+
+ORCH = make_client(ORCH_BASE_URL)
+DEV = make_client(DEV_BASE_URL)
+REVIEW = make_client(REVIEW_BASE_URL)
+
+
+def extract_message_text(message: Any) -&gt; str:
+    &quot;&quot;&quot;
+    Extract model output from OpenAI-compatible responses.
+
+    Some local servers/models return normal assistant content.
+    Some thinking models may expose a separate reasoning field.
+    Prefer content, but fall back to reasoning if content is empty.
+    &quot;&quot;&quot;
+    content = getattr(message, &quot;content&quot;, None)
+    if content:
+        return content
+
+    reasoning = getattr(message, &quot;reasoning&quot;, None)
+    if reasoning:
+        return reasoning
+
+    if isinstance(message, dict):
+        return message.get(&quot;content&quot;) or message.get(&quot;reasoning&quot;) or &quot;&quot;
+
+    return &quot;&quot;
+
+
+def chat(
+    client: OpenAI,
+    model: str,
+    system: str,
+    user: str,
+    *,
+    temperature: float = 0.4,
+    max_tokens: int = 4096,
+) -&gt; str:
+    response = client.chat.completions.create(
+        model=model,
+        messages=[
+            {
+                &quot;role&quot;: &quot;system&quot;,
+                &quot;content&quot;: (
+                    system.strip()
+                    + &quot;\n\nAnswer with the requested output only. &quot;
+                    &quot;Do not include hidden reasoning, thinking traces, or analysis.&quot;
+                ),
+            },
+            {&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: user.strip()},
+        ],
+        temperature=temperature,
+        top_p=0.95,
+        max_tokens=max_tokens,
+    )
+
+    message = response.choices[0].message
+    text = extract_message_text(message)
+
+    if not text.strip():
+        raise RuntimeError(
+            &quot;Model returned an empty assistant message. &quot;
+            &quot;Check the server response, model path, and whether the model is &quot;
+            &quot;returning reasoning-only output.&quot;
+        )
+
+    return text
+
+
+def run_cmd(cmd: str, cwd: Path, timeout: int = 180) -&gt; str:
+    blocked_fragments = [
+        &quot;sudo &quot;,
+        &quot; rm -rf /&quot;,
+        &quot; rm -rf ~&quot;,
+        &quot;mkfs&quot;,
+        &quot;diskutil erase&quot;,
+        &quot;:(){&quot;,
+        &quot;chmod -R 777 /&quot;,
+        &quot;&gt; /dev/sd&quot;,
+        &quot;shutdown&quot;,
+        &quot;reboot&quot;,
+    ]
+
+    if not ALLOW_UNSAFE_TOOLS:
+        if any(fragment in f&quot; {cmd} &quot; for fragment in blocked_fragments):
+            return f&quot;[BLOCKED unsafe command]\n{cmd}&quot;
+        if &quot;..&quot; in cmd or &quot;~/&quot; in cmd:
+            return f&quot;[BLOCKED path escape]\n{cmd}&quot;
+
+    try:
+        p = subprocess.run(
+            cmd,
+            shell=True,
+            cwd=str(cwd),
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            timeout=timeout,
+        )
+        return f&quot;$ {cmd}\n(exit {p.returncode})\n{p.stdout[-12000:]}&quot;
+    except subprocess.TimeoutExpired:
+        return f&quot;$ {cmd}\n[TIMEOUT after {timeout}s]&quot;
+
+
+def ensure_workspace(path: str) -&gt; Path:
+    expanded = os.path.expandvars(os.path.expanduser(path))
+    workspace = Path(expanded).resolve()
+    workspace.mkdir(parents=True, exist_ok=True)
+
+    if not (workspace / &quot;.git&quot;).exists():
+        run_cmd(&quot;git init&quot;, workspace)
+        run_cmd(&#x27;git config user.email &quot;local-agent@example.local&quot;&#x27;, workspace)
+        run_cmd(&#x27;git config user.name &quot;Local AI Agent&quot;&#x27;, workspace)
+
+    return workspace
+
+
+def memory_path(workspace: Path) -&gt; Path:
+    return workspace / &quot;.agent_memory.jsonl&quot;
+
+
+def append_memory(workspace: Path, event: Dict[str, Any]) -&gt; None:
+    event = dict(event)
+    event[&quot;ts&quot;] = time.strftime(&quot;%Y-%m-%d %H:%M:%S&quot;)
+    with memory_path(workspace).open(&quot;a&quot;, encoding=&quot;utf-8&quot;) as f:
+        f.write(json.dumps(event, ensure_ascii=False) + &quot;\n&quot;)
+
+
+def recent_memory(workspace: Path, limit: int = 12) -&gt; str:
+    path = memory_path(workspace)
+    if not path.exists():
+        return &quot;&quot;
+    lines = path.read_text(encoding=&quot;utf-8&quot;).splitlines()[-limit:]
+    return &quot;\n&quot;.join(lines)
+
+
+def repo_tree(workspace: Path, max_files: int = 200) -&gt; str:
+    ignore = {
+        &quot;.git&quot;,
+        &quot;.venv&quot;,
+        &quot;node_modules&quot;,
+        &quot;__pycache__&quot;,
+        &quot;.mypy_cache&quot;,
+        &quot;.pytest_cache&quot;,
+        &quot;.ruff_cache&quot;,
+        &quot;dist&quot;,
+        &quot;build&quot;,
+    }
+
+    files: List[str] = []
+    for p in workspace.rglob(&quot;*&quot;):
+        rel = p.relative_to(workspace)
+        if any(part in ignore for part in rel.parts):
+            continue
+        if p.is_file():
+            files.append(str(rel))
+        if len(files) &gt;= max_files:
+            break
+
+    return &quot;\n&quot;.join(sorted(files)) or &quot;(empty workspace)&quot;
+
+
+def git_diff(workspace: Path) -&gt; str:
+    return run_cmd(&quot;git diff -- .&quot;, workspace, timeout=60)
+
+
+def git_status(workspace: Path) -&gt; str:
+    return run_cmd(&quot;git status --short&quot;, workspace, timeout=60)
+
+
+def extract_tag(text: str, tag: str) -&gt; str:
+    m = re.search(rf&quot;&lt;{tag}&gt;\s*(.*?)\s*&lt;/{tag}&gt;&quot;, text, flags=re.S | re.I)
+    return m.group(1).strip() if m else &quot;&quot;
+
+
+def extract_commands(text: str) -&gt; List[str]:
+    raw = extract_tag(text, &quot;commands&quot;)
+    if not raw:
+        return []
+
+    try:
+        data = json.loads(raw)
+        if isinstance(data, list):
+            return [str(x) for x in data]
+    except Exception:
+        pass
+
+    return []
+
+
+def apply_patch(patch: str, workspace: Path) -&gt; str:
+    if not patch.strip():
+        return &quot;[no patch supplied]&quot;
+
+    p = subprocess.run(
+        [&quot;git&quot;, &quot;apply&quot;, &quot;--whitespace=fix&quot;, &quot;-&quot;],
+        input=patch,
+        text=True,
+        cwd=str(workspace),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+    )
+
+    if p.returncode == 0:
+        return &quot;[patch applied with git apply]&quot;
+
+    p2 = subprocess.run(
+        [&quot;patch&quot;, &quot;-p1&quot;],
+        input=patch,
+        text=True,
+        cwd=str(workspace),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+    )
+
+    if p2.returncode == 0:
+        return &quot;[patch applied with patch -p1]&quot;
+
+    return (
+        &quot;[patch failed]\n&quot;
+        &quot;--- git apply ---\n&quot;
+        + p.stdout
+        + &quot;\n--- patch -p1 ---\n&quot;
+        + p2.stdout
+    )
+
+
+def auto_tests(workspace: Path) -&gt; List[str]:
+    commands: List[str] = []
+
+    if (
+        (workspace / &quot;pyproject.toml&quot;).exists()
+        or (workspace / &quot;pytest.ini&quot;).exists()
+        or (workspace / &quot;tests&quot;).exists()
+    ):
+        commands.append(&quot;python -m pytest -q&quot;)
+
+    if (workspace / &quot;package.json&quot;).exists():
+        commands.append(&quot;npm test&quot;)
+
+    if (workspace / &quot;Cargo.toml&quot;).exists():
+        commands.append(&quot;cargo test&quot;)
+
+    if (workspace / &quot;go.mod&quot;).exists():
+        commands.append(&quot;go test ./...&quot;)
+
+    return commands
+
+
+def orchestrate(state: AgentState) -&gt; AgentState:
+    workspace = ensure_workspace(state[&quot;workspace&quot;])
+    memory = recent_memory(workspace)
+
+    system = &quot;&quot;&quot;
+You are the AI Agent Orchestrator.
+You plan tasks, define acceptance criteria, and delegate implementation to a developer agent.
+Be decisive. Produce an actionable plan, not a motivational essay.
+&quot;&quot;&quot;
+
+    user = f&quot;&quot;&quot;
+Task:
+{state[&quot;task&quot;]}
+
+Workspace:
+{workspace}
+
+Repo tree:
+{repo_tree(workspace)}
+
+Recent memory:
+{memory or &quot;(none)&quot;}
+
+Return:
+1. Goal
+2. Constraints
+3. Files likely to change
+4. Implementation plan
+5. Review checklist
+&quot;&quot;&quot;
+
+    plan = chat(ORCH, ORCH_MODEL, system, user, temperature=0.35, max_tokens=4096)
+    append_memory(workspace, {&quot;type&quot;: &quot;plan&quot;, &quot;content&quot;: plan})
+
+    print(&quot;\n[bold cyan]ORCHESTRATOR PLAN[/bold cyan]\n&quot;)
+    print(plan)
+
+    return {
+        **state,
+        &quot;plan&quot;: plan,
+        &quot;iteration&quot;: 0,
+        &quot;approved&quot;: False,
+        &quot;history&quot;: state.get(&quot;history&quot;, []) + [&quot;orchestrator_plan&quot;],
+    }
+
+
+def develop(state: AgentState) -&gt; AgentState:
+    workspace = ensure_workspace(state[&quot;workspace&quot;])
+    iteration = int(state.get(&quot;iteration&quot;, 0)) + 1
+    review = state.get(&quot;review_output&quot;, &quot;&quot;)
+    diff_before = git_diff(workspace)
+
+    system = &quot;&quot;&quot;
+You are the AI Agent Developer.
+You write correct, maintainable code. You respond with a unified diff patch and commands to run.
+Do not edit outside the workspace. Prefer small, reviewable changes.
+
+Required output format:
+
+&lt;summary&gt;
+Brief summary of what you changed.
+&lt;/summary&gt;
+
+&lt;patch&gt;
+Unified diff here. Use git-compatible diff format.
+&lt;/patch&gt;
+
+&lt;commands&gt;
+[&quot;python -m pytest -q&quot;]
+&lt;/commands&gt;
+
+If no tests exist, create tests where appropriate.
+&quot;&quot;&quot;
+
+    user = f&quot;&quot;&quot;
+Task:
+{state[&quot;task&quot;]}
+
+Orchestrator plan:
+{state[&quot;plan&quot;]}
+
+Current repo tree:
+{repo_tree(workspace)}
+
+Current git status:
+{git_status(workspace)}
+
+Current diff before your work:
+{diff_before[-12000:]}
+
+Reviewer feedback from previous pass:
+{review or &quot;(none)&quot;}
+
+Iteration:
+{iteration}
+
+Produce a patch and commands.
+&quot;&quot;&quot;
+
+    dev_output = chat(DEV, DEV_MODEL, system, user, temperature=0.45, max_tokens=12000)
+    patch = extract_tag(dev_output, &quot;patch&quot;)
+    commands = extract_commands(dev_output)
+
+    patch_result = apply_patch(patch, workspace)
+
+    command_logs: List[str] = [patch_result]
+    for cmd in commands:
+        command_logs.append(run_cmd(cmd, workspace, timeout=300))
+
+    if not commands:
+        for cmd in auto_tests(workspace):
+            command_logs.append(run_cmd(cmd, workspace, timeout=300))
+
+    test_output = &quot;\n\n&quot;.join(command_logs)
+
+    append_memory(
+        workspace,
+        {
+            &quot;type&quot;: &quot;developer_iteration&quot;,
+            &quot;iteration&quot;: iteration,
+            &quot;summary&quot;: extract_tag(dev_output, &quot;summary&quot;),
+            &quot;test_output_tail&quot;: test_output[-4000:],
+        },
+    )
+
+    print(f&quot;\n[bold green]DEVELOPER ITERATION {iteration}[/bold green]\n&quot;)
+    print(extract_tag(dev_output, &quot;summary&quot;) or dev_output[:2000])
+    print(&quot;\n[bold]Tool/test output tail:[/bold]&quot;)
+    print(test_output[-4000:])
+
+    return {
+        **state,
+        &quot;developer_output&quot;: dev_output,
+        &quot;test_output&quot;: test_output,
+        &quot;iteration&quot;: iteration,
+        &quot;history&quot;: state.get(&quot;history&quot;, []) + [f&quot;developer_{iteration}&quot;],
+    }
+
+
+def review(state: AgentState) -&gt; AgentState:
+    workspace = ensure_workspace(state[&quot;workspace&quot;])
+    diff = git_diff(workspace)
+    status = git_status(workspace)
+
+    system = &quot;&quot;&quot;
+You are the AI Agent Code Reviewer.
+You review for correctness, security, maintainability, performance, tests, and hidden edge cases.
+Be strict. Do not approve unless the patch is actually acceptable.
+
+Return valid JSON only:
+{
+  &quot;approved&quot;: true or false,
+  &quot;summary&quot;: &quot;...&quot;,
+  &quot;blocking_issues&quot;: [&quot;...&quot;],
+  &quot;non_blocking_suggestions&quot;: [&quot;...&quot;],
+  &quot;required_changes&quot;: [&quot;...&quot;]
+}
+&quot;&quot;&quot;
+
+    user = f&quot;&quot;&quot;
+Task:
+{state[&quot;task&quot;]}
+
+Orchestrator plan:
+{state[&quot;plan&quot;]}
+
+Developer output:
+{state.get(&quot;developer_output&quot;, &quot;&quot;)[-12000:]}
+
+Git status:
+{status}
+
+Diff to review:
+{diff[-30000:]}
+
+Test/tool output:
+{state.get(&quot;test_output&quot;, &quot;&quot;)[-12000:]}
+
+Review this patch.
+&quot;&quot;&quot;
+
+    raw = chat(REVIEW, REVIEW_MODEL, system, user, temperature=0.2, max_tokens=6000)
+
+    approved = False
+    try:
+        data = json.loads(raw)
+        approved = bool(data.get(&quot;approved&quot;))
+    except Exception:
+        approved = &#x27;&quot;approved&quot;: true&#x27; in raw.lower() or &quot;approved: true&quot; in raw.lower()
+
+    append_memory(
+        workspace,
+        {
+            &quot;type&quot;: &quot;review&quot;,
+            &quot;iteration&quot;: state.get(&quot;iteration&quot;, 0),
+            &quot;approved&quot;: approved,
+            &quot;content&quot;: raw,
+        },
+    )
+
+    print(&quot;\n[bold magenta]REVIEW[/bold magenta]\n&quot;)
+    print(raw)
+
+    return {
+        **state,
+        &quot;review_output&quot;: raw,
+        &quot;approved&quot;: approved,
+        &quot;history&quot;: state.get(&quot;history&quot;, []) + [f&quot;review_{state.get(&#x27;iteration&#x27;, 0)}&quot;],
+    }
+
+
+def route_after_review(state: AgentState) -&gt; str:
+    if state.get(&quot;approved&quot;):
+        return &quot;end&quot;
+
+    if int(state.get(&quot;iteration&quot;, 0)) &gt;= MAX_REVIEW_LOOPS:
+        return &quot;end&quot;
+
+    return &quot;develop&quot;
+
+
+def build_graph():
+    graph = StateGraph(AgentState)
+
+    graph.add_node(&quot;orchestrate&quot;, orchestrate)
+    graph.add_node(&quot;develop&quot;, develop)
+    graph.add_node(&quot;review&quot;, review)
+
+    graph.set_entry_point(&quot;orchestrate&quot;)
+    graph.add_edge(&quot;orchestrate&quot;, &quot;develop&quot;)
+    graph.add_edge(&quot;develop&quot;, &quot;review&quot;)
+
+    graph.add_conditional_edges(
+        &quot;review&quot;,
+        route_after_review,
+        {
+            &quot;develop&quot;: &quot;develop&quot;,
+            &quot;end&quot;: END,
+        },
+    )
+
+    return graph.compile()
+
+
+def main() -&gt; None:
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument(
+        &quot;task&quot;,
+        nargs=&quot;+&quot;,
+        help=&quot;Task for the local multi-agent system&quot;,
+    )
+
+    parser.add_argument(
+        &quot;--workspace&quot;,
+        default=os.getenv(&quot;WORKSPACE&quot;, &quot;~/ai/workspaces/default_project&quot;),
+        help=&quot;Workspace directory&quot;,
+    )
+
+    args = parser.parse_args()
+
+    task = &quot; &quot;.join(args.task)
+    workspace = str(Path(os.path.expandvars(os.path.expanduser(args.workspace))).resolve())
+
+    print(&quot;\n[bold blue]LOCAL AGENT CONFIG[/bold blue]&quot;)
+    print(f&quot;Orchestrator endpoint: {ORCH_BASE_URL}&quot;)
+    print(f&quot;Developer endpoint:    {DEV_BASE_URL}&quot;)
+    print(f&quot;Reviewer endpoint:     {REVIEW_BASE_URL}&quot;)
+    print(f&quot;Orchestrator model:    {ORCH_MODEL}&quot;)
+    print(f&quot;Developer model:       {DEV_MODEL}&quot;)
+    print(f&quot;Reviewer model:        {REVIEW_MODEL}&quot;)
+    print(f&quot;Workspace:             {workspace}&quot;)
+    print(f&quot;Max review loops:      {MAX_REVIEW_LOOPS}&quot;)
+    print(f&quot;Unsafe tools allowed:  {ALLOW_UNSAFE_TOOLS}&quot;)
+
+    app = build_graph()
+
+    final = app.invoke(
+        {
+            &quot;task&quot;: task,
+            &quot;workspace&quot;: workspace,
+            &quot;history&quot;: [],
+        },
+        config={&quot;recursion_limit&quot;: 20},
+    )
+
+    print(&quot;\n[bold yellow]FINAL STATE[/bold yellow]&quot;)
+    print(f&quot;Approved: {final.get(&#x27;approved&#x27;)}&quot;)
+    print(f&quot;Iterations: {final.get(&#x27;iteration&#x27;)}&quot;)
+    print(f&quot;Workspace: {workspace}&quot;)
+
+    if not final.get(&quot;approved&quot;):
+        print(&quot;\n[bold red]Stopped without approval. Read reviewer feedback above.[/bold red]&quot;)
+
+
+if __name__ == &quot;__main__&quot;:
+    main()
+
+PY
+chmod +x ~/ai/agents/three_agent_system/local_agents.py</pre></div></details></div></div><div class="step" data-step="controller-smoke"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Run the three-agent smoke test</h3><div class="code-block"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn">Copy</button></div><pre>cd ~/ai/agents/three_agent_system
+source .venv/bin/activate
+
+python local_agents.py   --workspace ~/ai/workspaces/hello_agent   &quot;Create a tiny README.md file that says the split-machine local multi-agent system is working.&quot;
+
+cd ~/ai/workspaces/hello_agent
+git status
+git diff
+cat README.md</pre></div></div></div></section><div class="part-divider"><div class="part-divider-line"></div><div class="part-divider-text">Part V · Frontier-to-local workflow tools</div><div class="part-divider-line"></div></div><section id="local-exec"><div class="section-num">11 / Machine 1</div><h2>Install <em>local-exec-plan</em></h2><p class="section-deck">This turns frontier-generated plan files into local execution worktrees.</p><div class="step" data-step="exec-plan-py"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Create local-exec-plan.py</h3><details class="script-detail"><summary class="script-summary"><code>local-exec-plan.py</code><span class="script-summary-desc">Reads a markdown plan, creates a worktree, runs local_agents.py</span></summary><div class="code-block"><div class="code-header"><span class="code-lang">bash · paste into terminal</span><button class="copy-btn">Copy</button></div><pre>cat &gt; ~/ai/bin/local-exec-plan.py &lt;&lt;&#x27;PY&#x27;
+
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import argparse
+import importlib.util
+import os
+import re
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+
+def run(cmd: list[str], cwd: Path, check: bool = True) -&gt; str:
+    print(&quot;+ &quot; + &quot; &quot;.join(cmd), file=sys.stderr)
+    p = subprocess.run(
+        cmd,
+        cwd=str(cwd),
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+    )
+    if check and p.returncode != 0:
+        print(p.stdout, file=sys.stderr)
+        raise SystemExit(p.returncode)
+    return p.stdout.strip()
+
+
+def slugify(text: str) -&gt; str:
+    text = text.lower()
+    text = re.sub(r&quot;[^a-z0-9]+&quot;, &quot;-&quot;, text)
+    text = text.strip(&quot;-&quot;)
+    return text[:60] or &quot;local-ai-task&quot;
+
+
+def git_root(path: Path) -&gt; Path:
+    out = run([&quot;git&quot;, &quot;rev-parse&quot;, &quot;--show-toplevel&quot;], path)
+    return Path(out).resolve()
+
+
+def load_local_agents(controller_path: Path):
+    controller_dir = controller_path.parent
+    os.chdir(controller_dir)
+    sys.path.insert(0, str(controller_dir))
+
+    spec = importlib.util.spec_from_file_location(&quot;local_agents&quot;, controller_path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f&quot;Could not load {controller_path}&quot;)
+
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def main() -&gt; None:
+    parser = argparse.ArgumentParser(
+        description=&quot;Execute a frontier-generated plan using the local multi-agent system.&quot;
+    )
+    parser.add_argument(&quot;plan_file&quot;, help=&quot;Path to plans/YYYY-MM-DD-feature.md&quot;)
+    parser.add_argument(&quot;--workspace&quot;, default=&quot;.&quot;, help=&quot;Repo or worktree path&quot;)
+    parser.add_argument(&quot;--branch&quot;, default=&quot;&quot;, help=&quot;Branch name for the local AI worktree&quot;)
+    parser.add_argument(&quot;--worktree-path&quot;, default=&quot;&quot;, help=&quot;Explicit worktree path&quot;)
+    parser.add_argument(&quot;--in-place&quot;, action=&quot;store_true&quot;, help=&quot;Run in current worktree instead of creating a new worktree&quot;)
+    args = parser.parse_args()
+
+    plan_path = Path(args.plan_file).expanduser().resolve()
+    if not plan_path.exists():
+        raise SystemExit(f&quot;Plan file not found: {plan_path}&quot;)
+
+    plan_text = plan_path.read_text(encoding=&quot;utf-8&quot;)
+    base_root = git_root(Path(args.workspace).expanduser().resolve())
+
+    status = run([&quot;git&quot;, &quot;status&quot;, &quot;--porcelain&quot;], base_root)
+    if status and not args.in_place:
+        print(
+            &quot;[warning] Base worktree has uncommitted changes. &quot;
+            &quot;The new worktree will be based on committed HEAD.&quot;,
+            file=sys.stderr,
+        )
+
+    feature_slug = slugify(plan_path.stem)
+    timestamp = time.strftime(&quot;%Y%m%d-%H%M%S&quot;)
+    branch = args.branch or f&quot;ai/local/{feature_slug}-{timestamp}&quot;
+
+    if args.in_place:
+        worktree = base_root
+    else:
+        if args.worktree_path:
+            worktree = Path(args.worktree_path).expanduser().resolve()
+        else:
+            worktree = base_root.parent / f&quot;{base_root.name}-local-{feature_slug}-{timestamp}&quot;
+
+        run([&quot;git&quot;, &quot;worktree&quot;, &quot;add&quot;, &quot;-b&quot;, branch, str(worktree)], base_root)
+
+    local_dir = worktree / &quot;.local-ai&quot;
+    local_dir.mkdir(parents=True, exist_ok=True)
+
+    task_file = local_dir / &quot;task.md&quot;
+    task_file.write_text(
+        f&quot;&quot;&quot;# Local AI execution task
+
+You are executing a frontier-model implementation plan.
+
+## Operating rules
+
+- Implement the plan as written.
+- Prefer small, reviewable changes.
+- Add or update tests.
+- Run relevant tests, lint, and type checks.
+- Do not touch secrets or unrelated files.
+- Do not change deployment infrastructure unless the plan explicitly asks for it.
+- Stop after local reviewer approval or after the configured review-loop limit.
+
+## Plan source
+
+{plan_path}
+
+## Plan
+
+{plan_text}
+&quot;&quot;&quot;,
+        encoding=&quot;utf-8&quot;,
+    )
+
+    controller_path = Path(
+        os.environ.get(
+            &quot;LOCAL_AI_CONTROLLER&quot;,
+            &quot;~/ai/agents/three_agent_system/local_agents.py&quot;,
+        )
+    ).expanduser().resolve()
+
+    if not controller_path.exists():
+        raise SystemExit(f&quot;Local agent controller not found: {controller_path}&quot;)
+
+    print(f&quot;\nWorkspace: {worktree}&quot;)
+    print(f&quot;Branch:    {branch if not args.in_place else &#x27;(current branch)&#x27;}&quot;)
+    print(f&quot;Task file: {task_file}\n&quot;)
+
+    local_agents = load_local_agents(controller_path)
+    app = local_agents.build_graph()
+
+    final = app.invoke(
+        {
+            &quot;task&quot;: task_file.read_text(encoding=&quot;utf-8&quot;),
+            &quot;workspace&quot;: str(worktree),
+            &quot;history&quot;: [],
+        },
+        config={&quot;recursion_limit&quot;: 20},
+    )
+
+    approved = bool(final.get(&quot;approved&quot;))
+    iterations = final.get(&quot;iteration&quot;)
+
+    print(&quot;\n=== LOCAL AI EXECUTION COMPLETE ===&quot;)
+    print(f&quot;Approved:   {approved}&quot;)
+    print(f&quot;Iterations: {iterations}&quot;)
+    print(f&quot;Workspace:  {worktree}&quot;)
+
+    if not approved:
+        raise SystemExit(2)
+
+
+if __name__ == &quot;__main__&quot;:
+    main()
+
+PY
+chmod +x ~/ai/bin/local-exec-plan.py</pre></div></details></div></div><div class="step" data-step="exec-plan-wrapper"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Create wrapper command</h3><div class="code-block"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn">Copy</button></div><pre>cat &gt; ~/ai/bin/local-exec-plan &lt;&lt;&#x27;SH&#x27;
+#!/usr/bin/env bash
+set -euo pipefail
+
+exec &quot;$HOME/ai/agents/three_agent_system/.venv/bin/python&quot;   &quot;$HOME/ai/bin/local-exec-plan.py&quot; &quot;$@&quot;
+SH
+
+chmod +x ~/ai/bin/local-exec-plan
+which local-exec-plan
+local-exec-plan --help</pre></div></div></div><div class="step" data-step="exec-plan-test"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Test with a tiny repo</h3><div class="code-block"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn">Copy</button></div><pre>mkdir -p ~/ai/workspaces/test_repo
+cd ~/ai/workspaces/test_repo
+git init
+git config user.email &quot;local-agent@example.local&quot;
+git config user.name &quot;Local AI Agent&quot;
+
+cat &gt; README.md &lt;&lt;&#x27;EOF&#x27;
+# Test Repo
+EOF
+
+git add README.md
+git commit -m &quot;Initial commit&quot;
+mkdir -p plans
+
+cat &gt; plans/2026-05-08-smoke-test.md &lt;&lt;&#x27;EOF&#x27;
+# Local AI smoke test
+
+## Goal
+Update README.md with a new section called &quot;Local AI Smoke Test&quot;.
+
+## Non-goals
+Do not modify source code. Do not add dependencies.
+
+## Files expected to change
+- README.md
+
+## Tasks
+1. Open README.md.
+2. Add a section titled &quot;Local AI Smoke Test&quot;.
+3. Mention that the split-machine local multi-agent system is working.
+
+## Acceptance criteria
+- README.md contains the heading &quot;Local AI Smoke Test&quot;.
+- No other files are modified except normal local agent metadata if needed.
+
+## Test plan
+Run: git diff -- README.md
+EOF
+
+git add plans/2026-05-08-smoke-test.md
+git commit -m &quot;Add smoke test plan&quot;
+local-exec-plan plans/2026-05-08-smoke-test.md --workspace .
+
+git worktree list</pre></div></div></div></section><section id="repo-workflow-files"><div class="section-num">12 / Each repo</div><h2>Add repo workflow <em>instructions</em></h2><p class="section-deck">These files teach Claude Code, Codex, and future agents how to use the frontier-to-local handoff.</p><div class="step" data-step="repo-ai-workflow"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Create docs/ai/AI_WORKFLOW.md</h3><div class="code-block"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn">Copy</button></div><pre>mkdir -p docs/ai plans
+
+cat &gt; docs/ai/AI_WORKFLOW.md &lt;&lt;&#x27;EOF&#x27;
+# AI Development Workflow
+
+This repository uses a hybrid AI workflow.
+
+## Roles
+
+Frontier models such as Claude Code and Codex are used for:
+- architecture planning
+- implementation plans
+- design review
+- documentation
+- final high-level review
+
+Local open-source models are used for:
+- implementation
+- test creation
+- debugging
+- local code review
+- repeated fix/review loops
+
+## Required handoff pattern
+
+For any non-trivial feature, create a plan under:
+
+plans/YYYY-MM-DD-feature-name.md
+
+The plan must include:
+1. Goal
+2. Non-goals
+3. Current system summary
+4. Proposed architecture
+5. Files expected to change
+6. Step-by-step implementation tasks
+7. Acceptance criteria
+8. Test plan
+9. Rollback plan
+10. Documentation updates required
+11. Risks and edge cases
+
+## Frontier model rules
+
+When asked to plan:
+- Do not implement source-code changes unless explicitly asked.
+- Prefer writing or updating files under docs/ and plans/.
+- Produce precise acceptance criteria.
+- Include exact commands to run tests.
+- Include migration and rollback notes when relevant.
+
+When asked to review:
+- Compare implementation against the plan.
+- Focus on architecture, correctness, security, maintainability, and docs.
+- Do not rewrite the implementation unless explicitly asked.
+
+## Local agent rules
+
+When executing a plan:
+- Work in an isolated branch or worktree.
+- Implement the plan as written.
+- Add or update tests.
+- Run relevant test/lint/typecheck commands.
+- Stop after reviewer approval or after three failed review loops.
+- Do not touch secrets, credentials, deployment config, or unrelated files.
+
+## Human rules
+
+The human developer must approve:
+- the plan before implementation
+- dependency additions
+- database migrations
+- destructive commands
+- final merge
+EOF</pre></div></div></div><div class="step" data-step="repo-agents-md"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Create AGENTS.md for Codex</h3><div class="code-block"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn">Copy</button></div><pre>cat &gt; AGENTS.md &lt;&lt;&#x27;EOF&#x27;
+# Repository AI Instructions
+
+Read docs/ai/AI_WORKFLOW.md before doing substantial work.
+
+## Default workflow
+
+For non-trivial changes:
+1. Act as the frontier architect first.
+2. Create or update a plan under plans/.
+3. Do not implement until the plan is approved.
+4. Local open-source agents execute implementation plans.
+5. After local implementation, perform architecture review and documentation polish.
+
+## Planning output
+
+A valid plan must include:
+- goal
+- non-goals
+- proposed architecture
+- affected files
+- step-by-step tasks
+- acceptance criteria
+- test plan
+- rollback plan
+- docs updates
+
+## Implementation restraint
+
+Unless explicitly told to implement, limit edits to:
+- docs/
+- plans/
+- AGENTS.md
+- README.md when documentation is requested
+
+## Verification
+
+When reviewing local agent work:
+- compare git diff against the plan
+- verify tests were added or updated
+- identify security, correctness, and maintainability issues
+- recommend only targeted fixes
+EOF</pre></div></div></div><div class="step" data-step="repo-claude-md"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Create CLAUDE.md for Claude Code</h3><div class="code-block"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn">Copy</button></div><pre>cat &gt; CLAUDE.md &lt;&lt;&#x27;EOF&#x27;
+# Claude Code Instructions
+
+Read docs/ai/AI_WORKFLOW.md before substantial work.
+
+You are primarily used in this repository as:
+- senior architect
+- technical planner
+- documentation writer
+- final reviewer
+
+Local open-source agents are used for implementation.
+
+## Default behavior
+
+For non-trivial work:
+1. Use plan mode.
+2. Create a plan under plans/.
+3. Do not implement source changes unless explicitly asked.
+4. Make plans concrete enough for local agents to execute.
+
+## Plan requirements
+
+Every implementation plan must include:
+- goal
+- non-goals
+- proposed architecture
+- affected files
+- task breakdown
+- acceptance criteria
+- test plan
+- rollback plan
+- documentation updates
+
+## Review behavior
+
+When reviewing local-agent changes:
+- inspect the diff
+- compare against the plan
+- check tests
+- check docs
+- flag architectural drift
+- do not rewrite large sections unless asked
+EOF
+
+git add docs/ai/AI_WORKFLOW.md AGENTS.md CLAUDE.md
+git commit -m &quot;Add hybrid AI workflow instructions&quot;</pre></div></div></div></section><div class="part-divider"><div class="part-divider-line"></div><div class="part-divider-text">Part VI · MCP bridge, Claude Code, and Codex</div><div class="part-divider-line"></div></div><section id="mcp-bridge"><div class="section-num">13 / Machine 1</div><h2>Install MCP <em>local-ai-delegate</em></h2><p class="section-deck">This exposes local execution to Claude Code and Codex as a narrow, safe toolset.</p><div class="step" data-step="mcp-project"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Create MCP project</h3><div class="code-block"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn">Copy</button></div><pre>mkdir -p ~/ai/agents/local_delegate_mcp
+cd ~/ai/agents/local_delegate_mcp
+uv venv .venv --python 3.12
+source .venv/bin/activate
+uv pip install -U mcp fastmcp</pre></div></div></div><div class="step" data-step="mcp-server"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Create MCP server.py</h3><details class="script-detail"><summary class="script-summary"><code>server.py</code><span class="script-summary-desc">MCP tools: local_ai_status, git_local_summary, run_local_plan</span></summary><div class="code-block"><div class="code-header"><span class="code-lang">bash · paste into terminal</span><button class="copy-btn">Copy</button></div><pre>cat &gt; ~/ai/agents/local_delegate_mcp/server.py &lt;&lt;&#x27;PY&#x27;
+
+from __future__ import annotations
+
+import os
+import subprocess
+import urllib.request
+from pathlib import Path
+
+from mcp.server.fastmcp import FastMCP
+
+
+mcp = FastMCP(&quot;local-ai-delegate&quot;)
+
+
+def allowed_roots() -&gt; list[Path]:
+    raw = os.environ.get(&quot;LOCAL_AI_ALLOWED_ROOTS&quot;, &quot;&quot;)
+    roots: list[Path] = []
+
+    if raw:
+        for item in raw.split(&quot;:&quot;):
+            item = item.strip()
+            if item:
+                roots.append(Path(item).expanduser().resolve())
+
+    roots.extend(
+        [
+            Path.home() / &quot;ai&quot; / &quot;workspaces&quot;,
+            Path.home() / &quot;code&quot;,
+            Path.home() / &quot;Developer&quot;,
+            Path.home() / &quot;projects&quot;,
+        ]
+    )
+
+    return [p.resolve() for p in roots if p.exists()]
+
+
+def resolve_allowed(path: str, *, must_exist: bool = True) -&gt; Path:
+    if not path or path == &quot;.&quot;:
+        default_workspace = os.environ.get(&quot;LOCAL_AI_DEFAULT_WORKSPACE&quot;, &quot;.&quot;)
+        path = default_workspace
+
+    p = Path(path).expanduser().resolve()
+
+    if must_exist and not p.exists():
+        raise ValueError(f&quot;Path does not exist: {p}&quot;)
+
+    roots = allowed_roots()
+    if not roots:
+        raise ValueError(&quot;No allowed roots configured. Set LOCAL_AI_ALLOWED_ROOTS.&quot;)
+
+    if not any(str(p).startswith(str(root)) for root in roots):
+        raise ValueError(
+            f&quot;Path is outside allowed roots: {p}\n&quot;
+            f&quot;Allowed roots: {&#x27;, &#x27;.join(str(r) for r in roots)}&quot;
+        )
+
+    return p
+
+
+def run(cmd: list[str], cwd: Path, timeout: int = 300) -&gt; str:
+    p = subprocess.run(
+        cmd,
+        cwd=str(cwd),
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        timeout=timeout,
+    )
+    return f&quot;$ {&#x27; &#x27;.join(cmd)}\n(exit {p.returncode})\n{p.stdout}&quot;
+
+
+@mcp.tool()
+def local_ai_status() -&gt; str:
+    &quot;&quot;&quot;Check whether the local MLX model servers appear reachable.&quot;&quot;&quot;
+    hosts = {
+        &quot;orchestrator&quot;: os.environ.get(&quot;ORCH_BASE_URL&quot;, &quot;http://127.0.0.1:8001/v1&quot;),
+        &quot;developer&quot;: os.environ.get(&quot;DEV_BASE_URL&quot;, &quot;http://10.10.10.2:8002/v1&quot;),
+        &quot;reviewer&quot;: os.environ.get(&quot;REVIEW_BASE_URL&quot;, &quot;http://10.10.10.2:8003/v1&quot;),
+    }
+
+    lines: list[str] = []
+    for name, base_url in hosts.items():
+        url = base_url.rstrip(&quot;/&quot;) + &quot;/models&quot;
+        try:
+            with urllib.request.urlopen(url, timeout=3) as r:
+                lines.append(f&quot;{name}: OK {url} HTTP {r.status}&quot;)
+        except Exception as e:
+            lines.append(f&quot;{name}: FAIL {url} {type(e).__name__}: {e}&quot;)
+
+    return &quot;\n&quot;.join(lines)
+
+
+@mcp.tool()
+def git_local_summary(workspace: str = &quot;.&quot;) -&gt; str:
+    &quot;&quot;&quot;Show git status and diff stat for a local workspace.&quot;&quot;&quot;
+    ws = resolve_allowed(workspace)
+    parts = [
+        run([&quot;git&quot;, &quot;status&quot;, &quot;--short&quot;], ws, timeout=60),
+        run([&quot;git&quot;, &quot;diff&quot;, &quot;--stat&quot;], ws, timeout=60),
+    ]
+    return &quot;\n\n&quot;.join(parts)[-20000:]
+
+
+@mcp.tool()
+def run_local_plan(
+    plan_file: str,
+    workspace: str = &quot;.&quot;,
+    in_place: bool = False,
+    timeout_minutes: int = 60,
+) -&gt; str:
+    &quot;&quot;&quot;
+    Execute a frontier-generated plan using the local multi-agent system.
+
+    plan_file: path to the markdown plan file.
+    workspace: repo/worktree path. Use an absolute path for best reliability.
+    in_place: false means create a separate git worktree; true edits current workspace.
+    timeout_minutes: max runtime for this tool call.
+    &quot;&quot;&quot;
+    ws = resolve_allowed(workspace)
+    plan = resolve_allowed(plan_file)
+
+    cmd = [
+        str(Path.home() / &quot;ai&quot; / &quot;bin&quot; / &quot;local-exec-plan&quot;),
+        str(plan),
+        &quot;--workspace&quot;,
+        str(ws),
+    ]
+
+    if in_place:
+        cmd.append(&quot;--in-place&quot;)
+
+    try:
+        p = subprocess.run(
+            cmd,
+            cwd=str(ws),
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            timeout=max(60, timeout_minutes * 60),
+        )
+        output = p.stdout
+        return (
+            f&quot;Command: {&#x27; &#x27;.join(cmd)}\n&quot;
+            f&quot;Exit code: {p.returncode}\n\n&quot;
+            f&quot;{output[-30000:]}&quot;
+        )
+    except subprocess.TimeoutExpired as e:
+        output = e.stdout or &quot;&quot;
+        return (
+            f&quot;TIMEOUT after {timeout_minutes} minutes.\n&quot;
+            f&quot;Partial output:\n{output[-20000:]}&quot;
+        )
+
+
+if __name__ == &quot;__main__&quot;:
+    mcp.run(transport=&quot;stdio&quot;)
+
+PY</pre></div></details></div></div><div class="step" data-step="mcp-test"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Smoke test MCP server</h3><div class="code-block"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn">Copy</button></div><pre>~/ai/agents/local_delegate_mcp/.venv/bin/python   ~/ai/agents/local_delegate_mcp/server.py
+# It should wait for stdio input. Press Control-C.</pre></div></div></div></section><section id="claude-codex-mcp"><div class="section-num">14 / Machine 1</div><h2>Register MCP with <em>Claude Code and Codex</em></h2><p class="section-deck">Give frontier models a safe way to delegate plan execution to your local stack.</p><div class="step" data-step="claude-mcp-add"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Register with Claude Code</h3><div class="code-block"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn">Copy</button></div><pre>claude mcp add local-ai-delegate   --scope user   --env LOCAL_AI_ALLOWED_ROOTS=&quot;$HOME/ai/workspaces:$HOME/code:$HOME/Developer:$HOME/projects&quot;   --env LOCAL_AI_DEFAULT_WORKSPACE=&quot;$HOME/ai/workspaces&quot;   --env ORCH_BASE_URL=&quot;http://127.0.0.1:8001/v1&quot;   --env DEV_BASE_URL=&quot;http://10.10.10.2:8002/v1&quot;   --env REVIEW_BASE_URL=&quot;http://10.10.10.2:8003/v1&quot;   -- &quot;$HOME/ai/agents/local_delegate_mcp/.venv/bin/python&quot;      &quot;$HOME/ai/agents/local_delegate_mcp/server.py&quot;
+
+claude mcp list
+# Inside Claude Code, type /mcp and confirm local-ai-delegate appears.</pre></div></div></div><div class="step" data-step="codex-mcp-add"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Register with Codex</h3><div class="code-block"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn">Copy</button></div><pre>codex mcp add local-ai-delegate   --env LOCAL_AI_ALLOWED_ROOTS=&quot;$HOME/ai/workspaces:$HOME/code:$HOME/Developer:$HOME/projects&quot;   --env LOCAL_AI_DEFAULT_WORKSPACE=&quot;$HOME/ai/workspaces&quot;   --env ORCH_BASE_URL=&quot;http://127.0.0.1:8001/v1&quot;   --env DEV_BASE_URL=&quot;http://10.10.10.2:8002/v1&quot;   --env REVIEW_BASE_URL=&quot;http://10.10.10.2:8003/v1&quot;   -- &quot;$HOME/ai/agents/local_delegate_mcp/.venv/bin/python&quot;      &quot;$HOME/ai/agents/local_delegate_mcp/server.py&quot;
+
+mkdir -p ~/.codex
+open ~/.codex/config.toml
+# In the [mcp_servers.local-ai-delegate] block, add:
+# startup_timeout_sec = 20
+# tool_timeout_sec = 3600</pre></div></div></div><div class="step" data-step="claude-skills"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Create Claude Code local delegation skills</h3><details class="script-detail"><summary class="script-summary"><code>delegate-local/SKILL.md</code><span class="script-summary-desc">Claude skill that creates/validates a plan and calls local execution</span></summary><div class="code-block"><div class="code-header"><span class="code-lang">bash · paste into terminal</span><button class="copy-btn">Copy</button></div><pre>
+mkdir -p ~/.claude/skills/delegate-local
+cat &gt; ~/.claude/skills/delegate-local/SKILL.md &lt;&lt;&#x27;EOF&#x27;
+---
+name: delegate-local
+description: Create or validate a plan, then delegate execution to the local multi-agent stack
+argument-hint: [task description or plan file]
+allowed-tools: Read, Grep, Glob, Bash(git status), Bash(pwd), local-ai-delegate__local_ai_status, local-ai-delegate__run_local_plan, local-ai-delegate__git_local_summary
+---
+
+You are the frontier architect and reviewer.
+
+Use this skill to hand off implementation work to the local multi-agent system.
+
+Workflow:
+
+1. Understand the task.
+2. If there is not already a concrete plan file, create one under plans/YYYY-MM-DD-feature-name.md.
+3. The plan must include:
+   - Goal
+   - Non-goals
+   - Current system summary
+   - Proposed architecture
+   - Files expected to change
+   - Step-by-step implementation tasks
+   - Acceptance criteria
+   - Test plan with exact commands
+   - Rollback plan
+   - Documentation updates
+   - Risks and edge cases
+4. Show the plan and ask for approval before execution.
+5. After approval, call local-ai-delegate__run_local_plan with:
+   - plan_file
+   - workspace
+   - in_place=false
+6. Summarize:
+   - worktree path
+   - branch
+   - local reviewer approval status
+   - files changed
+   - tests run
+   - unresolved issues
+7. Do final frontier-level review after execution.
+
+Task: $ARGUMENTS
+EOF</pre></div></details><details class="script-detail"><summary class="script-summary"><code>local-review/SKILL.md</code><span class="script-summary-desc">Claude skill for local second-opinion review</span></summary><div class="code-block"><div class="code-header"><span class="code-lang">bash · paste into terminal</span><button class="copy-btn">Copy</button></div><pre>
+mkdir -p ~/.claude/skills/local-review
+cat &gt; ~/.claude/skills/local-review/SKILL.md &lt;&lt;&#x27;EOF&#x27;
+---
+name: local-review
+description: Use the local AI stack for a second opinion on the current git diff or project state
+argument-hint: [optional file, area, or diff description]
+allowed-tools: Read, Grep, Glob, Bash(git diff), Bash(git status), local-ai-delegate__git_local_summary, local-ai-delegate__local_ai_status
+---
+
+Use the local AI stack as a second-opinion reviewer.
+
+Process:
+1. Identify the relevant workspace.
+2. Inspect git status and git diff.
+3. Use local-ai-delegate__git_local_summary.
+4. Present the local findings.
+5. Add your own frontier-level judgment:
+   - what you agree with
+   - what you disagree with
+   - what was missed
+   - whether this is safe to merge
+
+Target: $ARGUMENTS
+EOF</pre></div></details></div></div></section><div class="part-divider"><div class="part-divider-line"></div><div class="part-divider-text">Part VII · Optional experimental upgrades</div><div class="part-divider-line"></div></div><section id="mtp-experimental"><div class="section-num">15 / Optional</div><h2>Add MTP-preserved <em>experimental model lane</em></h2><p class="section-deck">Keep this behind a test endpoint. Do not replace the stable MLX stack until benchmarking proves it wins.</p><div class="step" data-step="mtp-manifest"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Record the experimental model</h3><div class="code-block"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn">Copy</button></div><pre>cat &gt;&gt; ~/ai/models/MODELS.md &lt;&lt;&#x27;EOF&#x27;
+
+## Experimental MTP-preserved 35B-A3B
+
+- llmfan46/Qwen3.6-35B-A3B-uncensored-heretic-Native-MTP-Preserved
+  - Role candidates: Orchestrator, Reviewer, Security Reviewer
+  - Current status: experimental; not stable daily driver yet
+  - Runtime paths: Safetensors conversion, GGUF, MTPLX, custom llama.cpp MTP
+EOF</pre></div></div></div><div class="step" data-step="mtp-download"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Download source model for experiments</h3><div class="code-block"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn">Copy</button></div><pre>cd ~/ai
+source .venv/bin/activate
+
+hf download   llmfan46/Qwen3.6-35B-A3B-uncensored-heretic-Native-MTP-Preserved   --local-dir ~/ai/models/src-llmfan46-qwen36-35b-a3b-mtp-preserved</pre></div></div></div><div class="step" data-step="mtp-try-mlx"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Try MLX conversion on Machine 1</h3><div class="code-block"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn">Copy</button></div><pre>mlx_lm.convert   --hf-path llmfan46/Qwen3.6-35B-A3B-uncensored-heretic-Native-MTP-Preserved   --mlx-path ~/ai/models/orchestrator-llmfan46-qwen36-35b-a3b-mtp-preserved-bf16-mlx   --trust-remote-code
+
+mlx_lm.server   --model ~/ai/models/orchestrator-llmfan46-qwen36-35b-a3b-mtp-preserved-bf16-mlx   --host 127.0.0.1   --port 8005</pre></div><div class="callout callout-warn"><div class="callout-label">Experimental</div><p>Stock <code>mlx_lm.server</code> may not use native MTP heads. Treat this as a quality comparison first, not a speed path.</p></div></div></div></section><section id="benchmarks"><div class="section-num">16 / Optional</div><h2>Benchmark and compare <em>models</em></h2><p class="section-deck">Promote new models by evidence, not hype. Use identical prompts and score quality plus latency.</p><div class="step" data-step="bench-script"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Create benchmark helper</h3><div class="code-block"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn">Copy</button></div><pre>cat &gt; ~/ai/bin/bench-chat-endpoint.sh &lt;&lt;&#x27;SH&#x27;
+#!/usr/bin/env bash
+set -euo pipefail
+
+BASE_URL=&quot;$1&quot;
+MODEL=&quot;$2&quot;
+PROMPT_FILE=&quot;$3&quot;
+PROMPT=&quot;$(cat &quot;$PROMPT_FILE&quot;)&quot;
+START=&quot;$(date +%s)&quot;
+
+curl -s &quot;$BASE_URL/chat/completions&quot; \
+  -H &quot;Content-Type: application/json&quot; \
+  -d &quot;{
+    \&quot;model\&quot;: \&quot;$MODEL\&quot;,
+    \&quot;messages\&quot;: [
+      {\&quot;role\&quot;: \&quot;system\&quot;, \&quot;content\&quot;: \&quot;Answer directly. Be precise. Do not include hidden reasoning traces.\&quot;},
+      {\&quot;role\&quot;: \&quot;user\&quot;, \&quot;content\&quot;: $(python3 -c &#x27;import json,sys; print(json.dumps(sys.stdin.read()))&#x27; &lt;&lt;&lt; &quot;$PROMPT&quot;)}
+    ],
+    \&quot;max_tokens\&quot;: 4096,
+    \&quot;temperature\&quot;: 0.3
+  }&quot;
+
+END=&quot;$(date +%s)&quot;
+echo
+echo &quot;Elapsed seconds: $((END - START))&quot;
+SH
+chmod +x ~/ai/bin/bench-chat-endpoint.sh</pre></div></div></div><div class="step" data-step="bench-prompt"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Create a benchmark prompt and run it</h3><div class="code-block"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn">Copy</button></div><pre>mkdir -p ~/ai/benchmarks/prompts ~/ai/benchmarks/results
+
+cat &gt; ~/ai/benchmarks/prompts/01_architecture_plan.md &lt;&lt;&#x27;EOF&#x27;
+Create a detailed implementation plan for adding API key rotation with audit logs, admin-only authorization, tests, rollback, and documentation updates. Include file paths, edge cases, and exact test commands.
+EOF
+
+bench-chat-endpoint.sh   http://127.0.0.1:8001/v1   /Users/admin/ai/models/orchestrator-qwen36-35b-a3b-heretic-bf16   ~/ai/benchmarks/prompts/01_architecture_plan.md</pre></div></div></div></section><div class="part-divider"><div class="part-divider-line"></div><div class="part-divider-text">Part VIII · Daily operations and troubleshooting</div><div class="part-divider-line"></div></div><section id="daily-workflow"><div class="section-num">17 / Daily</div><h2>Daily operating <em>rhythm</em></h2><p class="section-deck">Start servers, plan with frontier models, execute locally, review, and merge.</p><div class="step" data-step="daily-start"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Start the stack</h3><div class="code-block"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn">Copy</button></div><pre># On Machine 1
+start-orchestrator.sh
+m1-ai-status.sh
+
+# On Machine 2
+start-worker-models.sh
+m2-ai-status.sh</pre></div></div></div><div class="step" data-step="daily-frontier-plan"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Have Claude/Codex create a plan</h3><div class="code-block"><div class="code-header"><span class="code-lang">text</span><button class="copy-btn">Copy</button></div><pre># In a real repo
+mkdir -p plans
+
+# Claude prompt:
+# Read CLAUDE.md and docs/ai/AI_WORKFLOW.md.
+# Create a plan at plans/YYYY-MM-DD-feature-name.md.
+# Do not implement source changes yet.
+# Include goal, non-goals, files, tasks, acceptance criteria, tests, rollback, docs, risks.</pre></div></div></div><div class="step" data-step="daily-local-execute"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Execute locally</h3><div class="code-block"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn">Copy</button></div><pre>local-exec-plan plans/YYYY-MM-DD-feature-name.md --workspace .
+
+git worktree list
+# cd into the generated worktree
+git status
+git diff
+# run your normal tests manually too</pre></div></div></div><div class="step" data-step="daily-final-review"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Final frontier review and commit</h3><div class="code-block"><div class="code-header"><span class="code-lang">text</span><button class="copy-btn">Copy</button></div><pre># In generated worktree, ask Claude/Codex:
+# Review this branch against the plan. Do not edit. Check architecture,
+# correctness, security, tests, and docs. Return approve/request-changes.
+
+git add .
+git commit -m &quot;Implement feature using local AI agents&quot;</pre></div></div></div></section><section id="troubleshooting"><div class="section-num">18 / Reference</div><h2>Trouble<em>shooting</em></h2><p class="section-deck">Common failures and exact fixes.</p><div class="cheat">
+<div class="cheat-card"><h4>Hugging Face 404: local/default</h4><p>Your <code>.env</code> still uses <code>local</code> or <code>default</code>. Replace with full model paths on the serving machine.</p></div>
+<div class="cheat-card"><h4>Cannot reach Machine 2</h4><p>Run <code>ping 10.10.10.2</code>. If it fails, check Thunderbolt Bridge IPs and cable.</p></div>
+<div class="cheat-card"><h4>mlx_lm command not found</h4><p>Activate the right venv: <code>cd ~/ai && source .venv/bin/activate</code>, then install <code>uv pip install -U mlx-lm</code>.</p></div>
+<div class="cheat-card"><h4>Model output cuts off</h4><p>Raise <code>max_tokens</code>. For real work use Orchestrator 4096–8192, Developer 8192–16000, Reviewer 4096–8192.</p></div>
+<div class="cheat-card"><h4>Machine 1 feels slow</h4><p>Stop BF16 Orchestrator and use the mixed-9bit fallback. Watch <code>memory_pressure</code>.</p></div>
+<div class="cheat-card"><h4>MCP tool times out</h4><p>Increase Codex <code>tool_timeout_sec</code> to 3600 and keep Claude output limits high for long tasks.</p></div>
+</div><div class="code-block"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn">Copy</button></div><pre># Quick status commands
+m1-ai-status.sh
+ssh admin@10.10.10.2 &#x27;m2-ai-status.sh&#x27;
+
+# Check ports
+lsof -nP -iTCP:8001 -sTCP:LISTEN
+ssh admin@10.10.10.2 &#x27;lsof -nP -iTCP:8002 -iTCP:8003 -sTCP:LISTEN&#x27;
+
+# Check logs
+tail -100 ~/ai/logs/orchestrator.log
+ssh admin@10.10.10.2 &#x27;tail -100 ~/ai/logs/developer.log; tail -100 ~/ai/logs/reviewer.log&#x27;
+
+# Stop and restart
+stop-orchestrator.sh
+start-orchestrator.sh
+ssh admin@10.10.10.2 &#x27;stop-worker-models.sh; start-worker-models.sh&#x27;</pre></div></section><section id="security-rules"><div class="section-num">19 / Reference</div><h2>Security <em>rules</em></h2><p class="section-deck">These are the guardrails that keep the local stack useful without letting agents damage your machine.</p><ol>
+<li>Never expose <code>mlx_lm.server</code>, LM Studio, MTPLX, or MCP servers to the public internet.</li>
+<li>Use <code>127.0.0.1</code> for Machine 1 Orchestrator and <code>10.10.10.2</code> for Machine 2 worker servers.</li>
+<li>Use Tailscale for remote access, not public port forwarding.</li>
+<li>Do not let local agents work outside a git workspace or worktree.</li>
+<li>Do not set <code>ALLOW_UNSAFE_TOOLS=1</code> unless the workspace is disposable.</li>
+<li>Do not paste secrets into prompts.</li>
+<li>Keep <code>.env</code>, keys, certificates, and databases out of git.</li>
+<li>Human approval is required for dependency additions, migrations, destructive commands, and final merge.</li>
+</ol><div class="code-block"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn">Copy</button></div><pre>cat &gt; ~/.gitignore_global &lt;&lt;&#x27;EOF&#x27;
+.env
+*.pem
+*.key
+*.p12
+*.sqlite
+*.db
+.DS_Store
+.agent_memory.jsonl
+EOF
+
+git config --global core.excludesfile ~/.gitignore_global</pre></div></section><section id="appendix-paths"><div class="section-num">20 / Reference</div><h2>Final path <em>checklist</em></h2><p class="section-deck">Use this when handing the setup to another human or AI agent.</p><div class="table-wrap"><table><thead><tr><th>Item</th><th>Expected path or URL</th></tr></thead><tbody>
+<tr><td>Machine 1 Orchestrator endpoint</td><td><code>http://127.0.0.1:8001/v1</code></td></tr>
+<tr><td>Machine 2 Developer endpoint</td><td><code>http://10.10.10.2:8002/v1</code></td></tr>
+<tr><td>Machine 2 Reviewer endpoint</td><td><code>http://10.10.10.2:8003/v1</code></td></tr>
+<tr><td>Machine 1 Orchestrator model</td><td><code>~/ai/models/orchestrator-qwen36-35b-a3b-heretic-bf16</code></td></tr>
+<tr><td>Machine 2 Developer model</td><td><code>~/ai/models/developer-qwen36-27b-heretic2-mixed94</code></td></tr>
+<tr><td>Machine 2 Reviewer model</td><td><code>~/ai/models/reviewer-qwen36-27b-heretic-bf16</code></td></tr>
+<tr><td>LangGraph controller</td><td><code>~/ai/agents/three_agent_system/local_agents.py</code></td></tr>
+<tr><td>Controller env</td><td><code>~/ai/agents/three_agent_system/.env</code></td></tr>
+<tr><td>MCP bridge</td><td><code>~/ai/agents/local_delegate_mcp/server.py</code></td></tr>
+<tr><td>Plan executor</td><td><code>~/ai/bin/local-exec-plan</code></td></tr>
+</tbody></table></div></section><footer><span class="signature">~/ai/SETUP.html</span> · generated <span id="gen-date"></span></footer></main></div>
+<script>
+const themeBtn=document.getElementById('theme-toggle');
+const setTheme=(theme)=>{document.documentElement.setAttribute('data-theme',theme);themeBtn.textContent=theme==='dark'?'☾ dark':'☀ light';localStorage.setItem('local-ai-setup-theme',theme)};
+setTheme(localStorage.getItem('local-ai-setup-theme')||'dark');
+themeBtn.addEventListener('click',()=>{const current=document.documentElement.getAttribute('data-theme');setTheme(current==='dark'?'light':'dark')});
+
+document.querySelectorAll('.copy-btn').forEach(btn=>{btn.addEventListener('click',async()=>{const pre=btn.closest('.code-block').querySelector('pre');const raw=pre.innerText||pre.textContent;const clean=raw.split('\n').map(l=>l.replace(/^\$\s/,'')).join('\n');try{await navigator.clipboard.writeText(clean);btn.textContent='Copied';btn.classList.add('copied');setTimeout(()=>{btn.textContent='Copy';btn.classList.remove('copied')},1400)}catch(e){btn.textContent='Failed';setTimeout(()=>{btn.textContent='Copy'},1400)}})});
+
+const STORAGE_KEY='local-ai-click-setup-progress-v1';
+const loadProgress=()=>{try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}')}catch{return {}}};
+const saveProgress=(state)=>localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
+const state=loadProgress();const allSteps=document.querySelectorAll('[data-step]');
+document.getElementById('total-steps').textContent=allSteps.length;
+const updateProgressTag=()=>{const done=Object.values(state).filter(v=>v).length;document.querySelector('#progress-tag b').textContent=done};
+allSteps.forEach(step=>{const id=step.dataset.step;const input=step.querySelector('input[type=checkbox]');if(state[id]){input.checked=true;step.classList.add('done')}input.addEventListener('change',()=>{state[id]=input.checked;step.classList.toggle('done',input.checked);saveProgress(state);updateProgressTag()})});updateProgressTag();
+
+const tocLinks=document.querySelectorAll('.sidebar-toc a');const tocMap={};tocLinks.forEach(a=>{tocMap[a.getAttribute('href').slice(1)]=a});
+const observer=new IntersectionObserver((entries)=>{entries.forEach(entry=>{if(entry.isIntersecting){tocLinks.forEach(a=>a.classList.remove('active'));const link=tocMap[entry.target.id];if(link)link.classList.add('active')}})},{rootMargin:'-30% 0px -60% 0px'});
+document.querySelectorAll('section[id], div.hero[id]').forEach(el=>observer.observe(el));
+document.getElementById('gen-date').textContent=new Date().toISOString().slice(0,10);
+</script>
+</body>
+</html>

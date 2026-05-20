@@ -1,0 +1,1100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Local AI Infrastructure Overview — Two Mac Studio Hybrid Frontier/Local Stack</title>
+  <style>
+    :root {
+      --bg: #0f1115;
+      --panel: #171b22;
+      --panel-2: #1f2530;
+      --text: #e8edf5;
+      --muted: #aeb7c5;
+      --accent: #7dd3fc;
+      --accent-2: #c4b5fd;
+      --good: #86efac;
+      --warn: #fde68a;
+      --bad: #fca5a5;
+      --border: #303847;
+      --code-bg: #0a0d12;
+      --link: #93c5fd;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.55;
+      background: var(--bg);
+      color: var(--text);
+    }
+    header {
+      padding: 48px 32px 28px;
+      background: linear-gradient(135deg, #111827 0%, #172033 48%, #1f2937 100%);
+      border-bottom: 1px solid var(--border);
+    }
+    header h1 {
+      margin: 0 0 10px;
+      font-size: clamp(2rem, 4vw, 3.4rem);
+      line-height: 1.05;
+      letter-spacing: -0.04em;
+    }
+    header p {
+      max-width: 980px;
+      margin: 0;
+      color: var(--muted);
+      font-size: 1.05rem;
+    }
+    main {
+      display: grid;
+      grid-template-columns: 310px minmax(0, 1fr);
+      gap: 24px;
+      max-width: 1500px;
+      margin: 0 auto;
+      padding: 28px 24px 80px;
+    }
+    nav {
+      position: sticky;
+      top: 16px;
+      align-self: start;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px;
+      max-height: calc(100vh - 32px);
+      overflow: auto;
+    }
+    nav h2 {
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      margin: 0 0 12px;
+    }
+    nav a {
+      display: block;
+      color: var(--text);
+      text-decoration: none;
+      padding: 7px 8px;
+      border-radius: 8px;
+      font-size: 0.94rem;
+    }
+    nav a:hover { background: var(--panel-2); color: var(--accent); }
+    section {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 28px;
+      margin-bottom: 24px;
+    }
+    h2 {
+      margin-top: 0;
+      letter-spacing: -0.02em;
+      font-size: 1.55rem;
+    }
+    h3 {
+      margin-top: 28px;
+      color: var(--accent);
+      font-size: 1.15rem;
+    }
+    h4 {
+      margin-top: 22px;
+      color: var(--accent-2);
+    }
+    p, li { color: var(--text); }
+    .muted { color: var(--muted); }
+    .callout {
+      border-left: 4px solid var(--accent);
+      background: rgba(125, 211, 252, 0.08);
+      padding: 14px 16px;
+      border-radius: 10px;
+      margin: 16px 0;
+    }
+    .warning {
+      border-left-color: var(--warn);
+      background: rgba(253, 230, 138, 0.08);
+    }
+    .danger {
+      border-left-color: var(--bad);
+      background: rgba(252, 165, 165, 0.08);
+    }
+    .success {
+      border-left-color: var(--good);
+      background: rgba(134, 239, 172, 0.08);
+    }
+    code {
+      background: rgba(255,255,255,0.07);
+      padding: 0.14rem 0.35rem;
+      border-radius: 6px;
+      color: #e0f2fe;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+      font-size: 0.93em;
+    }
+    pre {
+      background: var(--code-bg);
+      color: #dbeafe;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      overflow: auto;
+      white-space: pre;
+      font-size: 0.92rem;
+    }
+    pre code {
+      background: none;
+      padding: 0;
+      color: inherit;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      overflow: hidden;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+    }
+    th, td {
+      padding: 11px 12px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+      text-align: left;
+    }
+    th {
+      background: var(--panel-2);
+      color: var(--accent);
+      font-weight: 650;
+    }
+    tr:last-child td { border-bottom: none; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+    .card {
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+    }
+    .card h3, .card h4 { margin-top: 0; }
+    .badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: rgba(125, 211, 252, 0.14);
+      color: var(--accent);
+      border: 1px solid rgba(125, 211, 252, 0.28);
+      font-size: 0.78rem;
+      margin-right: 6px;
+      white-space: nowrap;
+    }
+    .ascii {
+      font-size: 0.9rem;
+      line-height: 1.35;
+    }
+    .footer {
+      color: var(--muted);
+      font-size: 0.9rem;
+      text-align: center;
+      margin-top: 32px;
+    }
+    @media (max-width: 980px) {
+      main { grid-template-columns: 1fr; }
+      nav { position: static; max-height: none; }
+      .grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<header>
+  <h1>Local AI Infrastructure Overview</h1>
+  <p>
+    Two-Mac-Studio hybrid frontier/local development stack:
+    Machine 1 is the daily-driver control plane and local Orchestrator;
+    Machine 2 is the Thunderbolt-connected inference worker for Developer, Reviewer,
+    and future experimental models.
+  </p>
+  <p class="muted">Generated for handoff to humans or AI agents. Updated: May 19, 2026.</p>
+</header>
+
+<main>
+  <nav>
+    <h2>Contents</h2>
+    <a href="#executive-summary">1. Executive Summary</a>
+    <a href="#high-level-architecture">2. Architecture</a>
+    <a href="#hardware">3. Hardware & Network</a>
+    <a href="#model-stack">4. Model Stack</a>
+    <a href="#precision">5. BF16 vs 9-bit Strategy</a>
+    <a href="#endpoints">6. Endpoints & Environment</a>
+    <a href="#directories">7. Directory Layout</a>
+    <a href="#agent-system">8. LangGraph Agent System</a>
+    <a href="#frontier-workflow">9. Frontier-to-Local Workflow</a>
+    <a href="#mcp">10. MCP Bridge</a>
+    <a href="#daily-ops">11. Daily Operations</a>
+    <a href="#scripts">12. Scripts & Commands</a>
+    <a href="#security">13. Security Rules</a>
+    <a href="#troubleshooting">14. Troubleshooting</a>
+    <a href="#future">15. Future Enhancements</a>
+    <a href="#ai-agent-instructions">16. AI Agent Instructions</a>
+  </nav>
+
+  <div>
+
+<section id="executive-summary">
+  <h2>1. Executive Summary</h2>
+  <div class="callout success">
+    <strong>Current target design:</strong> use frontier models such as Claude Code and Codex for architecture,
+    planning, documentation, and final judgment. Use local open-source Heretic/uncensored Qwen-family models
+    for implementation, test generation, debugging, and local review loops.
+  </div>
+
+  <p>
+    This setup is a hybrid development system. It does <strong>not</strong> combine two Macs into one shared-memory machine.
+    Instead, it creates a distributed multi-agent workflow:
+  </p>
+
+  <pre class="ascii"><code>Frontier layer:
+  Claude Code / Codex
+  Roles: senior architect, planner, documentation writer, final reviewer
+
+Machine 1:
+  Daily driver / cockpit / control plane
+  Runs LangGraph controller, MCP bridge, VS Code/Cursor, Claude Code/Codex
+  Runs local Orchestrator model on localhost
+
+Thunderbolt Bridge:
+  Direct private Mac-to-Mac network
+
+Machine 2:
+  Dedicated inference worker
+  Runs Developer, Reviewer, optional Security Reviewer / MTP experimental models</code></pre>
+
+  <p>
+    The operating principle is:
+  </p>
+
+  <pre><code>Frontier model writes the contract.
+Local agents execute the contract.
+Frontier model performs final review.
+Human approves merge.</code></pre>
+
+  <p>
+    This mirrors the uploaded frontier-to-local handoff plan’s core idea: use frontier model judgment where
+    leverage is highest, then push the high-volume execution phase to local models.
+  </p>
+</section>
+
+<section id="high-level-architecture">
+  <h2>2. High-Level Architecture</h2>
+
+  <pre class="ascii"><code>                       ┌─────────────────────────────────────────────┐
+                       │              FRONTIER LAYER                 │
+                       │                                             │
+                       │  Claude Code / Codex                        │
+                       │  - architecture                             │
+                       │  - implementation plans                     │
+                       │  - detailed documentation                   │
+                       │  - final review / judgment                  │
+                       └──────────────────────┬──────────────────────┘
+                                              │
+                                              │ MCP tools / plan files
+                                              ▼
+┌───────────────────────────────────────────────────────────────────────────────┐
+│                         MACHINE 1 — DAILY DRIVER                              │
+│                                                                               │
+│  Control plane:                                                                │
+│    - VS Code / Cursor                                                          │
+│    - Claude Code / Codex                                                       │
+│    - LangGraph controller                                                      │
+│    - local-exec-plan                                                           │
+│    - local-ai-delegate MCP bridge                                              │
+│                                                                               │
+│  Local model server:                                                           │
+│    - Orchestrator BF16                                                         │
+│    - http://127.0.0.1:8001/v1                                                  │
+└───────────────────────────────┬───────────────────────────────────────────────┘
+                                │
+                                │ Thunderbolt Bridge
+                                │ Mac 1: 10.10.10.1
+                                │ Mac 2: 10.10.10.2
+                                ▼
+┌───────────────────────────────────────────────────────────────────────────────┐
+│                         MACHINE 2 — INFERENCE WORKER                           │
+│                                                                               │
+│  Worker model servers:                                                         │
+│    - Developer: http://10.10.10.2:8002/v1                                      │
+│    - Reviewer:  http://10.10.10.2:8003/v1                                      │
+│    - Optional experimental: http://10.10.10.2:8004/v1                          │
+│                                                                               │
+│  Purpose: heavy execution, code generation, review, security review, testing   │
+└───────────────────────────────────────────────────────────────────────────────┘</code></pre>
+
+  <h3>Why this split?</h3>
+  <ul>
+    <li><strong>Machine 1 stays the cockpit:</strong> all developer tools, plan files, worktrees, and frontier agents live where you work.</li>
+    <li><strong>Machine 1 Orchestrator avoids unnecessary Mac 2 load:</strong> the Orchestrator is mostly planning/routing, so it fits naturally on the daily driver.</li>
+    <li><strong>Machine 2 focuses on worker models:</strong> Developer and Reviewer are where most repeated inference happens.</li>
+    <li><strong>Thunderbolt is fast enough:</strong> prompts/responses are tiny compared with model compute. Inference is the bottleneck, not network throughput.</li>
+  </ul>
+</section>
+
+<section id="hardware">
+  <h2>3. Hardware & Network</h2>
+
+  <div class="grid">
+    <div class="card">
+      <h3>Machine 1 — Daily Driver</h3>
+      <ul>
+        <li>M3 Mac Studio</li>
+        <li>512 GB unified memory</li>
+        <li>Runs UI, Claude Code, Codex, LangGraph, MCP bridge</li>
+        <li>Runs Orchestrator locally</li>
+        <li>Thunderbolt Bridge IP: <code>10.10.10.1</code></li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Machine 2 — Inference Worker</h3>
+      <ul>
+        <li>M3 Mac Studio</li>
+        <li>512 GB unified memory</li>
+        <li>Runs heavy model servers</li>
+        <li>Developer / Reviewer / experimental models</li>
+        <li>Thunderbolt Bridge IP: <code>10.10.10.2</code></li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Thunderbolt Bridge configuration</h3>
+  <table>
+    <thead><tr><th>Machine</th><th>Interface</th><th>IPv4</th><th>Subnet</th><th>Router</th></tr></thead>
+    <tbody>
+      <tr><td>Machine 1</td><td>Thunderbolt Bridge</td><td><code>10.10.10.1</code></td><td><code>255.255.255.0</code></td><td>blank</td></tr>
+      <tr><td>Machine 2</td><td>Thunderbolt Bridge</td><td><code>10.10.10.2</code></td><td><code>255.255.255.0</code></td><td>blank</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout warning">
+    Use one real Thunderbolt 4/5 cable first. Two cables are not automatically bonded into one faster TCP pipe.
+    Additional cables may create confusing routing unless managed deliberately as separate networks.
+  </div>
+
+  <h3>Network tests from Machine 1</h3>
+  <pre><code>ping 10.10.10.2
+ssh admin@10.10.10.2
+
+curl http://10.10.10.2:8002/v1/models
+curl http://10.10.10.2:8003/v1/models</code></pre>
+</section>
+
+<section id="model-stack">
+  <h2>4. Model Stack</h2>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Role</th>
+        <th>Machine</th>
+        <th>Endpoint</th>
+        <th>Model</th>
+        <th>Precision</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>AI Agent Orchestrator</td>
+        <td>Machine 1</td>
+        <td><code>http://127.0.0.1:8001/v1</code></td>
+        <td><code>TheCluster/Qwen3.6-35B-A3B-Heretic-MLX-bf16</code></td>
+        <td>BF16 daily, mixed-9bit fallback</td>
+      </tr>
+      <tr>
+        <td>AI Agent Developer</td>
+        <td>Machine 2</td>
+        <td><code>http://10.10.10.2:8002/v1</code></td>
+        <td><code>TheCluster/Qwen3.6-27B-Heretic2-Uncensored-Finetune-Thinking-MLX-mixed-9.4bit</code></td>
+        <td>Mixed 9.4-bit</td>
+      </tr>
+      <tr>
+        <td>AI Agent Code Reviewer</td>
+        <td>Machine 2</td>
+        <td><code>http://10.10.10.2:8003/v1</code></td>
+        <td><code>TheCluster/Qwen3.6-27B-Heretic-MLX-bf16</code> or converted <code>llmfan46/Qwen3.6-27B-uncensored-heretic-v2</code></td>
+        <td>BF16 preferred</td>
+      </tr>
+      <tr>
+        <td>Optional Security Reviewer / Experimental MTP model</td>
+        <td>Machine 2</td>
+        <td><code>http://10.10.10.2:8004/v1</code></td>
+        <td><code>llmfan46/Qwen3.6-35B-A3B-uncensored-heretic-Native-MTP-Preserved</code></td>
+        <td>Experimental: MTPLX, GGUF, or conversion path</td>
+      </tr>
+      <tr>
+        <td>Optional Deep Oracle</td>
+        <td>Machine 2</td>
+        <td>manual / on demand</td>
+        <td><code>mlx-community/Kimi-K2.6-mlx-DQ3_K_M-q8</code></td>
+        <td>Huge quant; run one-model-at-a-time</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Current model paths</h3>
+  <pre><code># Machine 1
+/Users/admin/ai/models/orchestrator-qwen36-35b-a3b-heretic-bf16
+/Users/admin/ai/models/orchestrator-qwen36-35b-a3b-heretic-mixed9   # optional fallback
+
+# Machine 2
+/Users/admin/ai/models/developer-qwen36-27b-heretic2-mixed94
+/Users/admin/ai/models/reviewer-qwen36-27b-heretic-bf16
+/Users/admin/ai/models/reviewer-llmfan46-qwen36-27b-heretic-v2-bf16 # optional converted reviewer</code></pre>
+
+  <div class="callout danger">
+    <strong>Important:</strong> with <code>mlx_lm.server</code>, do not use model aliases such as
+    <code>local</code> or <code>default</code> unless a custom aliasing layer exists. The server treats
+    the model field as a real local path or Hugging Face repo ID. Use the full model path seen by the machine
+    running that server.
+  </div>
+</section>
+
+<section id="precision">
+  <h2>5. BF16 vs 9-bit Strategy</h2>
+
+  <p>
+    The current precision strategy is intentionally mixed:
+  </p>
+
+  <table>
+    <thead><tr><th>Role</th><th>Recommended Precision</th><th>Reason</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>Orchestrator</td>
+        <td>BF16 on Machine 1</td>
+        <td>Planning, routing, judgment, long-range coherence. Quality is worth the memory.</td>
+      </tr>
+      <tr>
+        <td>Developer</td>
+        <td>Mixed 9.4-bit on Machine 2</td>
+        <td>Bulk token generation, patch writing, retries. Throughput and headroom matter.</td>
+      </tr>
+      <tr>
+        <td>Reviewer</td>
+        <td>BF16 on Machine 2</td>
+        <td>Review quality matters more than raw speed.</td>
+      </tr>
+      <tr>
+        <td>Experimental extra agents</td>
+        <td>Mixed/high-bit quant or on-demand</td>
+        <td>Avoid memory pressure and keep the worker machine flexible.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Practical rule</h3>
+  <pre><code>Use BF16 where judgment matters.
+Use high-bit quantization where throughput and concurrency matter.</code></pre>
+
+  <div class="callout">
+    With 512 GB unified memory per machine, BF16 fits comfortably for single large models.
+    The real pressure comes from weights + KV cache + long context + multiple simultaneous servers + macOS/app memory.
+  </div>
+</section>
+
+<section id="endpoints">
+  <h2>6. Endpoints & Environment</h2>
+
+  <h3>Primary endpoint map</h3>
+  <table>
+    <thead><tr><th>Service</th><th>URL</th><th>Model path must be valid on</th></tr></thead>
+    <tbody>
+      <tr><td>Orchestrator</td><td><code>http://127.0.0.1:8001/v1</code></td><td>Machine 1</td></tr>
+      <tr><td>Developer</td><td><code>http://10.10.10.2:8002/v1</code></td><td>Machine 2</td></tr>
+      <tr><td>Reviewer</td><td><code>http://10.10.10.2:8003/v1</code></td><td>Machine 2</td></tr>
+      <tr><td>Experimental MTP/Security Reviewer</td><td><code>http://10.10.10.2:8004/v1</code></td><td>Depends on runtime</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Machine 1 LangGraph controller <code>.env</code></h3>
+  <pre><code>ORCH_BASE_URL=http://127.0.0.1:8001/v1
+DEV_BASE_URL=http://10.10.10.2:8002/v1
+REVIEW_BASE_URL=http://10.10.10.2:8003/v1
+
+ORCH_MODEL=/Users/admin/ai/models/orchestrator-qwen36-35b-a3b-heretic-bf16
+DEV_MODEL=/Users/admin/ai/models/developer-qwen36-27b-heretic2-mixed94
+REVIEW_MODEL=/Users/admin/ai/models/reviewer-qwen36-27b-heretic-bf16
+
+LOCAL_API_KEY=not-needed
+
+WORKSPACE=$HOME/ai/workspaces/default_project
+MAX_REVIEW_LOOPS=3
+ALLOW_UNSAFE_TOOLS=0</code></pre>
+
+  <h3>Optional experimental additions</h3>
+  <pre><code>MTP35_BASE_URL=http://10.10.10.2:8004/v1
+MTP35_MODEL=mtplx</code></pre>
+</section>
+
+<section id="directories">
+  <h2>7. Directory Layout</h2>
+
+  <h3>Machine 1</h3>
+  <pre><code>~/ai/
+  models/
+    orchestrator-qwen36-35b-a3b-heretic-bf16/
+    orchestrator-qwen36-35b-a3b-heretic-mixed9/       # fallback
+
+  agents/
+    three_agent_system/
+      .venv/
+      .env
+      local_agents.py
+
+    local_delegate_mcp/
+      .venv/
+      server.py
+
+  bin/
+    start-orchestrator.sh
+    stop-orchestrator.sh
+    m1-ai-status.sh
+    local-exec-plan
+    local-exec-plan.py
+    bench-chat-endpoint.sh                              # optional
+
+  logs/
+    orchestrator.log
+
+  workspaces/
+    hello_agent/
+    test_repo/
+    project worktrees...</code></pre>
+
+  <h3>Machine 2</h3>
+  <pre><code>~/ai/
+  models/
+    developer-qwen36-27b-heretic2-mixed94/
+    reviewer-qwen36-27b-heretic-bf16/
+    reviewer-llmfan46-qwen36-27b-heretic-v2-bf16/       # optional
+    gguf/                                                # optional GGUF experiments
+    kimi-k26-dq3km-q8/                                   # optional huge oracle
+
+  bin/
+    start-worker-models.sh
+    stop-worker-models.sh                                # optional
+    ai-status.sh
+
+  logs/
+    developer.log
+    reviewer.log
+    experimental-mtp.log</code></pre>
+
+  <h3>Per-project repo files</h3>
+  <pre><code>AGENTS.md
+CLAUDE.md
+docs/ai/AI_WORKFLOW.md
+plans/YYYY-MM-DD-feature-name.md</code></pre>
+</section>
+
+<section id="agent-system">
+  <h2>8. LangGraph Agent System</h2>
+
+  <p>
+    The local multi-agent controller is implemented in:
+  </p>
+
+  <pre><code>~/ai/agents/three_agent_system/local_agents.py</code></pre>
+
+  <h3>Agent graph</h3>
+  <pre class="ascii"><code>User task or frontier-generated plan
+        │
+        ▼
+Orchestrator
+  - reads task
+  - inspects repo tree
+  - makes implementation plan
+  - defines review checklist
+        │
+        ▼
+Developer
+  - writes unified diff patch
+  - proposes commands/tests
+  - controller applies patch
+  - controller runs tests/tools
+        │
+        ▼
+Reviewer
+  - reviews diff, tests, logs, task, plan
+  - returns JSON approval or required changes
+        │
+        ├── if rejected and loop count &lt; MAX_REVIEW_LOOPS → Developer again
+        │
+        └── if approved or max loops reached → final state</code></pre>
+
+  <h3>Key implementation invariants</h3>
+  <ul>
+    <li><code>local_agents.py</code> reads all endpoints and model paths from <code>.env</code>.</li>
+    <li>It validates that model names are not <code>local</code>.</li>
+    <li>Developer output is expected to include <code>&lt;summary&gt;</code>, <code>&lt;patch&gt;</code>, and <code>&lt;commands&gt;</code> blocks.</li>
+    <li>Patches are applied with <code>git apply</code>, with <code>patch -p1</code> fallback.</li>
+    <li>Commands are blocked if they look destructive unless <code>ALLOW_UNSAFE_TOOLS=1</code>.</li>
+    <li>The controller uses git workspaces and stores memory in <code>.agent_memory.jsonl</code>.</li>
+  </ul>
+
+  <h3>Manual smoke test</h3>
+  <pre><code>cd ~/ai/agents/three_agent_system
+source .venv/bin/activate
+
+python local_agents.py \
+  --workspace ~/ai/workspaces/hello_agent \
+  "Create a tiny README.md file that says the split-machine local multi-agent system is working."</code></pre>
+</section>
+
+<section id="frontier-workflow">
+  <h2>9. Frontier-to-Local Workflow</h2>
+
+  <p>
+    This setup adopts the <strong>plan → local execution → local review → frontier review → human merge</strong>
+    model. It is based on the principle that the local model’s success depends heavily on plan quality.
+  </p>
+
+  <h3>Default serious-work workflow</h3>
+  <pre><code>1. Open Claude Code or Codex in the repo.
+2. Ask frontier model to create a concrete plan:
+   plans/YYYY-MM-DD-feature-name.md
+
+3. Human reviews and approves the plan.
+
+4. Run local execution:
+   local-exec-plan plans/YYYY-MM-DD-feature-name.md --workspace .
+
+5. Local agents execute in a separate git worktree.
+
+6. Inspect:
+   git worktree list
+   cd ../repo-local-feature-*
+   git status
+   git diff
+   run tests manually
+
+7. Ask Claude Code / Codex for final architecture/docs/security review.
+
+8. Human commits and merges.</code></pre>
+
+  <h3>Good plan requirements</h3>
+  <ul>
+    <li>Goal and non-goals</li>
+    <li>Current system summary</li>
+    <li>Proposed architecture</li>
+    <li>Exact files expected to change</li>
+    <li>Step-by-step implementation tasks</li>
+    <li>Function/class signatures when applicable</li>
+    <li>Edge cases</li>
+    <li>Exact test commands</li>
+    <li>Rollback plan</li>
+    <li>Documentation updates</li>
+    <li>Risks and security concerns</li>
+  </ul>
+
+  <div class="callout">
+    A useful test: if a human engineer could implement the plan without asking follow-up questions,
+    it is probably specific enough for the local Developer model.
+  </div>
+</section>
+
+<section id="mcp">
+  <h2>10. MCP Bridge</h2>
+
+  <p>
+    The MCP bridge lives on Machine 1 and lets Claude Code or Codex call into the local execution system.
+    It should be a thin wrapper around the existing LangGraph/worktree pipeline, not a raw one-shot chat proxy.
+  </p>
+
+  <h3>Current MCP bridge project</h3>
+  <pre><code>~/ai/agents/local_delegate_mcp/
+  .venv/
+  server.py</code></pre>
+
+  <h3>Recommended MCP tools</h3>
+  <table>
+    <thead><tr><th>Tool</th><th>Purpose</th></tr></thead>
+    <tbody>
+      <tr><td><code>local_ai_status()</code></td><td>Check Orchestrator, Developer, Reviewer endpoints.</td></tr>
+      <tr><td><code>run_local_plan(plan_file, workspace, in_place=false)</code></td><td>Run local execution against a frontier-generated plan.</td></tr>
+      <tr><td><code>git_local_summary(workspace)</code></td><td>Show git status and diff stat for a workspace.</td></tr>
+      <tr><td><code>local_review_diff(...)</code></td><td>Future optional local review-only tool.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Claude Code MCP registration</h3>
+  <pre><code>claude mcp add local-ai-delegate \
+  --scope user \
+  --env LOCAL_AI_ALLOWED_ROOTS="$HOME/ai/workspaces:$HOME/code:$HOME/Developer:$HOME/projects" \
+  --env LOCAL_AI_DEFAULT_WORKSPACE="$HOME/ai/workspaces" \
+  --env ORCH_BASE_URL="http://127.0.0.1:8001/v1" \
+  --env DEV_BASE_URL="http://10.10.10.2:8002/v1" \
+  --env REVIEW_BASE_URL="http://10.10.10.2:8003/v1" \
+  -- "$HOME/ai/agents/local_delegate_mcp/.venv/bin/python" \
+     "$HOME/ai/agents/local_delegate_mcp/server.py"</code></pre>
+
+  <h3>Codex MCP registration</h3>
+  <pre><code>codex mcp add local-ai-delegate \
+  --env LOCAL_AI_ALLOWED_ROOTS="$HOME/ai/workspaces:$HOME/code:$HOME/Developer:$HOME/projects" \
+  --env LOCAL_AI_DEFAULT_WORKSPACE="$HOME/ai/workspaces" \
+  --env ORCH_BASE_URL="http://127.0.0.1:8001/v1" \
+  --env DEV_BASE_URL="http://10.10.10.2:8002/v1" \
+  --env REVIEW_BASE_URL="http://10.10.10.2:8003/v1" \
+  -- "$HOME/ai/agents/local_delegate_mcp/.venv/bin/python" \
+     "$HOME/ai/agents/local_delegate_mcp/server.py"</code></pre>
+
+  <div class="callout warning">
+    MCP tools can run powerful local commands. Keep allowed roots narrow, prefer worktrees,
+    and do not expose secrets or unrelated folders.
+  </div>
+</section>
+
+<section id="daily-ops">
+  <h2>11. Daily Operations</h2>
+
+  <h3>Morning startup</h3>
+  <pre><code># Machine 1
+start-orchestrator.sh
+m1-ai-status.sh
+
+# Check Machine 2 worker endpoints from Machine 1
+curl http://10.10.10.2:8002/v1/models
+curl http://10.10.10.2:8003/v1/models</code></pre>
+
+  <h3>Start Machine 2 workers</h3>
+  <pre><code># On Machine 2
+~/ai/bin/start-worker-models.sh</code></pre>
+
+  <h3>Manual local execution</h3>
+  <pre><code>cd /path/to/repo
+local-exec-plan plans/YYYY-MM-DD-feature-name.md --workspace .</code></pre>
+
+  <h3>Claude Code flow</h3>
+  <pre><code>1. Open repo.
+2. Use Claude Code plan mode.
+3. Ask:
+   "Create a concrete implementation plan under plans/YYYY-MM-DD-feature.md.
+    Do not implement source changes."
+
+4. Review plan.
+5. Ask:
+   "Use local-ai-delegate to execute this plan in a separate worktree."
+
+6. Inspect worktree and tests manually.
+7. Ask Claude for final read-only review.
+8. Commit and merge.</code></pre>
+
+  <h3>Codex flow</h3>
+  <pre><code>1. Open repo.
+2. Ask Codex to read AGENTS.md and docs/ai/AI_WORKFLOW.md.
+3. Ask it to create plans/YYYY-MM-DD-feature.md.
+4. Human reviews plan.
+5. Ask Codex to call local-ai-delegate run_local_plan.
+6. Final Codex read-only review.
+7. Human merges.</code></pre>
+</section>
+
+<section id="scripts">
+  <h2>12. Scripts & Commands</h2>
+
+  <h3>Machine 1: start Orchestrator</h3>
+  <pre><code>#!/usr/bin/env bash
+set -euo pipefail
+
+source "$HOME/ai/.venv/bin/activate"
+mkdir -p "$HOME/ai/logs"
+
+MODEL="$HOME/ai/models/orchestrator-qwen36-35b-a3b-heretic-bf16"
+
+nohup mlx_lm.server \
+  --model "$MODEL" \
+  --host 127.0.0.1 \
+  --port 8001 \
+  &gt; "$HOME/ai/logs/orchestrator.log" 2&gt;&amp;1 &amp;</code></pre>
+
+  <h3>Machine 2: start Developer and Reviewer</h3>
+  <pre><code>#!/usr/bin/env bash
+set -euo pipefail
+
+source "$HOME/ai/.venv/bin/activate"
+mkdir -p "$HOME/ai/logs"
+
+DEV_MODEL="$HOME/ai/models/developer-qwen36-27b-heretic2-mixed94"
+REVIEW_MODEL="$HOME/ai/models/reviewer-qwen36-27b-heretic-bf16"
+
+nohup mlx_lm.server \
+  --model "$DEV_MODEL" \
+  --host 10.10.10.2 \
+  --port 8002 \
+  &gt; "$HOME/ai/logs/developer.log" 2&gt;&amp;1 &amp;
+
+nohup mlx_lm.server \
+  --model "$REVIEW_MODEL" \
+  --host 10.10.10.2 \
+  --port 8003 \
+  &gt; "$HOME/ai/logs/reviewer.log" 2&gt;&amp;1 &amp;</code></pre>
+
+  <h3>Endpoint smoke tests</h3>
+  <pre><code># Orchestrator from Machine 1
+MODEL_PATH="$HOME/ai/models/orchestrator-qwen36-35b-a3b-heretic-bf16"
+
+curl http://127.0.0.1:8001/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"model\": \"$MODEL_PATH\",
+    \"messages\": [
+      {\"role\": \"system\", \"content\": \"Answer directly and briefly. Do not show reasoning.\"},
+      {\"role\": \"user\", \"content\": \"Say exactly: orchestrator OK\"}
+    ],
+    \"max_tokens\": 256,
+    \"temperature\": 0.1
+  }"
+
+# Developer from Machine 1
+curl http://10.10.10.2:8002/v1/models
+
+# Reviewer from Machine 1
+curl http://10.10.10.2:8003/v1/models</code></pre>
+
+  <h3>Memory checks</h3>
+  <pre><code>memory_pressure
+lsof -nP -iTCP:8001 -sTCP:LISTEN
+lsof -nP -iTCP:8002 -sTCP:LISTEN
+lsof -nP -iTCP:8003 -sTCP:LISTEN
+tail -100 ~/ai/logs/orchestrator.log</code></pre>
+</section>
+
+<section id="security">
+  <h2>13. Security Rules</h2>
+
+  <div class="callout danger">
+    This stack uses uncensored/local models and local tool execution. That makes it powerful and dangerous.
+    Treat it as a junior engineer with shell access: useful, but never fully trusted.
+  </div>
+
+  <h3>Hard rules</h3>
+  <ul>
+    <li>Do not expose local model servers to the public internet.</li>
+    <li>Use <code>127.0.0.1</code> for Machine 1 Orchestrator.</li>
+    <li>Use <code>10.10.10.2</code> for Machine 2 worker endpoints over Thunderbolt.</li>
+    <li>Use Tailscale if remote access is required.</li>
+    <li>Do not let agents operate in your home directory.</li>
+    <li>Prefer git worktrees for all non-trivial execution.</li>
+    <li>Never give agents secrets, private keys, production credentials, or sensitive customer data unless there is a deliberate local-only reason and you understand the risk.</li>
+    <li>Keep <code>ALLOW_UNSAFE_TOOLS=0</code>.</li>
+    <li>Do not allow auto-commit or auto-merge for high-risk changes.</li>
+    <li>Human approval is required for dependency additions, migrations, destructive commands, security-sensitive code, and final merge.</li>
+  </ul>
+
+  <h3>Recommended global git ignore</h3>
+  <pre><code>.env
+*.pem
+*.key
+*.p12
+*.sqlite
+*.db
+.DS_Store
+.agent_memory.jsonl</code></pre>
+</section>
+
+<section id="troubleshooting">
+  <h2>14. Troubleshooting</h2>
+
+  <h3>Hugging Face 404 for <code>local</code> or <code>default</code></h3>
+  <p>
+    Cause: request sent <code>"model": "local"</code> or <code>"model": "default"</code> to <code>mlx_lm.server</code>.
+    The server tried to resolve it as a Hugging Face repo.
+  </p>
+  <pre><code># Fix .env:
+ORCH_MODEL=/Users/admin/ai/models/orchestrator-qwen36-35b-a3b-heretic-bf16
+DEV_MODEL=/Users/admin/ai/models/developer-qwen36-27b-heretic2-mixed94
+REVIEW_MODEL=/Users/admin/ai/models/reviewer-qwen36-27b-heretic-bf16</code></pre>
+
+  <h3><code>mlx_lm.generate</code> or <code>mlx_lm.server</code> not found</h3>
+  <pre><code>cd ~/ai
+source .venv/bin/activate
+which mlx_lm.server
+uv pip show mlx-lm
+
+# If missing:
+uv pip install -U mlx-lm</code></pre>
+
+  <h3>Machine 1 cannot reach Machine 2</h3>
+  <pre><code>ping 10.10.10.2
+ssh admin@10.10.10.2
+curl http://10.10.10.2:8002/v1/models</code></pre>
+
+  <h3>Port already in use</h3>
+  <pre><code>lsof -nP -iTCP:8001 -sTCP:LISTEN
+kill &lt;PID&gt;</code></pre>
+
+  <h3>Model outputs visible reasoning / gets cut off</h3>
+  <ul>
+    <li>Increase <code>max_tokens</code>.</li>
+    <li>Add system instruction: <code>Answer directly. Do not show reasoning.</code></li>
+    <li>Use higher max tokens for Developer: 8192–16000.</li>
+    <li>Use lower temperature for Reviewer: 0.1–0.25.</li>
+  </ul>
+
+  <h3>Mac feels sluggish</h3>
+  <ul>
+    <li>Check <code>memory_pressure</code>.</li>
+    <li>Stop BF16 Orchestrator and switch to mixed-9bit.</li>
+    <li>Reduce context length if using a runtime setting that controls it.</li>
+    <li>Stop experimental models.</li>
+  </ul>
+</section>
+
+<section id="future">
+  <h2>15. Future Enhancements</h2>
+
+  <h3>Experimental Native-MTP 35B-A3B model</h3>
+  <p>
+    The experimental model <code>llmfan46/Qwen3.6-35B-A3B-uncensored-heretic-Native-MTP-Preserved</code>
+    may become useful as a faster Reviewer/Security Reviewer if Apple Silicon native-MTP serving matures.
+  </p>
+
+  <p>Recommended path:</p>
+  <pre><code>1. Add to model manifest.
+2. Test MLX conversion if possible.
+3. If conversion works, run as experimental Orchestrator/Reviewer on port 8005.
+4. Separately test MTPLX or custom llama.cpp MTP on port 8004.
+5. Promote only if benchmarks show better quality, speed, or refusal profile.</code></pre>
+
+  <h3>Security Reviewer agent</h3>
+  <p>
+    Add a fourth role focused only on security:
+  </p>
+  <pre><code>AI Agent Security Reviewer:
+  - auth flaws
+  - injection risks
+  - path traversal
+  - unsafe shell commands
+  - dependency risk
+  - secret leaks
+  - permission bugs
+  - prompt-injection hazards</code></pre>
+
+  <h3>Batch / overnight execution</h3>
+  <p>
+    Future option: queue plan files or Beads issues, have Machine 2 execute independent tasks overnight,
+    then ask Claude/Codex for morning review.
+  </p>
+
+  <h3>A/B benchmark harness</h3>
+  <p>
+    Maintain benchmark prompts for:
+  </p>
+  <ul>
+    <li>architecture planning</li>
+    <li>code review</li>
+    <li>security review</li>
+    <li>patch generation</li>
+    <li>frontier-plan execution</li>
+  </ul>
+</section>
+
+<section id="ai-agent-instructions">
+  <h2>16. Instructions for Future AI Agents</h2>
+
+  <div class="callout success">
+    <strong>Read this section before modifying the setup.</strong>
+  </div>
+
+  <h3>System identity</h3>
+  <p>
+    You are operating in a two-machine local AI development stack. Machine 1 is the control plane and
+    runs the Orchestrator. Machine 2 is the worker inference server and runs Developer and Reviewer models.
+  </p>
+
+  <h3>Do not break these invariants</h3>
+  <ul>
+    <li>Do not use <code>model=local</code> or <code>model=default</code> with <code>mlx_lm.server</code>.</li>
+    <li>Use full model paths that are valid on the server machine being called.</li>
+    <li>Machine 1 Orchestrator endpoint is <code>http://127.0.0.1:8001/v1</code>.</li>
+    <li>Machine 2 Developer endpoint is <code>http://10.10.10.2:8002/v1</code>.</li>
+    <li>Machine 2 Reviewer endpoint is <code>http://10.10.10.2:8003/v1</code>.</li>
+    <li>Use Thunderbolt IP <code>10.10.10.2</code>, not <code>.local</code>, for Machine 2 model traffic.</li>
+    <li>Do not expose model servers to the public internet.</li>
+    <li>Do not run destructive commands or modify unrelated directories.</li>
+    <li>Use worktrees for serious implementation tasks.</li>
+    <li>Human approval is required before merge.</li>
+  </ul>
+
+  <h3>When asked to implement a feature</h3>
+  <pre><code>1. Prefer frontier planning first.
+2. Create plans/YYYY-MM-DD-feature-name.md.
+3. Make the plan specific and executable.
+4. Run local-exec-plan against the plan.
+5. Inspect diff and tests.
+6. Ask frontier model for final review.
+7. Human merges.</code></pre>
+
+  <h3>When asked to troubleshoot</h3>
+  <pre><code>1. Check endpoint health:
+   curl http://127.0.0.1:8001/v1/models
+   curl http://10.10.10.2:8002/v1/models
+   curl http://10.10.10.2:8003/v1/models
+
+2. Check model paths in .env.
+
+3. Check ports:
+   lsof -nP -iTCP:8001 -sTCP:LISTEN
+   lsof -nP -iTCP:8002 -sTCP:LISTEN
+   lsof -nP -iTCP:8003 -sTCP:LISTEN
+
+4. Check logs:
+   tail -100 ~/ai/logs/orchestrator.log
+   ssh admin@10.10.10.2 'tail -100 ~/ai/logs/developer.log'
+   ssh admin@10.10.10.2 'tail -100 ~/ai/logs/reviewer.log'</code></pre>
+
+  <h3>Most likely failure modes</h3>
+  <table>
+    <thead><tr><th>Symptom</th><th>Likely cause</th><th>Fix</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>Hugging Face 404 for local/default</td>
+        <td>Wrong model field</td>
+        <td>Use full model path in <code>.env</code></td>
+      </tr>
+      <tr>
+        <td>Cannot reach 10.10.10.2</td>
+        <td>Thunderbolt Bridge down or wrong IP</td>
+        <td>Check Network settings and <code>ping 10.10.10.2</code></td>
+      </tr>
+      <tr>
+        <td>Port 8002/8003 unavailable</td>
+        <td>Machine 2 worker servers not running</td>
+        <td>Run <code>~/ai/bin/start-worker-models.sh</code> on Machine 2</td>
+      </tr>
+      <tr>
+        <td>Machine 1 slow</td>
+        <td>BF16 Orchestrator memory/bandwidth pressure</td>
+        <td>Switch Orchestrator to mixed-9bit fallback</td>
+      </tr>
+      <tr>
+        <td>Local agent modifies wrong files</td>
+        <td>Plan too vague or workspace wrong</td>
+        <td>Use worktree and more specific plan</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Preferred final answer style for future AI agents</h3>
+  <p>
+    When helping with this setup, be concrete. Give exact commands. State which machine the command runs on.
+    Avoid vague advice like “restart the server”; specify the port, script, path, and expected output.
+  </p>
+</section>
+
+<p class="footer">
+  End of overview. This file is intended to be self-contained and safe to share with a trusted AI agent or human collaborator.
+</p>
+
+  </div>
+</main>
+</body>
+</html>

@@ -1,0 +1,1 @@
+This repository manages a two-Mac local AI development stack. Read AGENTS.md, CLAUDE.md, and docs/ARCHITECTURE.md before making changes. Preserve the Machine 1 / Machine 2 endpoint split and never replace full mlx_lm.server model paths with `local` or `default` aliases.
