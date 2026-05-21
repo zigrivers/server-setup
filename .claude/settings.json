@@ -14,7 +14,18 @@
       "Bash(scripts/preflight.sh)",
       "Bash(scripts/m1-ai-status.sh)",
       "Bash(scripts/m2-ai-status.sh)",
-      "Bash(scripts/smoke-test-endpoints.sh)"
+      "Bash(scripts/smoke-test-endpoints.sh)",
+      "Bash(scripts/install-symlinks.sh)",
+      "Bash(scripts/install-claude-skills.sh)",
+      "Bash(scripts/install-launchd-machine1.sh)",
+      "Bash(scripts/start-orchestrator.sh)",
+      "Bash(scripts/start-worker-models.sh)",
+      "Bash(scripts/stop-orchestrator.sh)",
+      "Bash(scripts/stop-worker-models.sh)",
+      "Bash(uv pip install -e:*)",
+      "Bash(uv venv:*)",
+      "Bash(git -C * pull)",
+      "Bash(git -C * status:*)"
     ]
   }
 }
