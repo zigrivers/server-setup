@@ -13,7 +13,13 @@
     <string>__HOME__/ai/local-ai-stack/scripts/start-orchestrator.sh</string>
   </array>
   <key>RunAtLoad</key><true/>
-  <key>KeepAlive</key><false/>
+  <key>KeepAlive</key>
+  <dict>
+    <key>SuccessfulExit</key><false/>
+    <key>Crashed</key><true/>
+  </dict>
+  <key>ThrottleInterval</key><integer>60</integer>
+  <key>ProcessType</key><string>Interactive</string>
   <key>StandardOutPath</key><string>__HOME__/ai/logs/orchestrator-launchd.out</string>
   <key>StandardErrorPath</key><string>__HOME__/ai/logs/orchestrator-launchd.err</string>
 </dict>

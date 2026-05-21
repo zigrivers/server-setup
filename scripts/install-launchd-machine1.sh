@@ -21,6 +21,7 @@ mkdir -p "$DEST_DIR" "$HOME/ai/logs"
 
 # Render template
 sed "s|__HOME__|$HOME|g" "$SRC" > "$DEST"
+chmod 644 "$DEST"
 echo "Wrote $DEST"
 
 # Bootstrap (idempotent: bootout first if already loaded)
