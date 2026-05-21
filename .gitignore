@@ -36,5 +36,8 @@ models/
 workspaces/
 tmp/
 
+# Claude Code per-user overrides
+.claude/settings.local.json
+
 # Keep docs/html included intentionally
 !docs/html/*.html
