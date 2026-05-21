@@ -14,6 +14,7 @@ ln -sfn "$REPO_DIR/scripts/bench-chat-endpoint.sh" "$HOME/ai/bin/bench-chat-endp
 ln -sfn "$REPO_DIR/scripts/smoke-test-endpoints.sh" "$HOME/ai/bin/smoke-test-endpoints.sh"
 ln -sfn "$REPO_DIR/scripts/preflight.sh" "$HOME/ai/bin/preflight.sh"
 ln -sfn "$REPO_DIR/scripts/audit-stack.sh" "$HOME/ai/bin/audit-stack.sh"
+ln -sfn "$REPO_DIR/scripts/fix-stack.sh" "$HOME/ai/bin/fix-stack.sh"
 
 echo "Symlinks installed in $HOME/ai/bin. Add this to PATH if needed:"
 echo 'export PATH="$HOME/ai/bin:$PATH"'

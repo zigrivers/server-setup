@@ -71,7 +71,8 @@ section{margin-bottom:64px;scroll-margin-top:88px}.section-num{font-family:ui-mo
     <li><a href="#security-rules"><span class="num">24</span>Security</a></li>
     <li><a href="#rerun-idempotency"><span class="num">25</span>Re-running</a></li>
     <li><a href="#audit-stack"><span class="num">26</span>Audit stack</a></li>
-    <li><a href="#appendix-paths"><span class="num">27</span>Paths</a></li>
+    <li><a href="#fix-stack"><span class="num">27</span>Fix stack</a></li>
+    <li><a href="#appendix-paths"><span class="num">28</span>Paths</a></li>
   </ul></div>
 </aside>
 <main class="content">
@@ -555,7 +556,40 @@ scripts/audit-stack.sh "launchd only"     # focused audit</pre></div>
 <div class="verify"><div class="verify-header">Run this</div><div class="verify-body">at least once after initial setup; after any macOS upgrade; after any <code>git pull</code> on this repo; whenever <code>m1-ai-status.sh</code> or <code>m2-ai-status.sh</code> flags something.</div></div></div></div>
 </section>
 
-<section id="appendix-paths"><div class="section-num">27 / Reference</div><h2>Final path <em>checklist</em></h2><p class="section-deck">Use this when handing the setup to another human or AI agent.</p>
+<section id="fix-stack"><div class="section-num">27 / Reference</div><h2>Remediating <em>drift</em></h2><p class="section-deck">Once <code>/audit-stack</code> tells you what's wrong, <code>/fix-stack</code> can fix the safely-idempotent items automatically and surface the rest for your approval. This is the "make it match the guide" companion to the read-only audit.</p>
+
+<div class="step" data-step="fix-launcher"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Launcher</h3>
+<div class="code-block"><div class="code-header"><span class="code-lang">bash · on Machine 1</span><button class="copy-btn">Copy</button></div><pre>cd ~/ai/local-ai-stack
+scripts/fix-stack.sh                    # full remediation
+scripts/fix-stack.sh "launchd only"     # focused</pre></div>
+<p>Same shape as <code>audit-stack.sh</code> — <code>cd</code>, <code>--add-dir</code> for the dirs that exist, then exec Claude Code with <code>/fix-stack</code> as the initial prompt. After <code>install-symlinks.sh</code> the launcher is on PATH as <code>fix-stack.sh</code>.</p></div></div>
+
+<div class="step" data-step="fix-buckets"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>What it will and won't do for you</h3>
+<p>Every failing check is triaged into one of four buckets:</p>
+<div class="table-wrap"><table><thead><tr><th>Bucket</th><th>Example</th><th>Behavior</th></tr></thead><tbody>
+<tr><td><strong>1. Auto-safe</strong></td><td>missing symlinks, venv not built, repo behind origin, skills not installed, LaunchAgent not loaded, server stopped</td><td>✅ runs the install/start script directly</td></tr>
+<tr><td><strong>2. Approve-then-run</strong></td><td>register MCP (errors on duplicate), restart cycle of a running server</td><td>📋 shows the command, asks before running</td></tr>
+<tr><td><strong>3. Long-running, ask first</strong></td><td>model downloads (200+ GB), full venv rebuild, anything touching <code>~/ai/models/</code></td><td>📋 surfaces the cost first</td></tr>
+<tr><td><strong>4. Human-only</strong></td><td><code>.env</code> overwrite, <code>hf auth login</code>, anything that has to run <em>on Machine 2</em>, macOS prep, hardware</td><td>👤 prints the exact command, does not run it</td></tr>
+</tbody></table></div></div></div>
+
+<div class="step" data-step="fix-m2-safety"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Machine 2 stays human-gated</h3>
+<p><code>/fix-stack</code> <strong>reads</strong> Machine 2 over SSH but will not run install or write commands there on its own — even when the allowlist would technically permit it. M2 has bigger blast radius (a different host, larger model dirs, the autostart that holds the inference servers). For each M2-side fix, <code>/fix-stack</code> shows the exact command and asks you to run it yourself, or SSH in and run it.</p>
+<p>Typical M2-side remediations the user runs manually:</p>
+<div class="code-block"><div class="code-header"><span class="code-lang">bash · on Machine 2 directly (or via ssh)</span><button class="copy-btn">Copy</button></div><pre>cd ~/ai/local-ai-stack
+git pull
+source .venv/bin/activate
+uv pip install -e '.[mlx]'
+scripts/install-symlinks.sh
+scripts/install-launchd-machine2.sh
+start-worker-models.sh</pre></div></div></div>
+
+<div class="step" data-step="fix-output"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>What you get back</h3>
+<p>Per-machine table with <em>Before / Action taken / After</em> columns, followed by a numbered "Next actions" list of every 📋 (approve) and 👤 (human-only) item in the order to run them.</p>
+<div class="verify"><div class="verify-header">Loop</div><div class="verify-body">Typical flow: <code>/audit-stack</code> → eyeball ❌ rows → <code>/fix-stack</code> for the easy stuff → run the printed M2 commands yourself → <code>/audit-stack</code> again to confirm green.</div></div></div></div>
+</section>
+
+<section id="appendix-paths"><div class="section-num">28 / Reference</div><h2>Final path <em>checklist</em></h2><p class="section-deck">Use this when handing the setup to another human or AI agent.</p>
 <div class="table-wrap"><table><thead><tr><th>Item</th><th>Expected path or URL</th></tr></thead><tbody>
 <tr><td>Repo on both Macs</td><td><code>~/ai/local-ai-stack</code></td></tr>
 <tr><td>Repo venv (both Macs)</td><td><code>~/ai/local-ai-stack/.venv</code></td></tr>

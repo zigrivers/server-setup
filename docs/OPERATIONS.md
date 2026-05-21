@@ -89,6 +89,20 @@ session opened in this repo:
 /audit-stack
 ```
 
+When the audit flags fixable items, the companion remediator runs the
+safely-idempotent ones for you and surfaces the rest for explicit
+approval:
+
+```bash
+scripts/fix-stack.sh                    # full remediation
+scripts/fix-stack.sh "launchd only"     # focused
+```
+
+Or `/fix-stack` from inside a session. Triage rules (auto-safe vs
+approve vs long-running vs human-only) are defined in
+`.claude/commands/fix-stack.md`. Machine 2 fixes always remain
+human-gated.
+
 ## Shutdown
 
 Machine 1:
