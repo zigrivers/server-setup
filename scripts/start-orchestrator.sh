@@ -19,10 +19,9 @@ echo "Starting Machine 1 Orchestrator:"
 echo "  Model: $MODEL"
 echo "  URL:   http://$HOST:$PORT/v1"
 
-nohup mlx_lm.server \
+echo "Log: $HOME/ai/logs/orchestrator.log"
+exec mlx_lm.server \
   --model "$MODEL" \
   --host "$HOST" \
   --port "$PORT" \
-  > "$HOME/ai/logs/orchestrator.log" 2>&1 &
-
-echo "Started. Log: $HOME/ai/logs/orchestrator.log"
+  >> "$HOME/ai/logs/orchestrator.log" 2>&1
