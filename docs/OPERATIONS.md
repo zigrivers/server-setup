@@ -2,21 +2,66 @@
 
 ## Morning startup
 
-On Machine 1:
+Normally **nothing to do** — launchd brings both machines up automatically
+(M1 at login, M2 at boot — see "Reboot behavior / launchd ownership"
+below). The manual launchers below are a fallback for when launchd has
+been intentionally booted out.
+
+Manual fallback — on Machine 1:
 
 ```bash
 cd ~/ai/local-ai-stack
-scripts/start-orchestrator.sh
+scripts/start-orchestrator.sh   # only if launchd has been booted out
 scripts/m1-ai-status.sh
 ```
 
-On Machine 2:
+Manual fallback — on Machine 2:
 
 ```bash
 cd ~/ai/local-ai-stack
-scripts/start-worker-models.sh
+scripts/start-worker-models.sh  # only if launchd has been booted out
 scripts/m2-ai-status.sh
 ```
+
+## Reboot behavior / launchd ownership
+
+Both machines run their workers under launchd, but the two domains differ:
+
+- **Machine 1: LaunchAgent** in `~/Library/LaunchAgents/com.localai.orchestrator.plist`. Loads in the `gui/$UID/` domain when the user logs in to the console. After a reboot, log in normally and the orchestrator starts. Crash-restart is automatic, throttled to one attempt per 60 seconds.
+- **Machine 2: LaunchDaemons** in `/Library/LaunchDaemons/com.localai.{developer,reviewer}.plist`, root:wheel. Load in the `system/` domain at boot, before any user logs in — required because Machine 2 is headless and FileVault-encrypted. The daemons run as `admin` via `UserName=admin`. FileVault still asks for the disk password at cold boot; once unlocked, the daemons load without a login. Use `sudo fdesetup authrestart` from M1 for planned remote reboots that auto-unlock the disk.
+
+Check status:
+
+```bash
+# Machine 1:
+launchctl print "gui/$(id -u)/com.localai.orchestrator" | grep -E 'state|pid|last exit'
+
+# Machine 2 (sudo required to read system daemons):
+ssh admin@10.10.10.2 'sudo launchctl print system/com.localai.developer | grep -E "state|pid|last exit"'
+ssh admin@10.10.10.2 'sudo launchctl print system/com.localai.reviewer  | grep -E "state|pid|last exit"'
+```
+
+Stop launchd from auto-restarting a worker (e.g. for maintenance):
+
+```bash
+# Machine 1:
+launchctl bootout "gui/$(id -u)/com.localai.orchestrator"
+launchctl bootstrap "gui/$(id -u)" ~/Library/LaunchAgents/com.localai.orchestrator.plist  # re-enable
+
+# Machine 2 (sudo + system domain):
+ssh -t admin@10.10.10.2 'sudo launchctl bootout system/com.localai.developer'
+ssh -t admin@10.10.10.2 'sudo launchctl bootstrap system /Library/LaunchDaemons/com.localai.developer.plist'
+```
+
+Running `scripts/start-*` while launchd-supervised processes are alive
+will hit the port-collision precheck and fail safely. The matching
+`scripts/stop-*` won't truly stop a launchd-supervised worker — launchd
+will restart it within 60 seconds; use `launchctl bootout` for a real
+stop.
+
+Logs:
+- launchd stdout/stderr: `~/ai/logs/*-launchd.{out,err}`
+- worker logs: `~/ai/logs/{orchestrator,developer,reviewer}.log`
 
 ## Endpoint smoke test
 
