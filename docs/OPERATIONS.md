@@ -64,6 +64,31 @@ make test   # or npm test / pytest / cargo test
 
 Then ask Claude/Codex for final review.
 
+## Auditing the deployed stack
+
+When you want a holistic check of *both* Macs against the canonical
+HTML guide (rather than the basic infra preflight), use the audit
+launcher:
+
+```bash
+cd ~/ai/local-ai-stack
+scripts/audit-stack.sh                    # full audit
+scripts/audit-stack.sh "launchd only"     # focused audit
+```
+
+The script launches Claude Code with the right `--add-dir` flags
+(skipping any directories that don't exist yet) and runs the
+`/audit-stack` slash command. Claude inspects Machine 1 directly and
+Machine 2 via SSH, then produces a per-machine pass/fail table with
+exact remediation commands.
+
+You can also invoke the slash command directly from any Claude Code
+session opened in this repo:
+
+```text
+/audit-stack
+```
+
 ## Shutdown
 
 Machine 1:
