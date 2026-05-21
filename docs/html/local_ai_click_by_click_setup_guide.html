@@ -70,7 +70,8 @@ section{margin-bottom:64px;scroll-margin-top:88px}.section-num{font-family:ui-mo
     <li><a href="#troubleshooting"><span class="num">23</span>Troubleshooting</a></li>
     <li><a href="#security-rules"><span class="num">24</span>Security</a></li>
     <li><a href="#rerun-idempotency"><span class="num">25</span>Re-running</a></li>
-    <li><a href="#appendix-paths"><span class="num">26</span>Paths</a></li>
+    <li><a href="#audit-stack"><span class="num">26</span>Audit stack</a></li>
+    <li><a href="#appendix-paths"><span class="num">27</span>Paths</a></li>
   </ul></div>
 </aside>
 <main class="content">
@@ -532,7 +533,29 @@ ssh admin@10.10.10.2 'tail -100 ~/ai/logs/developer.log; tail -100 ~/ai/logs/rev
 <div class="callout callout-warn"><div class="callout-label">When you're not sure</div><p>Run <code>git -C ~/ai/local-ai-stack status</code> first. If there are no local-only edits, everything in this guide is safe to rerun. If there are edits to <code>.env</code> or anything else, decide before overwriting.</p></div>
 </section>
 
-<section id="appendix-paths"><div class="section-num">26 / Reference</div><h2>Final path <em>checklist</em></h2><p class="section-deck">Use this when handing the setup to another human or AI agent.</p>
+<section id="audit-stack"><div class="section-num">26 / Reference</div><h2>Auditing the <em>deployed stack</em></h2><p class="section-deck">After initial setup and any time you suspect drift, run an end-to-end audit that compares the *actual* state of both Macs against this guide. The audit covers Machine 1 directly and Machine 2 over SSH.</p>
+
+<div class="step" data-step="audit-launcher"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>One-shot launcher</h3>
+<div class="code-block"><div class="code-header"><span class="code-lang">bash · on Machine 1</span><button class="copy-btn">Copy</button></div><pre>cd ~/ai/local-ai-stack
+scripts/audit-stack.sh                    # full audit
+scripts/audit-stack.sh "launchd only"     # focused audit</pre></div>
+<p>The launcher <code>cd</code>s to the repo, builds <code>claude --add-dir</code> flags only for directories that actually exist (skips <code>~/Library/LaunchAgents</code>, <code>~/.codex</code>, etc. if you haven't created them yet), and execs Claude Code with <code>/audit-stack</code> as the initial prompt. After <code>install-symlinks.sh</code> the launcher is on PATH, so you can also just type <code>audit-stack.sh</code> from anywhere.</p></div></div>
+
+<div class="step" data-step="audit-slash"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Or invoke the slash command from any session</h3>
+<p>If you already have Claude Code open inside this repo, you don't need the launcher — the project slash command is registered:</p>
+<div class="code-block"><div class="code-header"><span class="code-lang">text · inside Claude Code</span><button class="copy-btn">Copy</button></div><pre>/audit-stack
+/audit-stack launchd only</pre></div></div></div>
+
+<div class="step" data-step="audit-allowlist"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>What's pre-approved</h3>
+<p><code>.claude/settings.json</code> in this repo pre-allows the read-only commands the audit needs: <code>ssh admin@10.10.10.2:*</code>, <code>launchctl print/list</code>, <code>claude mcp list</code>, <code>lsof -nP*</code>, <code>curl</code> against the two configured hosts, <code>ping -c*</code>, and the four status/preflight scripts. The audit runs without per-command permission prompts.</p>
+<p>If you renamed the Machine 2 short username away from <code>admin</code>, edit the matching rule in <code>.claude/settings.json</code> (or override locally via <code>.claude/settings.local.json</code>).</p></div></div>
+
+<div class="step" data-step="audit-output"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>What you get back</h3>
+<p>A Markdown report with three sections — Machine 1 pass/fail, Machine 2 pass/fail, and a "Drift / notes" tail. Each failing row includes the exact remediation command. Treat ✅ rows as evidence; treat ❌ rows as work items.</p>
+<div class="verify"><div class="verify-header">Run this</div><div class="verify-body">at least once after initial setup; after any macOS upgrade; after any <code>git pull</code> on this repo; whenever <code>m1-ai-status.sh</code> or <code>m2-ai-status.sh</code> flags something.</div></div></div></div>
+</section>
+
+<section id="appendix-paths"><div class="section-num">27 / Reference</div><h2>Final path <em>checklist</em></h2><p class="section-deck">Use this when handing the setup to another human or AI agent.</p>
 <div class="table-wrap"><table><thead><tr><th>Item</th><th>Expected path or URL</th></tr></thead><tbody>
 <tr><td>Repo on both Macs</td><td><code>~/ai/local-ai-stack</code></td></tr>
 <tr><td>Repo venv (both Macs)</td><td><code>~/ai/local-ai-stack/.venv</code></td></tr>
