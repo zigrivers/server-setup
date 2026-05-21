@@ -6,6 +6,11 @@ REPO_DIR="${LOCAL_AI_REPO:-$HOME/ai/local-ai-stack}"
 source "$REPO_DIR/.venv/bin/activate"
 mkdir -p "$HOME/ai/logs"
 
+# Load .env for model path overrides (REVIEW_MODEL_PATH, DEV_MODEL_PATH, etc.)
+if [ -f "$REPO_DIR/.env" ]; then
+  set -a; source "$REPO_DIR/.env"; set +a
+fi
+
 HOST="${WORKER_HOST:-10.10.10.2}"
 DEV_PORT="${DEV_PORT:-8002}"
 REVIEW_PORT="${REVIEW_PORT:-8003}"

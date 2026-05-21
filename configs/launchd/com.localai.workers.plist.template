@@ -11,6 +11,7 @@
   <key>Label</key><string>com.localai.workers</string>
   <key>ProgramArguments</key>
   <array>
+    <string>/bin/bash</string>
     <string>__HOME__/ai/local-ai-stack/scripts/start-worker-models.sh</string>
   </array>
   <key>RunAtLoad</key><true/>

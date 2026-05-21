@@ -9,6 +9,7 @@
   <key>Label</key><string>com.localai.orchestrator</string>
   <key>ProgramArguments</key>
   <array>
+    <string>/bin/bash</string>
     <string>__HOME__/ai/local-ai-stack/scripts/start-orchestrator.sh</string>
   </array>
   <key>RunAtLoad</key><true/>
