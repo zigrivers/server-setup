@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- LaunchDaemon template. install-launchd-machine2.sh replaces
+     __USER__ with the Machine 2 worker username (admin) and __HOME__
+     with that user's home (/Users/admin), then installs the rendered
+     plist into /Library/LaunchDaemons/ with sudo. Owned by root:wheel,
+     mode 644. Loads at boot via `sudo launchctl bootstrap system ...`. -->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.localai.developer</string>
+  <key>UserName</key><string>__USER__</string>
+  <key>GroupName</key><string>staff</string>
+  <key>WorkingDirectory</key><string>__HOME__</string>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>HOME</key><string>__HOME__</string>
+    <key>PATH</key><string>/usr/bin:/bin:/usr/sbin:/sbin:/opt/homebrew/bin:/usr/local/bin</string>
+  </dict>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>__HOME__/ai/local-ai-stack/scripts/start-developer.sh</string>
+  </array>
+  <key>RunAtLoad</key><true/>
+  <key>KeepAlive</key>
+  <dict>
+    <key>SuccessfulExit</key><false/>
+    <key>Crashed</key><true/>
+  </dict>
+  <key>ThrottleInterval</key><integer>60</integer>
+  <key>ProcessType</key><string>Interactive</string>
+  <key>StandardOutPath</key><string>__HOME__/ai/logs/developer-launchd.out</string>
+  <key>StandardErrorPath</key><string>__HOME__/ai/logs/developer-launchd.err</string>
+</dict>
+</plist>
