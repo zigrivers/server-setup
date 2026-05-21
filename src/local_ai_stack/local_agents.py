@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from __future__ import annotations
 
 import argparse
 import json
@@ -8,7 +7,7 @@ import re
 import subprocess
 import time
 from pathlib import Path
-from typing import Any, Dict, List, TypedDict
+from typing import Any, TypedDict
 
 from dotenv import load_dotenv
 from langgraph.graph import END, StateGraph
@@ -29,7 +28,7 @@ class AgentState(TypedDict, total=False):
     test_output: str
     approved: bool
     iteration: int
-    history: List[str]
+    history: list[str]
 
 
 def required_env(name: str) -> str:
@@ -186,7 +185,7 @@ def memory_path(workspace: Path) -> Path:
     return workspace / ".agent_memory.jsonl"
 
 
-def append_memory(workspace: Path, event: Dict[str, Any]) -> None:
+def append_memory(workspace: Path, event: dict[str, Any]) -> None:
     event = dict(event)
     event["ts"] = time.strftime("%Y-%m-%d %H:%M:%S")
     with memory_path(workspace).open("a", encoding="utf-8") as f:
@@ -214,7 +213,7 @@ def repo_tree(workspace: Path, max_files: int = 200) -> str:
         "build",
     }
 
-    files: List[str] = []
+    files: list[str] = []
     for p in workspace.rglob("*"):
         rel = p.relative_to(workspace)
         if any(part in ignore for part in rel.parts):
@@ -240,7 +239,7 @@ def extract_tag(text: str, tag: str) -> str:
     return m.group(1).strip() if m else ""
 
 
-def extract_commands(text: str) -> List[str]:
+def extract_commands(text: str) -> list[str]:
     raw = extract_tag(text, "commands")
     if not raw:
         return []
@@ -282,8 +281,8 @@ def apply_patch(patch: str, workspace: Path) -> str:
     return "[patch failed]\n--- git apply ---\n" + p.stdout + "\n--- patch -p1 ---\n" + p2.stdout
 
 
-def auto_tests(workspace: Path) -> List[str]:
-    commands: List[str] = []
+def auto_tests(workspace: Path) -> list[str]:
+    commands: list[str] = []
     if (workspace / "pyproject.toml").exists() or (workspace / "pytest.ini").exists() or (workspace / "tests").exists():
         commands.append("python -m pytest -q")
     if (workspace / "package.json").exists():
@@ -400,7 +399,7 @@ Produce a patch and commands.
 
     patch_result = apply_patch(patch, workspace)
 
-    command_logs: List[str] = [patch_result]
+    command_logs: list[str] = [patch_result]
     for cmd in commands:
         command_logs.append(run_cmd(cmd, workspace, timeout=300))
 
