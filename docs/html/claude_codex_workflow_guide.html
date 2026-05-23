@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Claude Code & Codex CLI Workflow Guide - Local AI Stack</title>
+  <meta name="description" content="Click-by-click workflow guide for utilizing Claude Code and Codex CLI tools with a split-machine local open-source AI development stack.">
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    /* Styling System & Variables */
+    :root {
+      --bg-color: hsl(222, 25%, 8%);
+      --surface-color: hsl(222, 24%, 12%);
+      --surface-hover: hsl(222, 24%, 16%);
+      --border-color: rgba(255, 255, 255, 0.08);
+      --text-main: hsl(210, 20%, 90%);
+      --text-muted: hsl(210, 15%, 65%);
+      --primary: hsl(20, 85%, 55%); /* Warm tone for Claude Code/Codex */
+      --primary-hover: hsl(20, 85%, 65%);
+      --primary-glow: rgba(249, 115, 22, 0.15);
+      --success: hsl(142, 70%, 45%);
+      --success-glow: rgba(34, 197, 94, 0.15);
+      --warning: hsl(37, 85%, 50%);
+      --font-outfit: 'Outfit', sans-serif;
+      --font-inter: 'Inter', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      --sidebar-width: 280px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      font-family: var(--font-inter);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      display: flex;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Layout & Sidebar */
+    .sidebar {
+      width: var(--sidebar-width);
+      background-color: var(--surface-color);
+      border-right: 1px solid var(--border-color);
+      position: fixed;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      z-index: 100;
+      padding: 2rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .brand-logo {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, var(--primary), hsl(45, 85%, 50%));
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      color: white;
+      font-family: var(--font-outfit);
+      box-shadow: 0 0 15px rgba(249, 115, 22, 0.4);
+    }
+
+    .brand-title {
+      font-family: var(--font-outfit);
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      background: linear-gradient(to right, #fff, var(--text-muted));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .nav-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .nav-item a {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: var(--transition);
+      border: 1px solid transparent;
+    }
+
+    .nav-item a:hover {
+      background-color: var(--surface-hover);
+      color: var(--text-main);
+    }
+
+    .nav-item.active a {
+      background-color: rgba(249, 115, 22, 0.08);
+      border-color: rgba(249, 115, 22, 0.2);
+      color: var(--text-main);
+    }
+
+    .progress-badge {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border: 2px solid var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.65rem;
+      transition: var(--transition);
+    }
+
+    .nav-item.completed .progress-badge {
+      background-color: var(--success);
+      border-color: var(--success);
+      color: white;
+    }
+
+    .nav-item.completed .progress-badge::after {
+      content: '✓';
+      font-weight: bold;
+    }
+
+    /* Overall Progress Bar in Sidebar */
+    .overall-progress-container {
+      background-color: rgba(255, 255, 255, 0.03);
+      padding: 1rem;
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+    }
+
+    .overall-progress-label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 0.5rem;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .overall-progress-bar {
+      height: 6px;
+      background-color: rgba(255, 255, 255, 0.05);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .overall-progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(to right, var(--primary), var(--success));
+      border-radius: 3px;
+      transition: width 0.4s ease;
+    }
+
+    /* Main Content Area */
+    .main-content {
+      margin-left: var(--sidebar-width);
+      padding: 3rem 4rem;
+      max-width: 1200px;
+      width: calc(100% - var(--sidebar-width));
+    }
+
+    header {
+      margin-bottom: 4rem;
+    }
+
+    .hero-label {
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      color: var(--primary);
+      margin-bottom: 0.5rem;
+      display: inline-block;
+    }
+
+    h1 {
+      font-family: var(--font-outfit);
+      font-size: 3rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      margin-bottom: 1rem;
+      background: linear-gradient(135deg, #fff 30%, var(--text-muted) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .subtitle {
+      font-size: 1.15rem;
+      color: var(--text-muted);
+      max-width: 800px;
+      margin-bottom: 2rem;
+    }
+
+    /* Hero Banner Image */
+    .hero-banner {
+      width: 100%;
+      border-radius: 16px;
+      border: 1px solid var(--border-color);
+      overflow: hidden;
+      margin-bottom: 4rem;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+      position: relative;
+    }
+
+    .hero-banner img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    /* Guide Sections */
+    section {
+      margin-bottom: 6rem;
+      scroll-margin-top: 3rem;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 2rem;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 0.75rem;
+    }
+
+    .section-num {
+      font-family: var(--font-outfit);
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--primary);
+      opacity: 0.8;
+    }
+
+    h2 {
+      font-family: var(--font-outfit);
+      font-size: 1.85rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    /* Step Checklist */
+    .step {
+      background-color: var(--surface-color);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 1.5rem 2rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      gap: 1.5rem;
+      transition: var(--transition);
+      position: relative;
+    }
+
+    .step:hover {
+      border-color: rgba(249, 115, 22, 0.3);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    }
+
+    .step-checkbox-container {
+      display: flex;
+      align-items: flex-start;
+      padding-top: 0.25rem;
+    }
+
+    /* Custom Checkbox Design */
+    .custom-checkbox {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 22px;
+      height: 22px;
+      border: 2px solid var(--text-muted);
+      border-radius: 6px;
+      outline: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: var(--transition);
+      background-color: transparent;
+    }
+
+    .custom-checkbox:hover {
+      border-color: var(--primary);
+      box-shadow: 0 0 8px rgba(249, 115, 22, 0.3);
+    }
+
+    .custom-checkbox:checked {
+      background-color: var(--success);
+      border-color: var(--success);
+    }
+
+    .custom-checkbox:checked::after {
+      content: '✓';
+      color: white;
+      font-size: 0.8rem;
+      font-weight: bold;
+    }
+
+    .step-content {
+      flex: 1;
+    }
+
+    .step-title {
+      font-family: var(--font-outfit);
+      font-size: 1.15rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      color: white;
+    }
+
+    .step-desc {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      margin-bottom: 1rem;
+    }
+
+    /* Code Blocks */
+    .code-block {
+      background-color: rgba(0, 0, 0, 0.3);
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      overflow: hidden;
+      margin: 1rem 0;
+    }
+
+    .code-header {
+      background-color: rgba(255, 255, 255, 0.02);
+      padding: 0.5rem 1rem;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .code-body {
+      padding: 1rem;
+      overflow-x: auto;
+      color: #e2e8f0;
+      white-space: pre;
+    }
+
+    .copy-btn {
+      background: transparent;
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.75rem;
+      transition: var(--transition);
+    }
+
+    .copy-btn:hover {
+      color: white;
+      background-color: rgba(255, 255, 255, 0.05);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    /* Callouts */
+    .callout {
+      border-left: 4px solid var(--primary);
+      background-color: rgba(249, 115, 22, 0.03);
+      border-radius: 0 8px 8px 0;
+      padding: 1.25rem 1.5rem;
+      margin: 1.5rem 0;
+      border-top: 1px solid var(--border-color);
+      border-right: 1px solid var(--border-color);
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .callout.callout-success {
+      border-left-color: var(--success);
+      background-color: rgba(34, 197, 94, 0.03);
+    }
+
+    .callout.callout-warning {
+      border-left-color: var(--warning);
+      background-color: rgba(245, 158, 11, 0.03);
+    }
+
+    .callout-title {
+      font-family: var(--font-outfit);
+      font-weight: 600;
+      font-size: 1rem;
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .callout-desc {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    /* Tables */
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      margin: 1.5rem 0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+      text-align: left;
+      background-color: var(--surface-color);
+    }
+
+    th {
+      background-color: rgba(255, 255, 255, 0.02);
+      font-family: var(--font-outfit);
+      font-weight: 600;
+      color: white;
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    td {
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-muted);
+      vertical-align: top;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:hover td {
+      color: var(--text-main);
+      background-color: rgba(255, 255, 255, 0.01);
+    }
+
+    /* Responsive adjustments */
+    @media(max-width: 1024px) {
+      .sidebar {
+        display: none;
+      }
+      .main-content {
+        margin-left: 0;
+        width: 100%;
+        padding: 2rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation Sidebar -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-logo">C</div>
+      <div class="brand-title">Claude & Codex</div>
+    </div>
+
+    <!-- Navigation List with Checkbox Status -->
+    <ul class="nav-list">
+      <li class="nav-item active" id="nav-intro"><a href="#intro"><span>01. Workflow Concept</span> <span class="progress-badge"></span></a></li>
+      <li class="nav-item" id="nav-setup-claude"><a href="#setup-claude"><span>02. Claude Setup</span> <span class="progress-badge"></span></a></li>
+      <li class="nav-item" id="nav-setup-codex"><a href="#setup-codex"><span>03. Codex Setup</span> <span class="progress-badge"></span></a></li>
+      <li class="nav-item" id="nav-project-prep"><a href="#project-prep"><span>04. Repo Prep</span> <span class="progress-badge"></span></a></li>
+      <li class="nav-item" id="nav-workflow-walkthrough"><a href="#workflow-walkthrough"><span>05. Feature Guide</span> <span class="progress-badge"></span></a></li>
+      <li class="nav-item" id="nav-triage"><a href="#triage"><span>06. Troubleshooting</span> <span class="progress-badge"></span></a></li>
+    </ul>
+
+    <!-- Overall Checklist Progress -->
+    <div class="overall-progress-container">
+      <div class="overall-progress-label">
+        <span>Guide Progress</span>
+        <span id="progress-percent">0%</span>
+      </div>
+      <div class="overall-progress-bar">
+        <div class="overall-progress-fill" id="progress-fill"></div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <header>
+      <span class="hero-label">Interactive Workflow Guide</span>
+      <h1>Split-Machine Development with Claude & Codex</h1>
+      <p class="subtitle">A step-by-step guide for developers to delegate tasks, run audits, and write code using Claude Code CLI and Codex CLI connected to your local split-machine AI stack.</p>
+      
+      <!-- Generated premium graphic banner -->
+      <div class="hero-banner">
+        <img src="assets/claude_codex_stack_illustration.png" alt="Claude Code and Codex Local AI Stack Connection Diagram">
+      </div>
+    </header>
+
+    <!-- SECTION 01: Concept -->
+    <section id="intro">
+      <div class="section-header">
+        <span class="section-num">01</span>
+        <h2>How delegation works with Claude & Codex</h2>
+      </div>
+      <p style="margin-bottom: 2rem; color: var(--text-muted);">
+        Just like the Antigravity setup, this workflow uses <strong>Claude Code</strong> or <strong>Codex</strong> on Machine 1 as the planning agent, which leverages the <strong>local-ai-delegate</strong> MCP bridge. When you approve a plan, the MCP bridge spawns a local execution loop that operates on your local Apple Silicon models.
+      </p>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Client CLI</th>
+              <th>Skills Location</th>
+              <th>MCP Registration Command</th>
+              <th>Configuration Target</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Claude Code</strong> (<code>claude</code>)</td>
+              <td><code>~/.claude/skills/</code></td>
+              <td><code>scripts/register-mcp-claude.sh</code></td>
+              <td>Managed internally by Claude Code sqlite database</td>
+            </tr>
+            <tr>
+              <td><strong>Codex</strong> (<code>codex</code>)</td>
+              <td>N/A (uses built-in tools)</td>
+              <td><code>scripts/register-mcp-codex.sh</code></td>
+              <td>Statically configured in <code>~/.codex/config.toml</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- SECTION 02: Claude Setup -->
+    <section id="setup-claude">
+      <div class="section-header">
+        <span class="section-num">02</span>
+        <h2>One-Time Claude Code CLI setup</h2>
+      </div>
+      <p style="margin-bottom: 2rem; color: var(--text-muted);">
+        Follow these steps to enable the three local skills and the MCP bridge for Claude Code on Machine 1.
+      </p>
+
+      <!-- Step 2.1 -->
+      <div class="step" data-section="setup-claude">
+        <div class="step-checkbox-container">
+          <input type="checkbox" class="custom-checkbox" id="chk-claude-skills">
+        </div>
+        <div class="step-content">
+          <div class="step-title">Install Claude Skills</div>
+          <div class="step-desc">Copy the local-stack skills (<code>delegate-local</code>, <code>local-review</code>, <code>local-ai-status</code>) to Claude's global skills directory.</div>
+          <div class="code-block">
+            <div class="code-header">
+              <span>Terminal · Machine 1</span>
+              <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            </div>
+            <div class="code-body">cd ~/ai/local-ai-stack
+./scripts/install-claude-skills.sh</div>
+          </div>
+          <p class="step-desc" style="margin-top: 0.5rem;">
+            Run <code>/skills</code> inside Claude Code to verify they show up.
+          </p>
+        </div>
+      </div>
+
+      <!-- Step 2.2 -->
+      <div class="step" data-section="setup-claude">
+        <div class="step-checkbox-container">
+          <input type="checkbox" class="custom-checkbox" id="chk-claude-mcp">
+        </div>
+        <div class="step-content">
+          <div class="step-title">Register the MCP Bridge with Claude Code</div>
+          <div class="step-desc">Wire the MCP server directly into Claude Code. This registers the server under a user scope with allowed workspace directory directories:</div>
+          <div class="code-block">
+            <div class="code-header">
+              <span>Terminal · Machine 1</span>
+              <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            </div>
+            <div class="code-body">./scripts/register-mcp-claude.sh</div>
+          </div>
+          <p class="step-desc" style="margin-top: 0.5rem;">
+            Type <code>/mcp</code> inside Claude Code and confirm <code>local-ai-delegate</code> is active.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 03: Codex Setup -->
+    <section id="setup-codex">
+      <div class="section-header">
+        <span class="section-num">03</span>
+        <h2>One-Time Codex CLI setup</h2>
+      </div>
+      <p style="margin-bottom: 2rem; color: var(--text-muted);">
+        Follow these steps to wire up the MCP bridge and adjust timeouts for the Codex CLI.
+      </p>
+
+      <!-- Step 3.1 -->
+      <div class="step" data-section="setup-codex">
+        <div class="step-checkbox-container">
+          <input type="checkbox" class="custom-checkbox" id="chk-codex-mcp">
+        </div>
+        <div class="step-content">
+          <div class="step-title">Register the MCP Bridge with Codex</div>
+          <div class="step-desc">Register the server in Codex's internal database:</div>
+          <div class="code-block">
+            <div class="code-header">
+              <span>Terminal · Machine 1</span>
+              <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            </div>
+            <div class="code-body">./scripts/register-mcp-codex.sh</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3.2 -->
+      <div class="step" data-section="setup-codex">
+        <div class="step-checkbox-container">
+          <input type="checkbox" class="custom-checkbox" id="chk-codex-config">
+        </div>
+        <div class="step-content">
+          <div class="step-title">Edit Codex Timeout Settings</div>
+          <div class="step-desc">Open Codex's static configuration file in your editor:</div>
+          <div class="code-block">
+            <div class="code-header">
+              <span>Terminal · Machine 1</span>
+              <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            </div>
+            <div class="code-body">nano ~/.codex/config.toml</div>
+          </div>
+          <p class="step-desc" style="margin-top: 0.5rem;">
+            Find the <code>[mcp_servers.local-ai-delegate]</code> section and ensure timeouts are raised. Local Qwen loops take time, and standard 30-second timeouts will fail:
+          </p>
+          <div class="code-block">
+            <div class="code-header">
+              <span>toml · config.toml</span>
+            </div>
+            <div class="code-body">startup_timeout_sec = 20
+tool_timeout_sec = 3600</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 04: Project Repo Prep -->
+    <section id="project-prep">
+      <div class="section-header">
+        <span class="section-num">04</span>
+        <h2>Preparing a project repository</h2>
+      </div>
+      <p style="margin-bottom: 2rem; color: var(--text-muted);">
+        Every project repository that you want to develop using local models needs to opt in by including local-agent instructions.
+      </p>
+
+      <!-- Step 4.1 -->
+      <div class="step" data-section="project-prep">
+        <div class="step-checkbox-container">
+          <input type="checkbox" class="custom-checkbox" id="chk-copy-templates">
+        </div>
+        <div class="step-content">
+          <div class="step-title">Bootstrap the Repo templates</div>
+          <div class="step-desc">Navigate to your target project folder (e.g. <code>~/ai/workspaces/my-app</code>) and copy the instructions templates from the stack repo. This defines safety guardrails and local endpoints rules.</div>
+          <div class="code-block">
+            <div class="code-header">
+              <span>Terminal · Machine 1</span>
+              <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            </div>
+            <div class="code-body">cd ~/ai/workspaces/my-app
+STACK=~/ai/local-ai-stack
+mkdir -p docs/ai plans
+cp "$STACK/docs/repo-templates/AGENTS.md"      ./AGENTS.md
+cp "$STACK/docs/repo-templates/CLAUDE.md"      ./CLAUDE.md
+cp "$STACK/docs/repo-templates/AI_WORKFLOW.md" ./docs/ai/AI_WORKFLOW.md
+touch plans/.gitkeep
+git add AGENTS.md CLAUDE.md docs/ai/AI_WORKFLOW.md plans/.gitkeep
+git commit -m "Add hybrid AI workflow instructions"</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 05: Workflow Walkthrough -->
+    <section id="workflow-walkthrough">
+      <div class="section-header">
+        <span class="section-num">05</span>
+        <h2>Walkthrough: Build a new feature</h2>
+      </div>
+      <p style="margin-bottom: 2rem; color: var(--text-muted);">
+        Here is a step-by-step example of how a developer adds a database migration and a route using Claude Code.
+      </p>
+
+      <!-- Step 5.1 -->
+      <div class="step" data-section="workflow-walkthrough">
+        <div class="step-checkbox-container">
+          <input type="checkbox" class="custom-checkbox" id="chk-launch-claude">
+        </div>
+        <div class="step-content">
+          <div class="step-title">1. Launch Claude Code</div>
+          <div class="step-desc">Enter your project workspace and open <code>claude</code>:</div>
+          <div class="code-block">
+            <div class="code-header">
+              <span>Terminal · Machine 1</span>
+              <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            </div>
+            <div class="code-body">cd ~/ai/workspaces/my-app
+claude</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 5.2 -->
+      <div class="step" data-section="workflow-walkthrough">
+        <div class="step-checkbox-container">
+          <input type="checkbox" class="custom-checkbox" id="chk-propose-plan">
+        </div>
+        <div class="step-content">
+          <div class="step-title">2. Propose Feature & Generate Plan</div>
+          <div class="step-desc">Ask Claude to create the implementation plan:</div>
+          <div class="code-block">
+            <div class="code-header">
+              <span>Claude Code prompt</span>
+            </div>
+            <div class="code-body">Create an implementation plan to add a users table database migration and route.</div>
+          </div>
+          <p class="step-desc" style="margin-top: 0.5rem;">
+            Claude Code will write the plan details to: <code>plans/2026-05-23-add-users-db.md</code>.
+          </p>
+        </div>
+      </div>
+
+      <!-- Step 5.3 -->
+      <div class="step" data-section="workflow-walkthrough">
+        <div class="step-checkbox-container">
+          <input type="checkbox" class="custom-checkbox" id="chk-delegate-task">
+        </div>
+        <div class="step-content">
+          <div class="step-title">3. Delegate Execution to Local Stack</div>
+          <div class="step-desc">Once you approve the plan, delegate its execution:</div>
+          <div class="code-block">
+            <div class="code-header">
+              <span>Claude Code prompt</span>
+            </div>
+            <div class="code-body">/delegate-local plans/2026-05-23-add-users-db.md</div>
+          </div>
+          <div class="callout callout-warning">
+            <div class="callout-title">⚠️ Isolation Rule</div>
+            <div class="callout-desc">
+              The script will create a git worktree sandbox and checkout a new branch (e.g. <code>ai/local/add-users-db-...</code>) automatically so your working directory remains untouched.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 5.4 -->
+      <div class="step" data-section="workflow-walkthrough">
+        <div class="step-checkbox-container">
+          <input type="checkbox" class="custom-checkbox" id="chk-inspect-merge">
+        </div>
+        <div class="step-content">
+          <div class="step-title">4. Inspect & Merge</div>
+          <div class="step-desc">Exit Claude Code and verify the changes inside the worktree before merging to main:</div>
+          <div class="code-block">
+            <div class="code-header">
+              <span>Terminal · Machine 1</span>
+              <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            </div>
+            <div class="code-body">cd ~/ai/workspaces/my-app
+git diff ai/local/add-users-db-...
+# Merge the local work branch
+git merge ai/local/add-users-db-...</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 06: Triage -->
+    <section id="triage">
+      <div class="section-header">
+        <span class="section-num">06</span>
+        <h2>Troubleshooting & Triage cheat sheet</h2>
+      </div>
+      <p style="margin-bottom: 2rem; color: var(--text-muted);">
+        A quick-reference list of common issues when executing plans, their potential causes, and how to fix them.
+      </p>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Symptom</th>
+              <th>Common Cause</th>
+              <th>Remediation Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>local_ai_status</code> reports <code>FAIL</code> on an endpoint</td>
+              <td>Inference server is down or Thunderbolt bridge is disconnected.</td>
+              <td>Run <code>preflight.sh</code> to trace the network path. Restart workers via <code>start-worker-models.sh</code> if needed.</td>
+            </tr>
+            <tr>
+              <td>Claude Code errors during <code>/delegate-local</code> tool call</td>
+              <td>The tool calls took longer than the default Claude Code timeout (often 5 mins).</td>
+              <td>Use <code>/audit-stack</code> to ensure connections are responsive, or chunk the task into smaller sub-tasks.</td>
+            </tr>
+            <tr>
+              <td>Codex fails to execute tool or times out</td>
+              <td>The <code>tool_timeout_sec</code> parameter inside <code>~/.codex/config.toml</code> is too small.</td>
+              <td>Double check that your <code>config.toml</code> has <code>tool_timeout_sec = 3600</code>.</td>
+            </tr>
+            <tr>
+              <td>Git worktree creation fails or collisions occur</td>
+              <td>A stale worktree exists with the same branch or directory name.</td>
+              <td>Run <code>git worktree prune</code> to clean up stale references, or remove directory manually.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    /* Javascript to handle localStorage state and progress metrics */
+    const checkboxes = document.querySelectorAll('.custom-checkbox');
+    const progressPercent = document.getElementById('progress-percent');
+    const progressFill = document.getElementById('progress-fill');
+    const navItems = document.querySelectorAll('.nav-item');
+
+    // Load states on load
+    window.addEventListener('DOMContentLoaded', () => {
+      checkboxes.forEach(chk => {
+        const checked = localStorage.getItem('cc_' + chk.id) === 'true';
+        chk.checked = checked;
+        chk.addEventListener('change', handleStateChange);
+      });
+      updateProgress();
+    });
+
+    function handleStateChange(e) {
+      localStorage.setItem('cc_' + e.target.id, e.target.checked);
+      updateProgress();
+    }
+
+    function updateProgress() {
+      const total = checkboxes.length;
+      let checkedCount = 0;
+
+      // Calculate totals per section
+      const sections = {
+        'setup-claude': { total: 0, checked: 0, navId: 'nav-setup-claude' },
+        'setup-codex': { total: 0, checked: 0, navId: 'nav-setup-codex' },
+        'project-prep': { total: 0, checked: 0, navId: 'nav-project-prep' },
+        'workflow-walkthrough': { total: 0, checked: 0, navId: 'nav-workflow-walkthrough' }
+      };
+
+      checkboxes.forEach(chk => {
+        if (chk.checked) checkedCount++;
+        
+        const parentStep = chk.closest('.step');
+        if (parentStep) {
+          const sectionKey = parentStep.getAttribute('data-section');
+          if (sections[sectionKey]) {
+            sections[sectionKey].total++;
+            if (chk.checked) sections[sectionKey].checked++;
+          }
+        }
+      });
+
+      // Update sidebar overall bar
+      const overallPercent = total > 0 ? Math.round((checkedCount / total) * 100) : 0;
+      progressPercent.textContent = `${overallPercent}%`;
+      progressFill.style.width = `${overallPercent}%`;
+
+      // Update section navigation badges
+      Object.keys(sections).forEach(key => {
+        const sec = sections[key];
+        const navEl = document.getElementById(sec.navId);
+        if (navEl) {
+          if (sec.total > 0 && sec.checked === sec.total) {
+            navEl.classList.add('completed');
+          } else {
+            navEl.classList.remove('completed');
+          }
+        }
+      });
+    }
+
+    /* Copy Button Helper */
+    function copyCode(btn) {
+      const codeBody = btn.closest('.code-block').querySelector('.code-body');
+      navigator.clipboard.writeText(codeBody.textContent.trim()).then(() => {
+        const originalText = btn.textContent;
+        btn.textContent = 'Copied!';
+        btn.style.color = '#22c55e';
+        btn.style.borderColor = '#22c55e';
+        setTimeout(() => {
+          btn.textContent = originalText;
+          btn.style.color = '';
+          btn.style.borderColor = '';
+        }, 2000);
+      });
+    }
+
+    // Scroll Spy for Active Navigation
+    window.addEventListener('scroll', () => {
+      let current = '';
+      const sectionElements = document.querySelectorAll('section');
+      
+      sectionElements.forEach(section => {
+        const sectionTop = section.offsetTop;
+        if (pageYOffset >= sectionTop - 150) {
+          current = section.getAttribute('id');
+        }
+      });
+
+      navItems.forEach(item => {
+        item.classList.remove('active');
+        if (item.id === `nav-${current}`) {
+          item.classList.add('active');
+        }
+      });
+    });
+  </script>
+</body>
+</html>
