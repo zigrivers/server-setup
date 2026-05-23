@@ -1,0 +1,1287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Local AI Workflow Guide - Unified CLI Hand-off</title>
+  <meta name="description" content="Unified click-by-click interactive guide for integrating Antigravity, Claude Code, and Codex CLI tools with a split-machine local AI stack.">
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    /* Styling System & Variables */
+    :root {
+      --bg-color: hsl(222, 25%, 8%);
+      --surface-color: hsl(222, 24%, 12%);
+      --surface-hover: hsl(222, 24%, 16%);
+      --border-color: rgba(255, 255, 255, 0.08);
+      --text-main: hsl(210, 20%, 90%);
+      --text-muted: hsl(210, 15%, 65%);
+      
+      /* CLI-specific Accents (controlled dynamically) */
+      --primary-antigravity: hsl(265, 85%, 66%);
+      --primary-claude: hsl(20, 85%, 55%);
+      --primary-codex: hsl(175, 85%, 45%);
+      
+      --accent: var(--primary-antigravity); /* Default */
+      --accent-glow: rgba(139, 92, 246, 0.15);
+      
+      --success: hsl(142, 70%, 45%);
+      --warning: hsl(37, 85%, 50%);
+      --font-outfit: 'Outfit', sans-serif;
+      --font-inter: 'Inter', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      --sidebar-width: 290px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      font-family: var(--font-inter);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      display: flex;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Layout & Sidebar */
+    .sidebar {
+      width: var(--sidebar-width);
+      background-color: var(--surface-color);
+      border-right: 1px solid var(--border-color);
+      position: fixed;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      z-index: 100;
+      padding: 2rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .brand-logo {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, var(--accent), hsl(290, 85%, 65%));
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      color: white;
+      font-family: var(--font-outfit);
+      box-shadow: 0 0 15px var(--accent-glow);
+      transition: var(--transition);
+    }
+
+    .brand-title {
+      font-family: var(--font-outfit);
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      background: linear-gradient(to right, #fff, var(--text-muted));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .nav-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .nav-item a {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: var(--transition);
+      border: 1px solid transparent;
+    }
+
+    .nav-item a:hover {
+      background-color: var(--surface-hover);
+      color: var(--text-main);
+    }
+
+    .nav-item.active a {
+      background-color: var(--accent-glow);
+      border-color: rgba(255, 255, 255, 0.05);
+      color: var(--text-main);
+    }
+
+    .progress-badge {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border: 2px solid var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.65rem;
+      transition: var(--transition);
+    }
+
+    .nav-item.completed .progress-badge {
+      background-color: var(--success);
+      border-color: var(--success);
+      color: white;
+    }
+
+    .nav-item.completed .progress-badge::after {
+      content: '✓';
+      font-weight: bold;
+    }
+
+    /* Overall Progress Bar */
+    .overall-progress-container {
+      background-color: rgba(255, 255, 255, 0.03);
+      padding: 1rem;
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+    }
+
+    .overall-progress-label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 0.5rem;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .overall-progress-bar {
+      height: 6px;
+      background-color: rgba(255, 255, 255, 0.05);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .overall-progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(to right, var(--accent), var(--success));
+      border-radius: 3px;
+      transition: width 0.4s ease;
+    }
+
+    /* Main Content Area */
+    .main-content {
+      margin-left: var(--sidebar-width);
+      padding: 3rem 4rem;
+      max-width: 1200px;
+      width: calc(100% - var(--sidebar-width));
+    }
+
+    /* Selector Bar styling */
+    .cli-selector-bar {
+      background-color: var(--surface-color);
+      border: 1px solid var(--border-color);
+      padding: 0.5rem;
+      border-radius: 14px;
+      display: inline-flex;
+      gap: 0.5rem;
+      margin-bottom: 3rem;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    }
+
+    .cli-tab {
+      padding: 0.75rem 1.5rem;
+      border-radius: 10px;
+      cursor: pointer;
+      font-family: var(--font-outfit);
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      background-color: transparent;
+      border: 1px solid transparent;
+      transition: var(--transition);
+    }
+
+    .cli-tab:hover {
+      color: white;
+      background-color: rgba(255, 255, 255, 0.02);
+    }
+
+    /* Tab Active States */
+    .cli-tab[data-cli="antigravity"].active {
+      background-color: rgba(139, 92, 246, 0.1);
+      border-color: rgba(139, 92, 246, 0.2);
+      color: hsl(265, 90%, 75%);
+    }
+
+    .cli-tab[data-cli="claude"].active {
+      background-color: rgba(249, 115, 22, 0.1);
+      border-color: rgba(249, 115, 22, 0.2);
+      color: hsl(20, 90%, 70%);
+    }
+
+    .cli-tab[data-cli="codex"].active {
+      background-color: rgba(20, 184, 166, 0.1);
+      border-color: rgba(20, 184, 166, 0.2);
+      color: hsl(175, 90%, 65%);
+    }
+
+    header {
+      margin-bottom: 4rem;
+    }
+
+    .hero-label {
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      color: var(--accent);
+      margin-bottom: 0.5rem;
+      display: inline-block;
+      transition: var(--transition);
+    }
+
+    h1 {
+      font-family: var(--font-outfit);
+      font-size: 3rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      margin-bottom: 1rem;
+      background: linear-gradient(135deg, #fff 30%, var(--text-muted) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .subtitle {
+      font-size: 1.15rem;
+      color: var(--text-muted);
+      max-width: 800px;
+      margin-bottom: 2rem;
+    }
+
+    /* Hero Banner Image */
+    .hero-banner {
+      width: 100%;
+      border-radius: 16px;
+      border: 1px solid var(--border-color);
+      overflow: hidden;
+      margin-bottom: 4rem;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+      position: relative;
+    }
+
+    .hero-banner img {
+      width: 100%;
+      height: auto;
+      display: none;
+      animation: fadeIn 0.4s ease;
+    }
+
+    .hero-banner img.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.98); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    /* Guide Sections */
+    section {
+      margin-bottom: 6rem;
+      scroll-margin-top: 3rem;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 2rem;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 0.75rem;
+    }
+
+    .section-num {
+      font-family: var(--font-outfit);
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--accent);
+      opacity: 0.8;
+      transition: var(--transition);
+    }
+
+    h2 {
+      font-family: var(--font-outfit);
+      font-size: 1.85rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    /* Step Checklist */
+    .step {
+      background-color: var(--surface-color);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 1.5rem 2rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      gap: 1.5rem;
+      transition: var(--transition);
+      position: relative;
+    }
+
+    .step:hover {
+      border-color: var(--accent);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    }
+
+    .step-checkbox-container {
+      display: flex;
+      align-items: flex-start;
+      padding-top: 0.25rem;
+    }
+
+    /* Custom Checkbox Design */
+    .custom-checkbox {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 22px;
+      height: 22px;
+      border: 2px solid var(--text-muted);
+      border-radius: 6px;
+      outline: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: var(--transition);
+      background-color: transparent;
+    }
+
+    .custom-checkbox:hover {
+      border-color: var(--accent);
+      box-shadow: 0 0 8px var(--accent-glow);
+    }
+
+    .custom-checkbox:checked {
+      background-color: var(--success);
+      border-color: var(--success);
+    }
+
+    .custom-checkbox:checked::after {
+      content: '✓';
+      color: white;
+      font-size: 0.8rem;
+      font-weight: bold;
+    }
+
+    .step-content {
+      flex: 1;
+    }
+
+    .step-title {
+      font-family: var(--font-outfit);
+      font-size: 1.15rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      color: white;
+    }
+
+    .step-desc {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      margin-bottom: 1rem;
+    }
+
+    /* Code Blocks */
+    .code-block {
+      background-color: rgba(0, 0, 0, 0.3);
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      overflow: hidden;
+      margin: 1rem 0;
+    }
+
+    .code-header {
+      background-color: rgba(255, 255, 255, 0.02);
+      padding: 0.5rem 1rem;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .code-body {
+      padding: 1rem;
+      overflow-x: auto;
+      color: #e2e8f0;
+      white-space: pre;
+    }
+
+    .copy-btn {
+      background: transparent;
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.75rem;
+      transition: var(--transition);
+    }
+
+    .copy-btn:hover {
+      color: white;
+      background-color: rgba(255, 255, 255, 0.05);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    /* Callouts */
+    .callout {
+      border-left: 4px solid var(--accent);
+      background-color: rgba(255, 255, 255, 0.01);
+      border-radius: 0 8px 8px 0;
+      padding: 1.25rem 1.5rem;
+      margin: 1.5rem 0;
+      border-top: 1px solid var(--border-color);
+      border-right: 1px solid var(--border-color);
+      border-bottom: 1px solid var(--border-color);
+      transition: var(--transition);
+    }
+
+    .callout.callout-success {
+      border-left-color: var(--success);
+      background-color: rgba(34, 197, 94, 0.03);
+    }
+
+    .callout-title {
+      font-family: var(--font-outfit);
+      font-weight: 600;
+      font-size: 1rem;
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .callout-desc {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    /* Tables */
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      margin: 1.5rem 0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+      text-align: left;
+      background-color: var(--surface-color);
+    }
+
+    th {
+      background-color: rgba(255, 255, 255, 0.02);
+      font-family: var(--font-outfit);
+      font-weight: 600;
+      color: white;
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    td {
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-muted);
+      vertical-align: top;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:hover td {
+      color: var(--text-main);
+      background-color: rgba(255, 255, 255, 0.01);
+    }
+
+    /* Dynamic Filtering Styles */
+    .cli-only {
+      display: none !important;
+    }
+
+    /* Filter rules applied via classes */
+    body[data-active-cli="antigravity"] .cli-antigravity {
+      display: flex !important;
+    }
+    body[data-active-cli="antigravity"] tr.cli-antigravity {
+      display: table-row !important;
+    }
+
+    body[data-active-cli="claude"] .cli-claude {
+      display: flex !important;
+    }
+    body[data-active-cli="claude"] tr.cli-claude {
+      display: table-row !important;
+    }
+
+    body[data-active-cli="codex"] .cli-codex {
+      display: flex !important;
+    }
+    body[data-active-cli="codex"] tr.cli-codex {
+      display: table-row !important;
+    }
+
+    /* Responsive adjustments */
+    @media(max-width: 1024px) {
+      .sidebar {
+        display: none;
+      }
+      .main-content {
+        margin-left: 0;
+        width: 100%;
+        padding: 2rem;
+      }
+    }
+  </style>
+</head>
+<body data-active-cli="antigravity">
+
+  <!-- Navigation Sidebar -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-logo" id="sidebar-logo">A</div>
+      <div class="brand-title">Local AI Stack</div>
+    </div>
+
+    <!-- Navigation List with Checkbox Status -->
+    <ul class="nav-list">
+      <li class="nav-item active" id="nav-intro"><a href="#intro"><span>01. Workflow Concept</span> <span class="progress-badge"></span></a></li>
+      <li class="nav-item" id="nav-system-prep"><a href="#system-prep"><span id="sidebar-setup-title">02. Setup agy CLI</span> <span class="progress-badge"></span></a></li>
+      <li class="nav-item" id="nav-project-prep"><a href="#project-prep"><span>03. Repo Prep</span> <span class="progress-badge"></span></a></li>
+      <li class="nav-item" id="nav-run-stack"><a href="#run-stack"><span>04. Start Stack</span> <span class="progress-badge"></span></a></li>
+      <li class="nav-item" id="nav-workflow-walkthrough"><a href="#workflow-walkthrough"><span>05. Feature Guide</span> <span class="progress-badge"></span></a></li>
+      <li class="nav-item" id="nav-triage"><a href="#triage"><span>06. Troubleshooting</span> <span class="progress-badge"></span></a></li>
+    </ul>
+
+    <!-- Overall Checklist Progress -->
+    <div class="overall-progress-container">
+      <div class="overall-progress-label">
+        <span>Checklist Progress</span>
+        <span id="progress-percent">0%</span>
+      </div>
+      <div class="overall-progress-bar">
+        <div class="overall-progress-fill" id="progress-fill"></div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <header>
+      <span class="hero-label" id="cli-accent-label">Antigravity CLI Workflow</span>
+      
+      <!-- Selector Tabs -->
+      <div style="display: block;">
+        <div class="cli-selector-bar">
+          <button class="cli-tab active" data-cli="antigravity" onclick="switchCLI('antigravity')">Antigravity CLI</button>
+          <button class="cli-tab" data-cli="claude" onclick="switchCLI('claude')">Claude Code CLI</button>
+          <button class="cli-tab" data-cli="codex" onclick="switchCLI('codex')">Codex CLI</button>
+        </div>
+      </div>
+
+      <h1>Unified Local AI Stack Workflow Guide</h1>
+      <p class="subtitle">An interactive guide for developers and non-technical users to build features, write tests, and run tasks using your local Apple Silicon split-machine AI models.</p>
+      
+      <!-- Banners switch based on active CLI -->
+      <div class="hero-banner">
+        <img src="assets/local_ai_stack_illustration.png" id="img-antigravity" class="active" alt="Antigravity local AI Stack Diagram">
+        <img src="assets/claude_codex_stack_illustration.png" id="img-claude-codex" alt="Claude & Codex local AI Stack Diagram">
+      </div>
+    </header>
+
+    <!-- SECTION 01: Concept -->
+    <section id="intro">
+      <div class="section-header">
+        <span class="section-num">01</span>
+        <h2>How delegation works</h2>
+      </div>
+      <p style="margin-bottom: 2rem; color: var(--text-muted);">
+        The split-machine stack isolates planning and execution. A frontier model running inside your selected CLI agent acts as the architect, while local open-source models (Developer & Reviewer) running on an inference worker computer perform the heavy coding and testing in a git sandbox.
+      </p>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Client CLI</th>
+              <th>Skills Directory</th>
+              <th>MCP Registration Command</th>
+              <th>Allowed-Roots Configuration</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="cli-only cli-antigravity" style="display: table-row;">
+              <td><strong>Antigravity CLI</strong> (<code>agy</code>)</td>
+              <td><code>~/.gemini/antigravity-cli/skills/</code></td>
+              <td><code>scripts/register-mcp-antigravity.sh</code></td>
+              <td>Managed in <code>~/.gemini/antigravity-cli/mcp_config.json</code></td>
+            </tr>
+            <tr class="cli-only cli-claude">
+              <td><strong>Claude Code</strong> (<code>claude</code>)</td>
+              <td><code>~/.claude/skills/</code></td>
+              <td><code>scripts/register-mcp-claude.sh</code></td>
+              <td>Configured internally in SQLite database via CLI arguments</td>
+            </tr>
+            <tr class="cli-only cli-codex">
+              <td><strong>Codex</strong> (<code>codex</code>)</td>
+              <td>N/A (uses built-in planning tools)</td>
+              <td><code>scripts/register-mcp-codex.sh</code></td>
+              <td>Configured inside <code>~/.codex/config.toml</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- SECTION 02: Setup -->
+    <section id="system-prep">
+      <div class="section-header">
+        <span class="section-num">02</span>
+        <h2 id="setup-section-title">One-Time CLI configuration</h2>
+      </div>
+      <p style="margin-bottom: 2rem; color: var(--text-muted);">
+        Set up the required skills and register the MCP server bridge for your selected CLI.
+      </p>
+
+      <!-- Antigravity setup steps -->
+      <div class="step cli-only cli-antigravity" data-section="system-prep" style="display: flex;">
+        <div class="step-checkbox-container">
+          <input type="checkbox" class="custom-checkbox" id="chk-ag-skills">
+        </div>
+        <div class="step-content">
+          <div class="step-title">Install Antigravity Skills</div>
+          <div class="step-desc">Copy the local stack skills (<code>delegate-local</code>, <code>local-review</code>, <code>local-ai-status</code>) to your user directory:</div>
+          <div class="code-block">
+            <div class="code-header">
+              <span>Terminal · Machine 1</span>
+              <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            </div>
+            <div class="code-body">cd ~/ai/local-ai-stack
+./scripts/install-antigravity-skills.sh</div>
+          </div>
+        </div>
+      </div>
+      <div class="step cli-only cli-antigravity" data-section="system-prep" style="display: flex;">
+        <div class="step-checkbox-container">
+          <input type="checkbox" class="custom-checkbox" id="chk-ag-mcp">
+        </div>
+        <div class="step-content">
+          <div class="step-title">Register the MCP Bridge with Antigravity</div>
+          <div class="step-desc">Wire the MCP delegate server into your Antigravity configuration file (<code>~/.gemini/antigravity-cli/mcp_config.json</code>):</div>
+          <div class="code-block">
+            <div class="code-header">
+              <span>Terminal · Machine 1</span>
+              <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            </div>
+            <div class="code-body">./scripts/register-mcp-antigravity.sh</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Claude setup steps -->
+      <div class="step cli-only cli-claude" data-section="system-prep">
+        <div class="step-checkbox-container">
+          <input type="checkbox" class="custom-checkbox" id="chk-cl-skills">
+        </div>
+        <div class="step-content">
+          <div class="step-title">Install Claude Skills</div>
+          <div class="step-desc">Copy the skills to your Claude Code directory:</div>
+          <div class="code-block">
+            <div class="code-header">
+              <span>Terminal · Machine 1</span>
+              <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            </div>
+            <div class="code-body">cd ~/ai/local-ai-stack
+./scripts/install-claude-skills.sh</div>
+          </div>
+        </div>
+      </div>
+      <div class="step cli-only cli-claude" data-section="system-prep">
+        <div class="step-checkbox-container">
+          <input type="checkbox" class="custom-checkbox" id="chk-cl-mcp">
+        </div>
+        <div class="step-content">
+          <div class="step-title">Register the MCP Bridge with Claude</div>
+          <div class="step-desc">Wire the MCP server into Claude Code:</div>
+          <div class="code-block">
+            <div class="code-header">
+              <span>Terminal · Machine 1</span>
+              <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            </div>
+            <div class="code-body">./scripts/register-mcp-claude.sh</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Codex setup steps -->
+      <div class="step cli-only cli-codex" data-section="system-prep">
+        <div class="step-checkbox-container">
+          <input type="checkbox" class="custom-checkbox" id="chk-cx-mcp">
+        </div>
+        <div class="step-content">
+          <div class="step-title">Register the MCP Bridge with Codex</div>
+          <div class="step-desc">Register the server in Codex's internal database:</div>
+          <div class="code-block">
+            <div class="code-header">
+              <span>Terminal · Machine 1</span>
+              <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            </div>
+            <div class="code-body">cd ~/ai/local-ai-stack
+./scripts/register-mcp-codex.sh</div>
+          </div>
+        </div>
+      </div>
+      <div class="step cli-only cli-codex" data-section="system-prep">
+        <div class="step-checkbox-container">
+          <input type="checkbox" class="custom-checkbox" id="chk-cx-config">
+        </div>
+        <div class="step-content">
+          <div class="step-title">Raise Codex Timeout Settings</div>
+          <div class="step-desc">Open Codex's configuration file in your editor:</div>
+          <div class="code-block">
+            <div class="code-header">
+              <span>Terminal · Machine 1</span>
+              <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            </div>
+            <div class="code-body">nano ~/.codex/config.toml</div>
+          </div>
+          <p class="step-desc" style="margin-top: 0.5rem;">
+            Find the <code>[mcp_servers.local-ai-delegate]</code> section and raise the values to prevent timeouts:
+          </p>
+          <div class="code-block">
+            <div class="code-header">
+              <span>toml · config.toml</span>
+            </div>
+            <div class="code-body">startup_timeout_sec = 20
+tool_timeout_sec = 3600</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 03: Project Repo Prep (SHARED) -->
+    <section id="project-prep">
+      <div class="section-header">
+        <span class="section-num">03</span>
+        <h2>Preparing a project repository</h2>
+      </div>
+      <p style="margin-bottom: 2rem; color: var(--text-muted);">
+        Every project repository that you want to develop using local models needs to opt in by including local-agent instructions.
+      </p>
+
+      <div class="step" data-section="project-prep">
+        <div class="step-checkbox-container">
+          <input type="checkbox" class="custom-checkbox" id="chk-copy-templates">
+        </div>
+        <div class="step-content">
+          <div class="step-title">Bootstrap the Repo templates</div>
+          <div class="step-desc">Navigate to your target project folder (e.g. <code>~/ai/workspaces/my-app</code>) and copy the instructions templates from the stack repo.</div>
+          <div class="code-block">
+            <div class="code-header">
+              <span>Terminal · Machine 1</span>
+              <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            </div>
+            <div class="code-body">cd ~/ai/workspaces/my-app
+STACK=~/ai/local-ai-stack
+mkdir -p docs/ai plans
+cp "$STACK/docs/repo-templates/AGENTS.md"      ./AGENTS.md
+cp "$STACK/docs/repo-templates/CLAUDE.md"      ./CLAUDE.md
+cp "$STACK/docs/repo-templates/AI_WORKFLOW.md" ./docs/ai/AI_WORKFLOW.md
+touch plans/.gitkeep
+git add AGENTS.md CLAUDE.md docs/ai/AI_WORKFLOW.md plans/.gitkeep
+git commit -m "Add hybrid AI workflow instructions"</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 04: Running the Stack (SHARED) -->
+    <section id="run-stack">
+      <div class="section-header">
+        <span class="section-num">04</span>
+        <h2>Starting up the Local AI engines</h2>
+      </div>
+      <p style="margin-bottom: 2rem; color: var(--text-muted);">
+        Ensure your orchestration and inference servers are active before launching your CLI session.
+      </p>
+
+      <div class="step" data-section="run-stack">
+        <div class="step-checkbox-container">
+          <input type="checkbox" class="custom-checkbox" id="chk-start-orchestrator">
+        </div>
+        <div class="step-content">
+          <div class="step-title">Start the Orchestrator on Machine 1</div>
+          <div class="step-desc">Fire up the routing and coordination model on port 8001:</div>
+          <div class="code-block">
+            <div class="code-header">
+              <span>Terminal · Machine 1</span>
+              <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            </div>
+            <div class="code-body">start-orchestrator.sh</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step" data-section="run-stack">
+        <div class="step-checkbox-container">
+          <input type="checkbox" class="custom-checkbox" id="chk-verify-endpoints">
+        </div>
+        <div class="step-content">
+          <div class="step-title">Verify Workers Status</div>
+          <div class="step-desc">Ensure Machine 2 models are responding via a quick preflight run:</div>
+          <div class="code-block">
+            <div class="code-header">
+              <span>Terminal · Machine 1</span>
+              <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            </div>
+            <div class="code-body">preflight.sh</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 05: Workflow Walkthrough -->
+    <section id="workflow-walkthrough">
+      <div class="section-header">
+        <span class="section-num">05</span>
+        <h2>Walkthrough: Build a new feature</h2>
+      </div>
+      <p style="margin-bottom: 2rem; color: var(--text-muted);">
+        Here is a step-by-step example of how to add a database migration and a route using your selected CLI.
+      </p>
+
+      <!-- Antigravity walkthrough -->
+      <div class="step cli-only cli-antigravity" data-section="workflow-walkthrough" style="display: flex;">
+        <div class="step-checkbox-container">
+          <input type="checkbox" class="custom-checkbox" id="chk-ag-run-1">
+        </div>
+        <div class="step-content">
+          <div class="step-title">1. Launch the CLI</div>
+          <div class="step-desc">Open the Antigravity CLI:</div>
+          <div class="code-block">
+            <div class="code-header">
+              <span>Terminal · Machine 1</span>
+              <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            </div>
+            <div class="code-body">cd ~/ai/workspaces/my-app
+agy</div>
+          </div>
+        </div>
+      </div>
+      <div class="step cli-only cli-antigravity" data-section="workflow-walkthrough" style="display: flex;">
+        <div class="step-checkbox-container">
+          <input type="checkbox" class="custom-checkbox" id="chk-ag-run-2">
+        </div>
+        <div class="step-content">
+          <div class="step-title">2. Propose Feature Plan</div>
+          <div class="step-desc">Ask <code>agy</code> to generate the implementation plan:</div>
+          <div class="code-block">
+            <div class="code-header">
+              <span>Antigravity CLI prompt</span>
+            </div>
+            <div class="code-body">Create an implementation plan to add a users table database migration and route.</div>
+          </div>
+        </div>
+      </div>
+      <div class="step cli-only cli-antigravity" data-section="workflow-walkthrough" style="display: flex;">
+        <div class="step-checkbox-container">
+          <input type="checkbox" class="custom-checkbox" id="chk-ag-run-3">
+        </div>
+        <div class="step-content">
+          <div class="step-title">3. Delegate Execution to Local Stack</div>
+          <div class="step-desc">Delegate the plan execution:</div>
+          <div class="code-block">
+            <div class="code-header">
+              <span>Antigravity CLI prompt</span>
+            </div>
+            <div class="code-body">/delegate-local plans/2026-05-23-add-users-db.md</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Claude Code walkthrough -->
+      <div class="step cli-only cli-claude" data-section="workflow-walkthrough">
+        <div class="step-checkbox-container">
+          <input type="checkbox" class="custom-checkbox" id="chk-cl-run-1">
+        </div>
+        <div class="step-content">
+          <div class="step-title">1. Launch the CLI</div>
+          <div class="step-desc">Open Claude Code:</div>
+          <div class="code-block">
+            <div class="code-header">
+              <span>Terminal · Machine 1</span>
+              <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            </div>
+            <div class="code-body">cd ~/ai/workspaces/my-app
+claude</div>
+          </div>
+        </div>
+      </div>
+      <div class="step cli-only cli-claude" data-section="workflow-walkthrough">
+        <div class="step-checkbox-container">
+          <input type="checkbox" class="custom-checkbox" id="chk-cl-run-2">
+        </div>
+        <div class="step-content">
+          <div class="step-title">2. Propose Feature Plan</div>
+          <div class="step-desc">Ask Claude to create the plan:</div>
+          <div class="code-block">
+            <div class="code-header">
+              <span>Claude Code prompt</span>
+            </div>
+            <div class="code-body">Create an implementation plan to add a users table database migration and route.</div>
+          </div>
+        </div>
+      </div>
+      <div class="step cli-only cli-claude" data-section="workflow-walkthrough">
+        <div class="step-checkbox-container">
+          <input type="checkbox" class="custom-checkbox" id="chk-cl-run-3">
+        </div>
+        <div class="step-content">
+          <div class="step-title">3. Delegate Execution to Local Stack</div>
+          <div class="step-desc">Delegate the task execution:</div>
+          <div class="code-block">
+            <div class="code-header">
+              <span>Claude Code prompt</span>
+            </div>
+            <div class="code-body">/delegate-local plans/2026-05-23-add-users-db.md</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Codex walkthrough -->
+      <div class="step cli-only cli-codex" data-section="workflow-walkthrough">
+        <div class="step-checkbox-container">
+          <input type="checkbox" class="custom-checkbox" id="chk-cx-run-1">
+        </div>
+        <div class="step-content">
+          <div class="step-title">1. Launch the CLI</div>
+          <div class="step-desc">Open Codex CLI:</div>
+          <div class="code-block">
+            <div class="code-header">
+              <span>Terminal · Machine 1</span>
+              <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            </div>
+            <div class="code-body">cd ~/ai/workspaces/my-app
+codex</div>
+          </div>
+        </div>
+      </div>
+      <div class="step cli-only cli-codex" data-section="workflow-walkthrough">
+        <div class="step-checkbox-container">
+          <input type="checkbox" class="custom-checkbox" id="chk-cx-run-2">
+        </div>
+        <div class="step-content">
+          <div class="step-title">2. Propose Feature Plan</div>
+          <div class="step-desc">Ask Codex to create the plan:</div>
+          <div class="code-block">
+            <div class="code-header">
+              <span>Codex CLI prompt</span>
+            </div>
+            <div class="code-body">Create an implementation plan to add a users table database migration and route.</div>
+          </div>
+        </div>
+      </div>
+      <div class="step cli-only cli-codex" data-section="workflow-walkthrough">
+        <div class="step-checkbox-container">
+          <input type="checkbox" class="custom-checkbox" id="chk-cx-run-3">
+        </div>
+        <div class="step-content">
+          <div class="step-title">3. Delegate Execution to Local Stack</div>
+          <div class="step-desc">Codex uses tool calls directly. Run:</div>
+          <div class="code-block">
+            <div class="code-header">
+              <span>Codex CLI prompt</span>
+            </div>
+            <div class="code-body">Run the local plan at plans/2026-05-23-add-users-db.md</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Shared wrap-up step -->
+      <div class="step" data-section="workflow-walkthrough">
+        <div class="step-checkbox-container">
+          <input type="checkbox" class="custom-checkbox" id="chk-shared-merge">
+        </div>
+        <div class="step-content">
+          <div class="step-title">4. Inspect & Merge</div>
+          <div class="step-desc">The local models will run tests, review, and write code inside the git sandbox. Once done, inspect the branch changes and merge to main:</div>
+          <div class="code-block">
+            <div class="code-header">
+              <span>Terminal · Machine 1</span>
+              <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            </div>
+            <div class="code-body">cd ~/ai/workspaces/my-app
+git diff ai/local/add-users-db-...
+# If happy, merge the local work branch
+git merge ai/local/add-users-db-...</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 06: Triage -->
+    <section id="triage">
+      <div class="section-header">
+        <span class="section-num">06</span>
+        <h2>Troubleshooting & Triage cheat sheet</h2>
+      </div>
+      <p style="margin-bottom: 2rem; color: var(--text-muted);">
+        A quick-reference list of common issues when executing plans, their potential causes, and how to fix them.
+      </p>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Symptom</th>
+              <th>Common Cause</th>
+              <th>Remediation Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>local_ai_status</code> reports <code>FAIL</code> on an endpoint</td>
+              <td>Inference server is down or Thunderbolt bridge is disconnected.</td>
+              <td>Run <code>preflight.sh</code> to trace the network path. Restart workers via <code>start-worker-models.sh</code> if needed.</td>
+            </tr>
+            <tr class="cli-only cli-antigravity" style="display: table-row;">
+              <td><code>run_local_plan</code> fails with <code>Binary not found</code> in agy</td>
+              <td>The virtual environment has not been initialized or registered.</td>
+              <td>Make sure you ran <code>uv pip install -e '.[all]'</code> on Machine 1, and ensure `LOCAL_EXEC_PLAN_BIN` in <code>mcp_config.json</code> points to your virtual env's bin path.</td>
+            </tr>
+            <tr class="cli-only cli-claude">
+              <td>Claude Code errors during <code>/delegate-local</code> tool call</td>
+              <td>The tool calls took longer than the default Claude Code timeout (often 5 mins).</td>
+              <td>Use <code>/audit-stack</code> to ensure connections are responsive, or chunk the task into smaller sub-tasks.</td>
+            </tr>
+            <tr class="cli-only cli-codex">
+              <td>Codex fails to execute tool or times out</td>
+              <td>The <code>tool_timeout_sec</code> parameter inside <code>~/.codex/config.toml</code> is too small.</td>
+              <td>Double check that your <code>config.toml</code> has <code>tool_timeout_sec = 3600</code>.</td>
+            </tr>
+            <tr>
+              <td>Git worktree creation fails or collisions occur</td>
+              <td>A stale worktree exists with the same branch or directory name.</td>
+              <td>Run <code>git worktree prune</code> to clean up stale references, or remove directory manually.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    /* Javascript to handle localStorage state and progress metrics */
+    const checkboxes = document.querySelectorAll('.custom-checkbox');
+    const progressPercent = document.getElementById('progress-percent');
+    const progressFill = document.getElementById('progress-fill');
+    const navItems = document.querySelectorAll('.nav-item');
+    const body = document.body;
+
+    // Load active CLI and checkmark states on load
+    window.addEventListener('DOMContentLoaded', () => {
+      const savedCLI = localStorage.getItem('active_cli') || 'antigravity';
+      switchCLI(savedCLI);
+
+      checkboxes.forEach(chk => {
+        const checked = localStorage.getItem('v2_' + chk.id) === 'true';
+        chk.checked = checked;
+        chk.addEventListener('change', handleStateChange);
+      });
+      updateProgress();
+    });
+
+    function switchCLI(cliName) {
+      // Update body selector
+      body.setAttribute('data-active-cli', cliName);
+      localStorage.setItem('active_cli', cliName);
+
+      // Update tabs styles
+      document.querySelectorAll('.cli-tab').forEach(tab => {
+        if (tab.getAttribute('data-cli') === cliName) {
+          tab.classList.add('active');
+        } else {
+          tab.classList.remove('active');
+        }
+      });
+
+      // Update branding & header texts
+      const sidebarLogo = document.getElementById('sidebar-logo');
+      const sidebarSetupTitle = document.getElementById('sidebar-setup-title');
+      const cliAccentLabel = document.getElementById('cli-accent-label');
+      const setupSectionTitle = document.getElementById('setup-section-title');
+
+      if (cliName === 'antigravity') {
+        sidebarLogo.textContent = 'A';
+        sidebarLogo.style.background = 'linear-gradient(135deg, var(--primary-antigravity), hsl(290, 85%, 65%))';
+        document.documentElement.style.setProperty('--accent', 'var(--primary-antigravity)');
+        document.documentElement.style.setProperty('--accent-glow', 'rgba(139, 92, 246, 0.15)');
+        sidebarSetupTitle.textContent = '02. Setup agy CLI';
+        setupSectionTitle.textContent = 'One-Time agy CLI setup';
+        cliAccentLabel.textContent = 'Antigravity CLI Workflow';
+        
+        document.getElementById('img-antigravity').classList.add('active');
+        document.getElementById('img-claude-codex').classList.remove('active');
+      } else if (cliName === 'claude') {
+        sidebarLogo.textContent = 'C';
+        sidebarLogo.style.background = 'linear-gradient(135deg, var(--primary-claude), hsl(45, 85%, 50%))';
+        document.documentElement.style.setProperty('--accent', 'var(--primary-claude)');
+        document.documentElement.style.setProperty('--accent-glow', 'rgba(249, 115, 22, 0.15)');
+        sidebarSetupTitle.textContent = '02. Setup Claude CLI';
+        setupSectionTitle.textContent = 'One-Time Claude CLI setup';
+        cliAccentLabel.textContent = 'Claude Code CLI Workflow';
+        
+        document.getElementById('img-antigravity').classList.remove('active');
+        document.getElementById('img-claude-codex').classList.add('active');
+      } else if (cliName === 'codex') {
+        sidebarLogo.textContent = 'C';
+        sidebarLogo.style.background = 'linear-gradient(135deg, var(--primary-codex), hsl(200, 85%, 50%))';
+        document.documentElement.style.setProperty('--accent', 'var(--primary-codex)');
+        document.documentElement.style.setProperty('--accent-glow', 'rgba(20, 184, 166, 0.15)');
+        sidebarSetupTitle.textContent = '02. Setup Codex CLI';
+        setupSectionTitle.textContent = 'One-Time Codex CLI setup';
+        cliAccentLabel.textContent = 'Codex CLI Workflow';
+        
+        document.getElementById('img-antigravity').classList.remove('active');
+        document.getElementById('img-claude-codex').classList.add('active');
+      }
+
+      // Recalculate progress for new CLI
+      updateProgress();
+    }
+
+    function handleStateChange(e) {
+      localStorage.setItem('v2_' + e.target.id, e.target.checked);
+      updateProgress();
+    }
+
+    function updateProgress() {
+      // Only count visible checkboxes
+      const visibleCheckboxes = Array.from(checkboxes).filter(chk => {
+        const stepParent = chk.closest('.step');
+        return stepParent && getComputedStyle(stepParent).display !== 'none';
+      });
+
+      const total = visibleCheckboxes.length;
+      let checkedCount = 0;
+
+      // Group totals per section for visible checkboxes
+      const sections = {
+        'system-prep': { total: 0, checked: 0, navId: 'nav-system-prep' },
+        'project-prep': { total: 0, checked: 0, navId: 'nav-project-prep' },
+        'run-stack': { total: 0, checked: 0, navId: 'nav-run-stack' },
+        'workflow-walkthrough': { total: 0, checked: 0, navId: 'nav-workflow-walkthrough' }
+      };
+
+      visibleCheckboxes.forEach(chk => {
+        if (chk.checked) checkedCount++;
+        
+        const parentStep = chk.closest('.step');
+        if (parentStep) {
+          const sectionKey = parentStep.getAttribute('data-section');
+          if (sections[sectionKey]) {
+            sections[sectionKey].total++;
+            if (chk.checked) sections[sectionKey].checked++;
+          }
+        }
+      });
+
+      // Update sidebar overall progress percentage and fill bar
+      const overallPercent = total > 0 ? Math.round((checkedCount / total) * 100) : 0;
+      progressPercent.textContent = `${overallPercent}%`;
+      progressFill.style.width = `${overallPercent}%`;
+
+      // Update section navigation badges
+      Object.keys(sections).forEach(key => {
+        const sec = sections[key];
+        const navEl = document.getElementById(sec.navId);
+        if (navEl) {
+          if (sec.total > 0 && sec.checked === sec.total) {
+            navEl.classList.add('completed');
+          } else {
+            navEl.classList.remove('completed');
+          }
+        }
+      });
+    }
+
+    /* Copy Button Helper */
+    function copyCode(btn) {
+      const codeBody = btn.closest('.code-block').querySelector('.code-body');
+      navigator.clipboard.writeText(codeBody.textContent.trim()).then(() => {
+        const originalText = btn.textContent;
+        btn.textContent = 'Copied!';
+        btn.style.color = '#22c55e';
+        btn.style.borderColor = '#22c55e';
+        setTimeout(() => {
+          btn.textContent = originalText;
+          btn.style.color = '';
+          btn.style.borderColor = '';
+        }, 2000);
+      });
+    }
+
+    // Scroll Spy for Navigation Active State
+    window.addEventListener('scroll', () => {
+      let current = '';
+      const sectionElements = document.querySelectorAll('section');
+      
+      sectionElements.forEach(section => {
+        const sectionTop = section.offsetTop;
+        if (pageYOffset >= sectionTop - 150) {
+          current = section.getAttribute('id');
+        }
+      });
+
+      navItems.forEach(item => {
+        item.classList.remove('active');
+        if (item.id === `nav-${current}`) {
+          item.classList.add('active');
+        }
+      });
+    });
+  </script>
+</body>
+</html>
