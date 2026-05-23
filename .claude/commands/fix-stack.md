@@ -1,7 +1,7 @@
 ---
 description: Audit the deployed two-Mac stack and remediate fixable drift, with explicit gates for anything destructive
 argument-hint: [optional focus area]
-allowed-tools: Read, Grep, Glob, Bash(ssh admin@10.10.10.2:*), Bash(launchctl print:*), Bash(launchctl list:*), Bash(claude mcp list), Bash(lsof -nP*), Bash(curl -s http://127.0.0.1:*), Bash(curl -s http://10.10.10.2:*), Bash(curl -fsS --max-time*), Bash(ping -c*), Bash(scripts/preflight.sh), Bash(scripts/m1-ai-status.sh), Bash(scripts/m2-ai-status.sh), Bash(scripts/smoke-test-endpoints.sh), Bash(scripts/install-symlinks.sh), Bash(scripts/install-claude-skills.sh), Bash(scripts/install-launchd-machine1.sh), Bash(scripts/install-launchd-machine2.sh), Bash(scripts/start-orchestrator.sh), Bash(scripts/start-worker-models.sh), Bash(scripts/stop-orchestrator.sh), Bash(scripts/stop-worker-models.sh), Bash(uv pip install*), Bash(uv venv*), Bash(git -C * pull), Bash(git -C * status*), Bash(cat:*), Bash(ls:*), Bash(test:*)
+allowed-tools: Read, Grep, Glob, Bash(ssh admin@10.10.10.2:*), Bash(launchctl print:*), Bash(launchctl list:*), Bash(claude mcp list), Bash(lsof -nP*), Bash(curl -s http://127.0.0.1:*), Bash(curl -s http://10.10.10.2:*), Bash(curl -fsS --max-time*), Bash(ping -c*), Bash(scripts/preflight.sh), Bash(scripts/m1-ai-status.sh), Bash(scripts/m2-ai-status.sh), Bash(scripts/smoke-test-endpoints.sh), Bash(scripts/install-symlinks.sh), Bash(scripts/install-claude-skills.sh), Bash(scripts/install-antigravity-skills.sh), Bash(scripts/install-launchd-machine1.sh), Bash(scripts/install-launchd-machine2.sh), Bash(scripts/start-orchestrator.sh), Bash(scripts/start-worker-models.sh), Bash(scripts/stop-orchestrator.sh), Bash(scripts/stop-worker-models.sh), Bash(scripts/register-mcp-antigravity.sh), Bash(uv pip install*), Bash(uv venv*), Bash(git -C * pull), Bash(git -C * status*), Bash(cat:*), Bash(ls:*), Bash(test:*)
 ---
 
 You are the remediator for the two-Mac local AI stack. Compare the
@@ -28,6 +28,7 @@ Idempotent scripts that fix the issue cleanly even if they ran before:
 - Repo package not installed → `uv pip install -e '.[all]'` (M1) or `'.[mlx]'` (M2 via the user, not over SSH)
 - Repo out of date with origin → `git -C ~/ai/local-ai-stack pull`
 - Claude skills not installed → `scripts/install-claude-skills.sh`
+- Antigravity skills not installed → `scripts/install-antigravity-skills.sh`
 - M1 LaunchAgent not loaded → `scripts/install-launchd-machine1.sh` (the install script handles the bootout/bootstrap reload)
 - Orchestrator/workers stopped → `scripts/start-orchestrator.sh` / `scripts/start-worker-models.sh`
 
@@ -40,6 +41,7 @@ ask "Run this? y/N" before executing:
 
 - `scripts/register-mcp-claude.sh` (errors if already registered; remedy is `claude mcp remove local-ai-delegate` then rerun)
 - `scripts/register-mcp-codex.sh`
+- `scripts/register-mcp-antigravity.sh`
 - `scripts/install-launchd-machine2.sh` (would run on this Mac if you're auditing from M2; if you're on M1 and M2 needs autostart, this is a Bucket 4 item)
 - `stop-orchestrator.sh` / `stop-worker-models.sh` followed by a `start-*.sh` (restart cycle)
 
@@ -70,8 +72,8 @@ run it.**
 1. Run `scripts/preflight.sh` first — it's the fastest signal for what
    broad category of thing is wrong (network, auth, endpoints, env).
 2. Walk the same checklist as `/audit-stack`:
-   - **Machine 1**: repo present, venv with package, `~/ai/bin` symlinks, LaunchAgent loaded, Claude skills present, MCP registered, `.env` valid, endpoints reachable.
-   - **Machine 2** (over SSH, **read-only**): repo present, venv with `mlx_lm.server`, models present, ports 8002/8003 listening, LaunchAgent loaded.
+    - **Machine 1**: repo present, venv with package, `~/ai/bin` symlinks, LaunchAgent loaded, Claude and Antigravity skills present, MCP registered (Claude, Codex, Antigravity), `.env` valid, endpoints reachable.
+    - **Machine 2** (over SSH, **read-only**): repo present, venv with `mlx_lm.server`, models present, ports 8002/8003 listening, LaunchAgent loaded.
 3. For each ❌, run the triage above.
 
 ## Output format

@@ -23,6 +23,8 @@ If you're using Time Machine, Arq, restic, or similar, **include**:
 - `~/ai/workspaces/` (or whatever projects you keep there) — but only
   the ones not already pushed to a remote git host
 - `~/.claude/skills/` if you've customized any
+- `~/.gemini/antigravity-cli/skills/` if you've customized any
+- `~/.gemini/antigravity-cli/mcp_config.json`
 - `~/.codex/` if you've customized `config.toml`
 
 And **exclude**:
@@ -78,11 +80,13 @@ If a Mac wipes, here is the rebuild order:
    ```bash
    scripts/download-models-machine{1,2}.sh
    ```
-6. Re-register MCP and Claude skills:
+6. Re-register MCP and skills:
    ```bash
    scripts/install-claude-skills.sh
+   scripts/install-antigravity-skills.sh
    scripts/register-mcp-claude.sh
    scripts/register-mcp-codex.sh
+   scripts/register-mcp-antigravity.sh
    ```
 7. Re-install launchd agents:
    ```bash
@@ -99,6 +103,9 @@ Things that don't live in `~/ai/` but matter for the stack:
 
 - `~/.claude/skills/` — populated by `scripts/install-claude-skills.sh`
   from the repo. Source of truth is `skills/claude/` in the repo.
+- `~/.gemini/antigravity-cli/skills/` — populated by `scripts/install-antigravity-skills.sh`
+  from the repo. Source of truth is `.agents/skills/` in the repo.
+- `~/.gemini/antigravity-cli/mcp_config.json` — populated by `scripts/register-mcp-antigravity.sh`.
 - `~/Library/LaunchAgents/com.localai.{orchestrator,workers}.plist` —
   rendered by the install-launchd scripts.
 - `~/.cache/huggingface/` — token + download cache. Safe to delete; the

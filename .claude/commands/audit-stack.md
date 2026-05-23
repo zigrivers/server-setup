@@ -31,7 +31,9 @@ run the full audit below.
    - `~/ai/bin/` has the expected symlinks (`start-orchestrator.sh`, `m1-ai-status.sh`, `smoke-test-endpoints.sh`, `bench-chat-endpoint.sh`, `preflight.sh`).
    - `~/Library/LaunchAgents/com.localai.orchestrator.plist` exists; `launchctl print "gui/$(id -u)/com.localai.orchestrator"` shows it loaded.
    - `~/.claude/skills/{delegate-local,local-review,local-ai-status}` exist with SKILL.md inside each.
+   - `~/.gemini/antigravity-cli/skills/{delegate-local,local-review,local-ai-status}` exist with SKILL.md inside each.
    - `claude mcp list` shows `local-ai-delegate`.
+   - `~/.gemini/antigravity-cli/mcp_config.json` contains `local-ai-delegate` configuration.
    - `~/.codex/config.toml` mentions `local-ai-delegate` with `tool_timeout_sec = 3600` (if Codex is configured).
 
 3. **For Machine 2, verify via SSH:**

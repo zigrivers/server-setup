@@ -98,7 +98,9 @@ python -m local_ai_stack.local_agents \
   "Create a tiny README.md file that says the split-machine local multi-agent system is working."
 ```
 
-## 9. Install Claude skills
+## 9. Install Claude and Antigravity skills
+
+For Claude Code:
 
 ```bash
 scripts/install-claude-skills.sh
@@ -109,6 +111,14 @@ Restart Claude Code and run:
 ```text
 /skills
 ```
+
+For Antigravity CLI:
+
+```bash
+scripts/install-antigravity-skills.sh
+```
+
+Restart Antigravity CLI and run `/skills`.
 
 ## 10. Register MCP bridge
 
@@ -122,6 +132,12 @@ For Codex:
 
 ```bash
 scripts/register-mcp-codex.sh
+```
+
+For Antigravity CLI:
+
+```bash
+scripts/register-mcp-antigravity.sh
 ```
 
 Then edit `~/.codex/config.toml` and add/increase:

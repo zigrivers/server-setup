@@ -35,6 +35,11 @@ mcp/local_delegate_mcp/
 scripts/
   launchers, installers, download helpers, status checks, benchmark helpers
 
+.agents/skills/
+  delegate-local/          Antigravity CLI skill for plan → local execution
+  local-review/            Antigravity CLI skill for local second-opinion review
+  local-ai-status/         Antigravity CLI skill for checking endpoints
+
 skills/claude/
   delegate-local/          Claude Code skill for plan → local execution
   local-review/            Claude Code skill for local second-opinion review

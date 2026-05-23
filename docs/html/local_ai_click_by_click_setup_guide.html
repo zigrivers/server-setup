@@ -373,15 +373,20 @@ cat "$WT/.agent_memory.jsonl" | tail -1 | python3 -m json.tool</pre></div>
 </section>
 
 <div class="part-divider"><div class="part-divider-line"></div><div class="part-divider-text">Part VI · Frontier handoff (Claude Code, Codex, MCP)</div><div class="part-divider-line"></div></div>
-<section id="install-skills"><div class="section-num">15 / Machine 1</div><h2>Install Claude <em>skills</em></h2><p class="section-deck">The repo ships three Claude skills under <code>skills/claude/</code>. Install them into <code>~/.claude/skills/</code> with the helper.</p>
-<div class="step" data-step="install-skills"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Run the installer</h3>
+<section id="install-skills"><div class="section-num">15 / Machine 1</div><h2>Install Claude and Antigravity <em>skills</em></h2><p class="section-deck">The repo ships three Claude skills under <code>skills/claude/</code> and three Antigravity skills under <code>.agents/skills/</code>. Install them into your local agent directories with the helpers.</p>
+<div class="step" data-step="install-claude-skills"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Install Claude skills</h3>
 <div class="code-block"><div class="code-header"><span class="code-lang">bash · on Machine 1</span><button class="copy-btn">Copy</button></div><pre>cd ~/ai/local-ai-stack
 scripts/install-claude-skills.sh
 ls ~/.claude/skills</pre></div>
 <p>Restart Claude Code, then run <code>/skills</code> to confirm <code>delegate-local</code>, <code>local-review</code>, and <code>local-ai-status</code> show up.</p></div></div>
+<div class="step" data-step="install-antigravity-skills"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Install Antigravity skills</h3>
+<div class="code-block"><div class="code-header"><span class="code-lang">bash · on Machine 1</span><button class="copy-btn">Copy</button></div><pre>cd ~/ai/local-ai-stack
+scripts/install-antigravity-skills.sh
+ls ~/.gemini/antigravity-cli/skills</pre></div>
+<p>Restart Antigravity CLI, then run <code>/skills</code> to confirm the skills show up.</p></div></div>
 </section>
 
-<section id="register-mcp"><div class="section-num">16 / Machine 1</div><h2>Register the <em>MCP bridge</em></h2><p class="section-deck">The MCP server lives at <code>mcp/local_delegate_mcp/server.py</code>. The register scripts wire it into Claude Code and Codex with sane allowed-roots. Full reference: <code>docs/MCP.md</code>.</p>
+<section id="register-mcp"><div class="section-num">16 / Machine 1</div><h2>Register the <em>MCP bridge</em></h2><p class="section-deck">The MCP server lives at <code>mcp/local_delegate_mcp/server.py</code>. The register scripts wire it into Claude Code, Codex, and Antigravity CLI with sane allowed-roots. Full reference: <code>docs/MCP.md</code>.</p>
 <div class="step" data-step="register-claude"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Register with Claude Code</h3>
 <div class="code-block"><div class="code-header"><span class="code-lang">bash · on Machine 1</span><button class="copy-btn">Copy</button></div><pre>cd ~/ai/local-ai-stack
 scripts/register-mcp-claude.sh
@@ -394,6 +399,10 @@ $EDITOR ~/.codex/config.toml</pre></div>
 <p>In the <code>[mcp_servers.local-ai-delegate]</code> block, add or increase:</p>
 <div class="code-block"><div class="code-header"><span class="code-lang">toml</span><button class="copy-btn">Copy</button></div><pre>startup_timeout_sec = 20
 tool_timeout_sec = 3600</pre></div></div></div>
+<div class="step" data-step="register-antigravity"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Register with Antigravity CLI</h3>
+<div class="code-block"><div class="code-header"><span class="code-lang">bash · on Machine 1</span><button class="copy-btn">Copy</button></div><pre>cd ~/ai/local-ai-stack
+scripts/register-mcp-antigravity.sh</pre></div>
+<p>Confirm the configuration is successfully written to <code>~/.gemini/antigravity-cli/mcp_config.json</code>.</p></div></div>
 </section>
 
 <section id="per-project"><div class="section-num">17 / Each project repo</div><h2>Per-project repo <em>workflow files</em></h2><p class="section-deck">Other repositories opt in to the hybrid workflow by copying three small files from <code>docs/repo-templates/</code>.</p>
@@ -524,8 +533,8 @@ ssh admin@10.10.10.2 'tail -100 ~/ai/logs/developer.log; tail -100 ~/ai/logs/rev
 <tr><td><code>uv venv .venv --python 3.12</code></td><td>Yes (no-op if exists)</td><td>Does not delete the venv. To rebuild, <code>rm -rf .venv</code> first.</td></tr>
 <tr><td><code>uv pip install -e '.[all]'</code></td><td>Yes</td><td>Reinstalls in-place. Safe.</td></tr>
 <tr><td><code>scripts/install-symlinks.sh</code></td><td>Yes</td><td>Uses <code>ln -sfn</code>; overwrites stale links cleanly.</td></tr>
-<tr><td><code>scripts/install-claude-skills.sh</code></td><td>Yes</td><td><strong>Deletes</strong> any prior <code>~/.claude/skills/{delegate-local,local-review,local-ai-status}</code> and recopies. Don't hand-edit those skills under <code>~/.claude/</code>; edit the source under <code>skills/claude/</code> and rerun.</td></tr>
-<tr><td><code>scripts/register-mcp-{claude,codex}.sh</code></td><td>Mostly</td><td><code>claude mcp add</code> errors if the server name is already registered. Remove first with <code>claude mcp remove local-ai-delegate</code>, then rerun.</td></tr>
+<tr><td><code>scripts/install-{claude,antigravity}-skills.sh</code></td><td>Yes</td><td><strong>Deletes</strong> any prior <code>~/.claude/skills/</code> or <code>~/.gemini/antigravity-cli/skills/</code> targets and recopies. Don't hand-edit those skills under home; edit the source under <code>skills/claude/</code> or <code>.agents/skills/</code> and rerun.</td></tr>
+<tr><td><code>scripts/register-mcp-{claude,codex,antigravity}.sh</code></td><td>Mostly</td><td>Claude/Codex scripts error if the server is already registered. Remove first (e.g. <code>claude mcp remove local-ai-delegate</code>), then rerun. The Antigravity script is fully idempotent and merges/updates config safely.</td></tr>
 <tr><td><code>scripts/download-models-machine{1,2}.sh</code></td><td>Yes</td><td><code>hf download</code> resumes; partial files are completed.</td></tr>
 <tr><td><code>scripts/install-launchd-machine{1,2}.sh</code></td><td>Yes</td><td>Idempotent — bootouts first if already loaded, then bootstraps.</td></tr>
 <tr><td><code>cp configs/env.machine1.example .env</code></td><td><strong>No — overwrites your edits</strong></td><td>Diff first: <code>diff configs/env.machine1.example .env</code>. Only re-copy if you want to discard your local edits.</td></tr>
