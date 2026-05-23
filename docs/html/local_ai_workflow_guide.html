@@ -589,10 +589,11 @@
     <ul class="nav-list">
       <li class="nav-item active" id="nav-intro"><a href="#intro"><span>01. Workflow Concept</span> <span class="progress-badge"></span></a></li>
       <li class="nav-item" id="nav-system-prep"><a href="#system-prep"><span id="sidebar-setup-title">02. Setup agy CLI</span> <span class="progress-badge"></span></a></li>
-      <li class="nav-item" id="nav-project-prep"><a href="#project-prep"><span>03. Repo Prep</span> <span class="progress-badge"></span></a></li>
-      <li class="nav-item" id="nav-run-stack"><a href="#run-stack"><span>04. Start Stack</span> <span class="progress-badge"></span></a></li>
-      <li class="nav-item" id="nav-workflow-walkthrough"><a href="#workflow-walkthrough"><span>05. Feature Guide</span> <span class="progress-badge"></span></a></li>
-      <li class="nav-item" id="nav-triage"><a href="#triage"><span>06. Troubleshooting</span> <span class="progress-badge"></span></a></li>
+      <li class="nav-item" id="nav-smoke-test"><a href="#smoke-test"><span>03. Smoke Test Connection</span> <span class="progress-badge"></span></a></li>
+      <li class="nav-item" id="nav-project-prep"><a href="#project-prep"><span>04. Repo Prep</span> <span class="progress-badge"></span></a></li>
+      <li class="nav-item" id="nav-run-stack"><a href="#run-stack"><span>05. Start Stack</span> <span class="progress-badge"></span></a></li>
+      <li class="nav-item" id="nav-workflow-walkthrough"><a href="#workflow-walkthrough"><span>06. Feature Guide</span> <span class="progress-badge"></span></a></li>
+      <li class="nav-item" id="nav-triage"><a href="#triage"><span>07. Troubleshooting</span> <span class="progress-badge"></span></a></li>
     </ul>
 
     <!-- Overall Checklist Progress -->
@@ -801,10 +802,124 @@ tool_timeout_sec = 3600</div>
       </div>
     </section>
 
-    <!-- SECTION 03: Project Repo Prep (SHARED) -->
-    <section id="project-prep">
+    <!-- SECTION 2.5: Smoke Test -->
+    <section id="smoke-test">
       <div class="section-header">
         <span class="section-num">03</span>
+        <h2>Smoke testing the connection</h2>
+      </div>
+      <p style="margin-bottom: 2rem; color: var(--text-muted);">
+        Before you prepare your project repositories, verify that your CLI agent can successfully speak to the local AI stack.
+      </p>
+
+      <!-- Step 2.5.1: Python command line test (shared) -->
+      <div class="step" data-section="smoke-test">
+        <div class="step-checkbox-container">
+          <input type="checkbox" class="custom-checkbox" id="chk-smoke-python">
+        </div>
+        <div class="step-content">
+          <div class="step-title">1. Test the MCP Server binary directly</div>
+          <div class="step-desc">Run the Python script directly from your terminal to verify imports and dependencies work. It should start and wait for input without error:</div>
+          <div class="code-block">
+            <div class="code-header">
+              <span>Terminal · Machine 1</span>
+              <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            </div>
+            <div class="code-body">cd ~/ai/local-ai-stack
+.venv/bin/python mcp/local_delegate_mcp/server.py</div>
+          </div>
+          <p class="step-desc" style="margin-top: 0.5rem;">
+            Press <strong>Ctrl+C</strong> to terminate the process after confirming it starts successfully (does not crash immediately with an <code>ImportError</code>).
+          </p>
+        </div>
+      </div>
+
+      <!-- Step 2.5.2: CLI-specific status verification -->
+      <div class="step cli-only cli-antigravity" data-section="smoke-test" style="display: flex;">
+        <div class="step-checkbox-container">
+          <input type="checkbox" class="custom-checkbox" id="chk-smoke-ag-connection">
+        </div>
+        <div class="step-content">
+          <div class="step-title">2. Verify status inside Antigravity CLI</div>
+          <div class="step-desc">Launch <code>agy</code> inside the local stack directory (which is already configured as an allowed-root) and run the status skill:</div>
+          <div class="code-block">
+            <div class="code-header">
+              <span>Terminal · Machine 1</span>
+              <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            </div>
+            <div class="code-body">cd ~/ai/local-ai-stack
+agy</div>
+          </div>
+          <p class="step-desc" style="margin-top: 0.5rem;">Inside the session, run:</p>
+          <div class="code-block">
+            <div class="code-header">
+              <span>Antigravity CLI prompt</span>
+            </div>
+            <div class="code-body">Check the status of my local AI endpoints.</div>
+          </div>
+          <div class="callout callout-success">
+            <div class="callout-title">✓ Expected Output</div>
+            <div class="callout-desc">The CLI should execute the MCP status tool and return <strong>OK</strong> for the endpoints (provided your model servers are running). If you see connection errors, ensure your models are started.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step cli-only cli-claude" data-section="smoke-test">
+        <div class="step-checkbox-container">
+          <input type="checkbox" class="custom-checkbox" id="chk-smoke-cl-connection">
+        </div>
+        <div class="step-content">
+          <div class="step-title">2. Verify status inside Claude Code</div>
+          <div class="step-desc">Launch <code>claude</code> inside the local stack directory and run the status skill:</div>
+          <div class="code-block">
+            <div class="code-header">
+              <span>Terminal · Machine 1</span>
+              <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            </div>
+            <div class="code-body">cd ~/ai/local-ai-stack
+claude</div>
+          </div>
+          <p class="step-desc" style="margin-top: 0.5rem;">Inside the session, run:</p>
+          <div class="code-block">
+            <div class="code-header">
+              <span>Claude Code prompt</span>
+            </div>
+            <div class="code-body">/skills</div>
+          </div>
+          <p class="step-desc" style="margin-top: 0.5rem;">Select <strong>local-ai-status</strong> to ping the model endpoints.</p>
+        </div>
+      </div>
+
+      <div class="step cli-only cli-codex" data-section="smoke-test">
+        <div class="step-checkbox-container">
+          <input type="checkbox" class="custom-checkbox" id="chk-smoke-cx-connection">
+        </div>
+        <div class="step-content">
+          <div class="step-title">2. Verify status inside Codex</div>
+          <div class="step-desc">Launch <code>codex</code> inside the local stack directory and call the MCP status tool manually:</div>
+          <div class="code-block">
+            <div class="code-header">
+              <span>Terminal · Machine 1</span>
+              <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            </div>
+            <div class="code-body">cd ~/ai/local-ai-stack
+codex</div>
+          </div>
+          <p class="step-desc" style="margin-top: 0.5rem;">Inside the session, run the tool directly:</p>
+          <div class="code-block">
+            <div class="code-header">
+              <span>Codex prompt</span>
+            </div>
+            <div class="code-body">local-ai-delegate__local_ai_status()</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 04: Project Repo Prep (SHARED) -->
+    <section id="project-prep">
+      <div class="section-header">
+        <span class="section-num">04</span>
         <h2>Preparing a project repository</h2>
       </div>
       <p style="margin-bottom: 2rem; color: var(--text-muted);">
@@ -837,10 +952,10 @@ git commit -m "Add hybrid AI workflow instructions"</div>
       </div>
     </section>
 
-    <!-- SECTION 04: Running the Stack (SHARED) -->
+    <!-- SECTION 05: Running the Stack (SHARED) -->
     <section id="run-stack">
       <div class="section-header">
-        <span class="section-num">04</span>
+        <span class="section-num">05</span>
         <h2>Starting up the Local AI engines</h2>
       </div>
       <p style="margin-bottom: 2rem; color: var(--text-muted);">
@@ -882,10 +997,10 @@ git commit -m "Add hybrid AI workflow instructions"</div>
       </div>
     </section>
 
-    <!-- SECTION 05: Workflow Walkthrough -->
+    <!-- SECTION 06: Workflow Walkthrough -->
     <section id="workflow-walkthrough">
       <div class="section-header">
-        <span class="section-num">05</span>
+        <span class="section-num">06</span>
         <h2>Walkthrough: Build a new feature</h2>
       </div>
       <p style="margin-bottom: 2rem; color: var(--text-muted);">
@@ -1061,10 +1176,10 @@ git merge ai/local/add-users-db-...</div>
       </div>
     </section>
 
-    <!-- SECTION 06: Triage -->
+    <!-- SECTION 07: Triage -->
     <section id="triage">
       <div class="section-header">
-        <span class="section-num">06</span>
+        <span class="section-num">07</span>
         <h2>Troubleshooting & Triage cheat sheet</h2>
       </div>
       <p style="margin-bottom: 2rem; color: var(--text-muted);">
@@ -1210,6 +1325,7 @@ git merge ai/local/add-users-db-...</div>
       // Group totals per section for visible checkboxes
       const sections = {
         'system-prep': { total: 0, checked: 0, navId: 'nav-system-prep' },
+        'smoke-test': { total: 0, checked: 0, navId: 'nav-smoke-test' },
         'project-prep': { total: 0, checked: 0, navId: 'nav-project-prep' },
         'run-stack': { total: 0, checked: 0, navId: 'nav-run-stack' },
         'workflow-walkthrough': { total: 0, checked: 0, navId: 'nav-workflow-walkthrough' }
