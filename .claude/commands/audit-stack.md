@@ -40,8 +40,10 @@ run the full audit below.
    - `ssh admin@10.10.10.2 'ls ~/ai/local-ai-stack/.venv/bin/mlx_lm.server'`
    - `ssh admin@10.10.10.2 'ls ~/ai/models/ | head'` includes the Developer and Reviewer model directories.
    - `ssh admin@10.10.10.2 'lsof -nP -iTCP:8002 -iTCP:8003 -sTCP:LISTEN'` shows both ports listening.
-   - `ssh admin@10.10.10.2 'launchctl print gui/$(id -u)/com.localai.workers'` shows the agent loaded (if autostart is installed).
-   - `ssh admin@10.10.10.2 'cat ~/Library/LaunchAgents/com.localai.workers.plist'` references `start-worker-models.sh`.
+   - `ssh admin@10.10.10.2 'launchctl print system/com.localai.developer'` shows `state = running`.
+   - `ssh admin@10.10.10.2 'launchctl print system/com.localai.reviewer'` shows `state = running`.
+   - `ssh admin@10.10.10.2 'cat /Library/LaunchDaemons/com.localai.developer.plist'` references `start-developer.sh`.
+   - `ssh admin@10.10.10.2 'cat /Library/LaunchDaemons/com.localai.reviewer.plist'` references `start-reviewer.sh`.
 
 4. **Cross-check `.env`** at `~/ai/local-ai-stack/.env` against
    `configs/env.machine1.example` — call out any new keys in the

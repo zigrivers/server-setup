@@ -425,17 +425,17 @@ scripts/install-launchd-machine1.sh</pre></div>
 <div class="verify"><div class="verify-header">Verify</div><div class="verify-body"><code>launchctl print gui/$(id -u)/com.localai.orchestrator</code> shows the agent loaded.</div></div></div></div>
 </section>
 
-<section id="autostart-m2"><div class="section-num">19 / Machine 2</div><h2>Launchd autostart <em>Machine 2</em></h2><p class="section-deck">Install the workers LaunchAgent so Developer and Reviewer start after first login.</p>
-<div class="step" data-step="autostart-m2"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Install the Machine 2 LaunchAgent</h3>
+<section id="autostart-m2"><div class="section-num">19 / Machine 2</div><h2>Launchd autostart <em>Machine 2</em></h2><p class="section-deck">Install Developer and Reviewer as per-worker system LaunchDaemons so they start at boot (no login required).</p>
+<div class="step" data-step="autostart-m2"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Install the Machine 2 LaunchDaemons</h3>
 <div class="code-block"><div class="code-header"><span class="code-lang">bash · on Machine 2</span><button class="copy-btn">Copy</button></div><pre>cd ~/ai/local-ai-stack
 scripts/install-launchd-machine2.sh</pre></div>
-<p>Same pattern: substitutes <code>__HOME__</code>, writes <code>~/Library/LaunchAgents/com.localai.workers.plist</code>, bootstraps it. The plist invokes <code>scripts/start-worker-models.sh</code>, which starts both Developer (8002) and Reviewer (8003) and handles port-collision detection.</p>
-<div class="callout callout-note"><div class="callout-label">FileVault note</div><p>LaunchAgents start on first user login after reboot, not at boot time. If Machine 2 reboots while FileVault is locked, the workers won't start until someone logs in.</p></div></div></div>
+<p>Renders <code>configs/launchd/com.localai.developer.plist.template</code> and <code>com.localai.reviewer.plist.template</code> with <code>__USER__</code> and <code>__HOME__</code>, writes them to <code>/Library/LaunchDaemons/</code> (root:wheel 644), and bootstraps both into the <code>system/</code> domain via <code>sudo</code>. Also boots out and removes the obsolete <code>com.localai.workers</code> LaunchAgent if present. Daemons start at boot regardless of console login — correct for a headless FileVault-encrypted Mac.</p>
+<div class="callout callout-note"><div class="callout-label">Verify after install</div><p>Run <code>sudo launchctl print system/com.localai.developer</code> and <code>sudo launchctl print system/com.localai.reviewer</code> — both should show <code>state = running</code>.</p></div></div></div>
 <div class="step" data-step="autostart-uninstall"><label class="step-check"><input type="checkbox"></label><div class="step-body"><h3>Uninstall (when needed)</h3>
 <div class="code-block"><div class="code-header"><span class="code-lang">bash · Machine 1</span><button class="copy-btn">Copy</button></div><pre>launchctl bootout gui/$(id -u)/com.localai.orchestrator
 rm ~/Library/LaunchAgents/com.localai.orchestrator.plist</pre></div>
-<div class="code-block"><div class="code-header"><span class="code-lang">bash · Machine 2</span><button class="copy-btn">Copy</button></div><pre>launchctl bootout gui/$(id -u)/com.localai.workers
-rm ~/Library/LaunchAgents/com.localai.workers.plist</pre></div></div></div>
+<div class="code-block"><div class="code-header"><span class="code-lang">bash · Machine 2</span><button class="copy-btn">Copy</button></div><pre>sudo launchctl bootout system/com.localai.developer && sudo rm /Library/LaunchDaemons/com.localai.developer.plist
+sudo launchctl bootout system/com.localai.reviewer  && sudo rm /Library/LaunchDaemons/com.localai.reviewer.plist</pre></div></div></div>
 </section>
 
 <div class="part-divider"><div class="part-divider-line"></div><div class="part-divider-text">Part VIII · Optional + reference</div><div class="part-divider-line"></div></div>
