@@ -1,12 +1,12 @@
 from __future__ import annotations
 
+import json
 import os
 import subprocess
 import urllib.request
 from pathlib import Path
 
 from mcp.server.fastmcp import FastMCP
-
 
 mcp = FastMCP("local-ai-delegate")
 
@@ -60,6 +60,73 @@ def run(cmd: list[str], cwd: Path, timeout: int = 300) -> str:
     return f"$ {' '.join(cmd)}\n(exit {p.returncode})\n{p.stdout}"
 
 
+REVIEW_SYSTEM_PROMPT = """You are a strict senior code reviewer. You receive a git status \
+and a unified diff. Review ONLY what the diff shows; do not invent context.
+
+Respond in exactly this structure:
+## Blocking issues
+(numbered list, or "None")
+## Non-blocking suggestions
+(numbered list, or "None")
+## Verdict
+One line: SAFE TO MERGE or NEEDS CHANGES, plus a one-sentence reason.
+
+Be concrete: cite file names and hunks from the diff. Check for: logic errors, \
+shell-safety problems, hardcoded paths or secrets, broken error handling, and \
+mismatches between code and comments/docs."""
+
+DIFF_SCOPES = {
+    "uncommitted": ["git", "diff", "HEAD"],
+    "staged": ["git", "diff", "--cached"],
+    "since-main": ["git", "diff", "main...HEAD"],
+}
+MAX_DIFF_CHARS = 60_000
+
+
+def _truncate_middle(text: str, limit: int = MAX_DIFF_CHARS) -> str:
+    if len(text) <= limit:
+        return text
+    half = limit // 2
+    return text[:half] + "\n\n[... diff truncated for length ...]\n\n" + text[-half:]
+
+
+def _collect_diff(ws: Path, scope: str) -> str:
+    if scope not in DIFF_SCOPES:
+        raise ValueError(f"Unknown scope: {scope!r}. Choose from {sorted(DIFF_SCOPES)}")
+    p = subprocess.run(
+        DIFF_SCOPES[scope],
+        cwd=str(ws),
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        timeout=60,
+    )
+    if p.returncode != 0:
+        raise ValueError(f"git diff failed (exit {p.returncode}):\n{p.stdout[-2000:]}")
+    return _truncate_middle(p.stdout)
+
+
+def _review_model(base_url: str, timeout: int = 10) -> str:
+    url = base_url.rstrip("/") + "/models"
+    with urllib.request.urlopen(url, timeout=timeout) as r:
+        data = json.loads(r.read().decode())
+    models = data.get("data") or []
+    if not models:
+        raise ValueError(f"Reviewer endpoint serves no models: {url}")
+    return models[0]["id"]
+
+
+def _post_json(url: str, payload: dict, timeout: int) -> dict:
+    req = urllib.request.Request(
+        url,
+        data=json.dumps(payload).encode(),
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    with urllib.request.urlopen(req, timeout=timeout) as r:
+        return json.loads(r.read().decode())
+
+
 @mcp.tool()
 def local_ai_status() -> str:
     """Check whether the local MLX model servers appear reachable."""
@@ -85,6 +152,47 @@ def git_local_summary(workspace: str = ".") -> str:
     ws = resolve_allowed(workspace)
     parts = [run(["git", "status", "--short"], ws, timeout=60), run(["git", "diff", "--stat"], ws, timeout=60)]
     return "\n\n".join(parts)[-20000:]
+
+
+@mcp.tool()
+def local_review(workspace: str = ".", scope: str = "uncommitted", instructions: str = "", timeout_seconds: int = 300) -> str:
+    """
+    Send the workspace's git diff to the local Reviewer model for a real code review.
+
+    workspace: repo path (resolved against allowed roots).
+    scope: 'uncommitted' (working tree vs HEAD), 'staged', or 'since-main'.
+    instructions: optional extra focus areas for the reviewer.
+    timeout_seconds: max time to wait for the reviewer model.
+    """
+    ws = resolve_allowed(workspace)
+    diff = _collect_diff(ws, scope)
+    if not diff.strip():
+        return f"No changes found for scope '{scope}' in {ws} — nothing to review."
+
+    status = run(["git", "status", "--short"], ws, timeout=60)
+    base_url = os.environ.get("REVIEW_BASE_URL", "http://10.10.10.2:8003/v1")
+    model = _review_model(base_url)
+
+    user_parts = []
+    if instructions:
+        user_parts.append(f"Caller-requested review focus: {instructions}")
+    user_parts.append(f"git status:\n{status}")
+    user_parts.append(f"Unified diff (scope: {scope}):\n```diff\n{diff}\n```")
+
+    payload = {
+        "model": model,
+        "messages": [
+            {"role": "system", "content": REVIEW_SYSTEM_PROMPT},
+            {"role": "user", "content": "\n\n".join(user_parts)},
+        ],
+        "temperature": 0.1,
+        # Generous cap: reasoning-tuned models spend hidden thinking tokens
+        # from the same budget, so 2000 truncates verdicts mid-sentence.
+        "max_tokens": 4096,
+    }
+    data = _post_json(base_url.rstrip("/") + "/chat/completions", payload, timeout=max(30, timeout_seconds))
+    text = data["choices"][0]["message"]["content"]
+    return f"{text}\n\n---\nReviewer: {model} via {base_url} (scope: {scope})"
 
 
 @mcp.tool()
