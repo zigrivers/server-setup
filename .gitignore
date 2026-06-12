@@ -41,3 +41,6 @@ tmp/
 
 # Keep docs/html included intentionally
 !docs/html/*.html
+
+# Antigravity CLI local state
+.antigravitycli/
