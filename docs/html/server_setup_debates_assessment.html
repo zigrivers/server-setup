@@ -1,0 +1,1224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Server Setup Decisions: Expert Debate & Assessment</title>
+  <style>
+    :root {
+      --bg-primary: #0f172a;
+      --bg-secondary: #1e293b;
+      --bg-card: #1e293b;
+      --border-color: #334155;
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      
+      --color-indigo: #6366f1;
+      --color-emerald: #10b981;
+      --color-amber: #f59e0b;
+      --color-rose: #f43f5e;
+      --color-purple: #a855f7;
+      
+      --accent-gradient: linear-gradient(135deg, var(--color-indigo), var(--color-purple));
+      --card-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.5);
+      --glass-bg: rgba(30, 41, 59, 0.7);
+      --glass-backdrop: blur(12px);
+      
+      --transition-speed: 0.3s;
+    }
+
+    .light-mode {
+      --bg-primary: #f8fafc;
+      --bg-secondary: #f1f5f9;
+      --bg-card: #ffffff;
+      --border-color: #cbd5e1;
+      --text-primary: #0f172a;
+      --text-secondary: #475569;
+      
+      --card-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.08);
+      --glass-bg: rgba(255, 255, 255, 0.85);
+      --glass-backdrop: blur(8px);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      transition: background-color var(--transition-speed), color var(--transition-speed);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background-color: var(--glass-bg);
+      backdrop-filter: var(--glass-backdrop);
+      border-bottom: 1px solid var(--border-color);
+      padding: 1.25rem 2rem;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .header-logo {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .logo-badge {
+      background: var(--accent-gradient);
+      color: white;
+      font-weight: bold;
+      padding: 0.35rem 0.75rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .header-title h1 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .header-controls {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .btn-toggle {
+      background: none;
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      cursor: pointer;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s;
+    }
+
+    .btn-toggle:hover {
+      background-color: var(--bg-secondary);
+      border-color: var(--color-indigo);
+    }
+
+    .main-container {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+      max-width: 1600px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    /* Sidebar Navigation */
+    .sidebar {
+      width: 320px;
+      background-color: var(--bg-secondary);
+      border-right: 1px solid var(--border-color);
+      padding: 2rem 1.25rem;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .sidebar h2 {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-secondary);
+      margin-left: 0.5rem;
+    }
+
+    .decision-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .decision-item {
+      padding: 0.85rem 1rem;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 500;
+      border: 1px solid transparent;
+      transition: all 0.2s;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .decision-item:hover {
+      background-color: var(--bg-card);
+      border-color: var(--border-color);
+    }
+
+    .decision-item.active {
+      background-color: var(--color-indigo);
+      color: white;
+      border-color: var(--color-indigo);
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    }
+
+    .decision-status {
+      font-size: 0.75rem;
+      padding: 0.15rem 0.4rem;
+      border-radius: 6px;
+      font-weight: 600;
+    }
+
+    .status-optimal { background-color: rgba(16, 185, 129, 0.2); color: #10b981; }
+    .status-conditional { background-color: rgba(245, 158, 11, 0.2); color: #f59e0b; }
+    .status-action { background-color: rgba(244, 63, 94, 0.2); color: #f43f5e; }
+
+    .decision-item.active .status-optimal,
+    .decision-item.active .status-conditional,
+    .decision-item.active .status-action {
+      background-color: rgba(255, 255, 255, 0.25);
+      color: white;
+    }
+
+    /* Content Area */
+    .content-area {
+      flex: 1;
+      padding: 2.5rem;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 2.5rem;
+    }
+
+    /* Top Overview Block */
+    .overview-grid {
+      display: grid;
+      grid-template-columns: 1.5fr 1fr;
+      gap: 2rem;
+    }
+
+    @media (max-width: 1024px) {
+      .main-container { flex-direction: column; }
+      .sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--border-color); }
+      .overview-grid { grid-template-columns: 1fr; }
+    }
+
+    .panel-card {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 2rem;
+      box-shadow: var(--card-shadow);
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .panel-header {
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 1rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .panel-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.5rem;
+    }
+
+    .panel-subtitle {
+      font-size: 0.95rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    /* SVG Architecture Visualizer */
+    .svg-container {
+      width: 100%;
+      background: #090d16;
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 1.5rem;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .arch-svg {
+      width: 100%;
+      height: auto;
+      max-height: 250px;
+    }
+
+    /* Flow lines animation */
+    .flow-line {
+      stroke-dasharray: 8, 8;
+      animation: data-flow 1.5s linear infinite;
+    }
+    @keyframes data-flow {
+      to {
+        stroke-dashoffset: -32;
+      }
+    }
+
+    /* Debates Bubble Layout */
+    .debate-arena {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    .speech-bubble-container {
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+      max-width: 85%;
+    }
+
+    .bubble-left {
+      align-self: flex-start;
+    }
+
+    .bubble-right {
+      align-self: flex-end;
+      flex-direction: row-reverse;
+    }
+
+    .expert-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-weight: 700;
+      color: white;
+      font-size: 1rem;
+      flex-shrink: 0;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      border: 1px solid rgba(255,255,255,0.15);
+    }
+
+    .avatar-arch { background-color: var(--color-purple); }
+    .avatar-ml { background-color: var(--color-emerald); }
+    .avatar-dx { background-color: var(--color-rose); }
+    .avatar-ops { background-color: var(--color-amber); }
+
+    .speech-bubble {
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 1.25rem;
+      line-height: 1.6;
+      font-size: 0.95rem;
+      position: relative;
+    }
+
+    .bubble-left .speech-bubble {
+      border-top-left-radius: 4px;
+    }
+
+    .bubble-right .speech-bubble {
+      border-top-right-radius: 4px;
+      background-color: rgba(99, 102, 241, 0.08);
+      border-color: rgba(99, 102, 241, 0.25);
+    }
+
+    .expert-meta {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 0.35rem;
+    }
+
+    .expert-name {
+      color: var(--text-primary);
+    }
+
+    /* Scorecard / Consensus Dashboard */
+    .verdict-box {
+      border-left: 4px solid var(--color-indigo);
+      background-color: rgba(99, 102, 241, 0.05);
+      border-radius: 0 12px 12px 0;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .verdict-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .verdict-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .consensus-meter {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .meter-bar {
+      width: 100px;
+      height: 8px;
+      background-color: var(--border-color);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .meter-fill {
+      height: 100%;
+      border-radius: 4px;
+      background: var(--accent-gradient);
+    }
+
+    .meter-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .verdict-content {
+      font-size: 0.95rem;
+      line-height: 1.6;
+      color: var(--text-secondary);
+    }
+
+    /* Trade-off Matrix CSS Visualizer */
+    .tradeoff-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .tradeoff-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .tradeoff-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    .tradeoff-bars {
+      position: relative;
+      height: 24px;
+      background-color: var(--bg-secondary);
+      border-radius: 6px;
+      overflow: hidden;
+      border: 1px solid var(--border-color);
+    }
+
+    .tradeoff-bar-current {
+      position: absolute;
+      left: 0;
+      top: 0;
+      height: 100%;
+      background-color: rgba(99, 102, 241, 0.4);
+      border-right: 2px solid var(--color-indigo);
+      transition: width var(--transition-speed) ease-out;
+    }
+
+    .tradeoff-bar-alt {
+      position: absolute;
+      left: 0;
+      top: 0;
+      height: 100%;
+      background-color: rgba(244, 63, 94, 0.2);
+      border-right: 2px dashed var(--color-rose);
+      transition: width var(--transition-speed) ease-out;
+    }
+
+    .tradeoff-legend {
+      display: flex;
+      gap: 1rem;
+      font-size: 0.75rem;
+      justify-content: flex-end;
+      margin-top: 0.5rem;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .legend-box {
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+    }
+
+    .legend-current { background-color: var(--color-indigo); }
+    .legend-alt { background-color: var(--color-rose); }
+
+    /* Scorecard Overview Grid */
+    .scorecard-summary-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.25rem;
+    }
+
+    @media (max-width: 768px) {
+      .scorecard-summary-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    .scorecard-card {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 1.25rem;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .scorecard-card:hover {
+      border-color: var(--color-indigo);
+      transform: translateY(-2px);
+    }
+
+    .scorecard-icon {
+      font-size: 1.5rem;
+    }
+
+    .scorecard-number {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-secondary);
+    }
+
+    .scorecard-title {
+      font-size: 0.9rem;
+      font-weight: 700;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-logo">
+      <span class="logo-badge">Stack Audit</span>
+      <div class="header-title">
+        <h1>Server Setup Debates & Visual Assessment</h1>
+      </div>
+    </div>
+    <div class="header-controls">
+      <button class="btn-toggle" onclick="toggleTheme()">
+        <span id="theme-icon">☀️</span> <span id="theme-text">Light Mode</span>
+      </button>
+    </div>
+  </header>
+
+  <div class="main-container">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <h2>Decisions Under Debate</h2>
+      <ul class="decision-list">
+        <li class="decision-item active" onclick="showDecision(1)">
+          <span>1. Model Split (M1/M2)</span>
+          <span class="decision-status status-optimal">Optimal</span>
+        </li>
+        <li class="decision-item" onclick="showDecision(2)">
+          <span>2. Thunderbolt Bridge</span>
+          <span class="decision-status status-optimal">Optimal</span>
+        </li>
+        <li class="decision-item" onclick="showDecision(3)">
+          <span>3. MLX Inference Engine</span>
+          <span class="decision-status status-conditional">Conditional</span>
+        </li>
+        <li class="decision-item" onclick="showDecision(4)">
+          <span>4. Model Quantizations</span>
+          <span class="decision-status status-optimal">Optimal</span>
+        </li>
+        <li class="decision-item" onclick="showDecision(5)">
+          <span>5. No-Alias Rule</span>
+          <span class="decision-status status-optimal">Optimal</span>
+        </li>
+        <li class="decision-item" onclick="showDecision(6)">
+          <span>6. Git Worktree Isolation</span>
+          <span class="decision-status status-optimal">Optimal</span>
+        </li>
+        <li class="decision-item" onclick="showDecision(7)">
+          <span>7. Process Domain Split</span>
+          <span class="decision-status status-optimal">Optimal</span>
+        </li>
+        <li class="decision-item" onclick="showDecision(8)">
+          <span>8. Weight Backup Policy</span>
+          <span class="decision-status status-action">Action Req</span>
+        </li>
+      </ul>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="content-area">
+      <!-- Overview Panels -->
+      <div class="overview-grid">
+        <!-- SVG Interactive Architecture Blueprint -->
+        <div class="panel-card">
+          <div class="panel-header">
+            <h3 class="panel-title">System Architecture Blueprint</h3>
+            <p class="panel-subtitle">Visual representation of data routing between Machine 1 (Cockpit) and Machine 2 (Execution Engine).</p>
+          </div>
+          <div class="svg-container">
+            <svg class="arch-svg" viewBox="0 0 600 250" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- Machine 1 Card -->
+              <rect x="20" y="30" width="200" height="180" rx="10" fill="#111827" stroke="#4b5563" stroke-width="2"/>
+              <text x="35" y="55" fill="#f3f4f6" font-family="Outfit" font-size="12" font-weight="bold">Machine 1: Control Plane</text>
+              <rect x="35" y="75" width="170" height="35" rx="6" fill="#1f2937" stroke="#6366f1" stroke-dasharray="2,2"/>
+              <text x="45" y="96" fill="#818cf8" font-family="Outfit" font-size="10">Claude Code / Codex IDE</text>
+              
+              <rect x="35" y="125" width="170" height="35" rx="6" fill="#1f2937" stroke="#374151"/>
+              <text x="45" y="146" fill="#9ca3af" font-family="Outfit" font-size="10">Orchestrator Model (Port 8001)</text>
+
+              <!-- Thunderbolt Link -->
+              <path id="tb-link" d="M220 120 L380 120" stroke="#f59e0b" stroke-width="3" stroke-linecap="round" class="flow-line"/>
+              <text x="245" y="110" fill="#f59e0b" font-family="Outfit" font-size="10" font-weight="bold">Thunderbolt Bridge</text>
+              <text x="260" y="140" fill="#9ca3af" font-family="Outfit" font-size="9">10.10.10.x IP</text>
+
+              <!-- Machine 2 Card -->
+              <rect x="380" y="30" width="200" height="180" rx="10" fill="#111827" stroke="#4b5563" stroke-width="2"/>
+              <text x="395" y="55" fill="#f3f4f6" font-family="Outfit" font-size="12" font-weight="bold">Machine 2: Inference worker</text>
+              
+              <rect x="395" y="70" width="170" height="35" rx="6" fill="#19231a" stroke="#10b981"/>
+              <text x="405" y="91" fill="#34d399" font-family="Outfit" font-size="10">Developer Model (Port 8002)</text>
+              
+              <rect x="395" y="115" width="170" height="35" rx="6" fill="#1f2937" stroke="#374151"/>
+              <text x="405" y="136" fill="#9ca3af" font-family="Outfit" font-size="10">Reviewer Model (Port 8003)</text>
+              
+              <rect x="395" y="160" width="170" height="35" rx="6" fill="#2d1c2b" stroke="#a855f7" stroke-dasharray="4,4"/>
+              <text x="405" y="181" fill="#c084fc" font-family="Outfit" font-size="10">Experimental MTP (Port 8004)</text>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Trade-off Scoring Matrix -->
+        <div class="panel-card">
+          <div class="panel-header">
+            <h3 class="panel-title">Trade-off Dimension Score</h3>
+            <p class="panel-subtitle">Weighted comparison of the current approach vs primary alternative strategy.</p>
+          </div>
+          <div class="tradeoff-list" id="tradeoff-container">
+            <!-- Dynamic items loaded by JS -->
+          </div>
+          <div class="tradeoff-legend">
+            <div class="legend-item">
+              <span class="legend-box legend-current"></span>
+              <span>Current Solution</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-box legend-alt"></span>
+              <span>Alternative Setup</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Expert Debates Section -->
+      <div class="panel-card">
+        <div class="panel-header">
+          <h3 class="panel-title" id="active-debate-title">Decision 1: Control Plane / Model Split</h3>
+        </div>
+        
+        <div class="debate-arena" id="active-debate-arena">
+          <!-- Populated by JS -->
+        </div>
+
+        <div class="verdict-box" id="active-verdict-box">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <!-- Core Checklist Dashboard -->
+      <div>
+        <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem;">Summary Architecture Scorecard</h3>
+        <div class="scorecard-summary-grid">
+          <div class="scorecard-card" onclick="showDecision(1)">
+            <span class="scorecard-icon">🧠</span>
+            <span class="scorecard-number">Decision 1</span>
+            <span class="scorecard-title">Model Split</span>
+            <span class="decision-status status-optimal">Optimal</span>
+          </div>
+          <div class="scorecard-card" onclick="showDecision(2)">
+            <span class="scorecard-icon">⚡</span>
+            <span class="scorecard-number">Decision 2</span>
+            <span class="scorecard-title">Thunderbolt Bridge</span>
+            <span class="decision-status status-optimal">Optimal</span>
+          </div>
+          <div class="scorecard-card" onclick="showDecision(3)">
+            <span class="scorecard-icon">⚙️</span>
+            <span class="scorecard-number">Decision 3</span>
+            <span class="scorecard-title">MLX Inference</span>
+            <span class="decision-status status-conditional">Conditional</span>
+          </div>
+          <div class="scorecard-card" onclick="showDecision(8)">
+            <span class="scorecard-icon">💾</span>
+            <span class="scorecard-number">Decision 8</span>
+            <span class="scorecard-title">Weight Backups</span>
+            <span class="decision-status status-action">Action Req</span>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // Data definition for the 8 decisions
+    const decisionsData = {
+      1: {
+        title: "Control Plane / Model Split",
+        subtitle: "Running the Orchestrator on Machine 1 (Control Plane) and the heavy Developer/Reviewer execution workers on Machine 2.",
+        status: "optimal",
+        statusLabel: "Optimal",
+        meter: 90,
+        consensus: "Strong Agreement (Systems Architect & ML Specialist align)",
+        tradeoffs: {
+          latency: { label: "Network Latency", current: 95, alt: 40 },
+          dx: { label: "Developer Context (DX)", current: 85, alt: 60 },
+          security: { label: "Isolation Boundary", current: 90, alt: 50 },
+          resilience: { label: "System Availability", current: 75, alt: 85 },
+          simplicity: { label: "Setup Simplicity", current: 70, alt: 95 }
+        },
+        debate: [
+          {
+            speaker: "arch",
+            name: "Systems Architect",
+            role: "Infrastructure",
+            avatar: "avatar-arch",
+            side: "left",
+            text: "Splitting the control plane from the model execution is the cleanest layout for two machines. Machine 1 is the user cockpit running VS Code, git, Claude Code, and LangGraph. Running Orchestration locally on Machine 1 keeps high-frequency planning and tool calls local. Treating Machine 2 as a pure model appliance prevents execution weights from choking the daily driver UI."
+          },
+          {
+            speaker: "ml",
+            name: "ML Specialist",
+            role: "Inference Engine",
+            avatar: "avatar-ml",
+            side: "left",
+            text: "I agree completely. Running Qwen 35B as the Orchestrator on Machine 1, and hosting the 27B Developer model plus the 27B Reviewer model on Machine 2 is highly efficient. Hosting all three of these models on a single Mac Studio would exceed 128GB of VRAM and throttle overall execution throughput."
+          },
+          {
+            speaker: "dx",
+            name: "DX Engineer",
+            role: "Integration",
+            avatar: "avatar-dx",
+            side: "right",
+            text: "While it makes sense resource-wise, it complicates setup. Now a developer needs to manage credentials and target paths across two machines. If Machine 2 experiences a network drop, the developer is hit with confusing connection timeouts instead of local tracebacks. We must build robust connection status tools."
+          },
+          {
+            speaker: "ops",
+            name: "Ops & Security",
+            role: "Reliability",
+            avatar: "avatar-ops",
+            side: "right",
+            text: "From a security perspective, treating Machine 2 as an appliance is excellent. We lock down SSH and expose endpoints only on the internal network link. However, if Machine 2 reboots unexpectedly, we need automated daemons to ensure endpoints resume serving without human login."
+          }
+        ],
+        verdict: "The split architecture is optimal. It preserves Machine 1's system responsiveness while grouping execution tasks on Machine 2. System administrators must monitor physical link status to prevent connection drops from disrupting developers."
+      },
+      2: {
+        title: "Physical Link: Thunderbolt Bridge",
+        subtitle: "Using a dedicated Thunderbolt cable to establish a high-speed point-to-point IP network (10.10.10.x) between the two Macs.",
+        status: "optimal",
+        statusLabel: "Optimal",
+        meter: 95,
+        consensus: "High Alignment (Bandwidth is absolute)",
+        tradeoffs: {
+          latency: { label: "Interface Latency", current: 98, alt: 25 },
+          dx: { label: "Developer Friction", current: 80, alt: 95 },
+          security: { label: "Link Isolation", current: 95, alt: 60 },
+          resilience: { label: "Connection Reliability", current: 80, alt: 90 },
+          simplicity: { label: "Configuration Ease", current: 75, alt: 90 }
+        },
+        debate: [
+          {
+            speaker: "arch",
+            name: "Systems Architect",
+            role: "Infrastructure",
+            avatar: "avatar-arch",
+            side: "left",
+            text: "Thunderbolt Bridge is the only physical transport that makes sense. We get up to 40 Gbps bandwidth and sub-millisecond latencies. Passing massive prompts and multi-megabyte source code patches back and forth over Wi-Fi or Gigabit Ethernet would quickly throttle agent execution."
+          },
+          {
+            speaker: "ops",
+            name: "Ops & Security",
+            role: "Reliability",
+            avatar: "avatar-ops",
+            side: "right",
+            text: "It is highly secure because it's a point-to-point interface. No packets ever hit the local office LAN. However, the virtual bridge setup in macOS is notoriously finicky. If a machine sleeps, the link can drop, and recovering it occasionally requires manually cycling the virtual interface."
+          },
+          {
+            speaker: "dx",
+            name: "DX Engineer",
+            role: "Integration",
+            avatar: "avatar-dx",
+            side: "right",
+            text: "Yes, it adds setup complexity. The user must manually configure static IPs on both machines. If the cable is unplugged, there is no automatic system warning. We should make sure we provide a quick diagnostic script like `ping` tests."
+          },
+          {
+            speaker: "ml",
+            name: "ML Specialist",
+            role: "Inference Engine",
+            avatar: "avatar-ml",
+            side: "left",
+            text: "The latency benefits are too high to ignore. A single prompt roundtrip is practically instantaneous, making the remote models feel completely local. Keep the Thunderbolt Bridge."
+          }
+        ],
+        verdict: "Unquestionably optimal. The bandwidth and latency gains are essential for multi-agent workflows. The virtual link must be monitored, and static IP bindings should be documented clearly."
+      },
+      3: {
+        title: "Inference Engine: Native MLX",
+        subtitle: "Using mlx_lm.server to run model weights directly, optimized for Apple Silicon GPUs.",
+        status: "conditional",
+        statusLabel: "Conditional",
+        meter: 70,
+        consensus: "Divided (MLX performance vs llama.cpp features)",
+        tradeoffs: {
+          latency: { label: "Token/Sec Output", current: 90, alt: 85 },
+          dx: { label: "API Compatibility", current: 85, alt: 85 },
+          security: { label: "Operational Safety", current: 80, alt: 80 },
+          resilience: { label: "Process Stability", current: 75, alt: 85 },
+          simplicity: { label: "System Overhead", current: 85, alt: 60 }
+        },
+        debate: [
+          {
+            speaker: "ml",
+            name: "ML Specialist",
+            role: "Inference Engine",
+            avatar: "avatar-ml",
+            side: "left",
+            text: "MLX is Apple's native framework. It utilizes the unified memory architecture of the M-series chips perfectly, resulting in top-tier performance for Qwen and other transformer models."
+          },
+          {
+            speaker: "arch",
+            name: "Systems Architect",
+            role: "Infrastructure",
+            avatar: "avatar-arch",
+            side: "right",
+            text: "Hold on. `mlx_lm.server` is currently missing a huge optimization: prefix caching. During multi-turn agent conversations, we send the same files and context over and over. llama.cpp's `llama-server` has highly optimized prefix caching, which cuts prompt processing times from seconds to milliseconds."
+          },
+          {
+            speaker: "dx",
+            name: "DX Engineer",
+            role: "Integration",
+            avatar: "avatar-dx",
+            side: "right",
+            text: "Additionally, Ollama offers a much better developer interface for managing model lifecycles and background daemons. Managing raw python scripts inside a virtual environment for `mlx_lm.server` is a bit raw and fragile."
+          },
+          {
+            speaker: "ml",
+            name: "ML Specialist",
+            role: "Inference Engine",
+            avatar: "avatar-ml",
+            side: "left",
+            text: "While that's true, MLX's direct support for complex quantizations like mixed-9.4bit is extremely clean on metal. But I agree we should monitor llama.cpp's progress and consider it if prompt-processing times become a bottleneck."
+          }
+        ],
+        verdict: "Optimal for raw token throughput, but conditionally recommended based on model context size. If agent runs use massive file trees, migrating to `llama.cpp` for prefix caching could speed up workflows by 2x to 3x."
+      },
+      4: {
+        title: "Model Quantizations",
+        subtitle: "Using BF16 (unquantized) for Orchestrator and Reviewer, but a mixed-9.4bit quantization for the Developer model.",
+        status: "optimal",
+        statusLabel: "Optimal",
+        meter: 85,
+        consensus: "Good Agreement (VRAM constraints vs Logic fidelity)",
+        tradeoffs: {
+          latency: { label: "Inference Speed", current: 75, alt: 90 },
+          dx: { label: "Developer Velocity", current: 85, alt: 85 },
+          security: { label: "Model Safety", current: 95, alt: 95 },
+          resilience: { label: "System Fit", current: 80, alt: 60 },
+          simplicity: { label: "Maintenance", current: 75, alt: 80 }
+        },
+        debate: [
+          {
+            speaker: "ml",
+            name: "ML Specialist",
+            role: "Inference Engine",
+            avatar: "avatar-ml",
+            side: "left",
+            text: "Orchestration and Code Review are highly logic-sensitive tasks. Quantizing these models degrades planning capabilities and leads to poor code analysis. Therefore, keeping the Orchestrator (Qwen 35B) and Reviewer (Qwen 27B) in raw BF16 is critical. Quantizing only the Developer model to mixed-9.4bit gives us high speed for long code generations while fitting within memory budgets."
+          },
+          {
+            speaker: "arch",
+            name: "Systems Architect",
+            role: "Infrastructure",
+            avatar: "avatar-arch",
+            side: "right",
+            text: "This requires significant VRAM. A 35B model in BF16 is ~70GB, and a 27B model is ~54GB. On Machine 2, running the Developer (mixed-9.4bit, ~32GB) alongside the Reviewer (BF16, ~54GB) requires nearly 86GB of active VRAM. This is fine for a 128GB Mac Studio but leaves no room on a 64GB machine."
+          },
+          {
+            speaker: "ops",
+            name: "Ops & Security",
+            role: "Reliability",
+            avatar: "avatar-ops",
+            side: "right",
+            text: "Agreed. If a user sets up the stack on smaller hardware, their system will swap aggressively and freeze. We must provide clear warnings and document fallback models like 8-bit or mixed-9bit quantizations for 64GB systems."
+          },
+          {
+            speaker: "ml",
+            name: "ML Specialist",
+            role: "Inference Engine",
+            avatar: "avatar-ml",
+            side: "left",
+            text: "That is why we documented `mixed-9bit` versions in the model manifest as fallback configurations. For premium setups, the BF16 logic fidelity is well worth the hardware budget."
+          }
+        ],
+        verdict: "Optimal for high-end setups. The split of unquantized reasoning models (BF16) and quantized generation models (mixed-9.4bit) balances logic quality with speed. System requirements must be strictly checked before downloads."
+      },
+      5: {
+        title: "No-Alias Rule",
+        subtitle: "Enforcing absolute model weights paths instead of setting up a local proxy to handle generic aliases like 'developer-stable'.",
+        status: "optimal",
+        statusLabel: "Optimal",
+        meter: 80,
+        consensus: "Agreed (Explicit is better than implicit)",
+        tradeoffs: {
+          latency: { label: "System Latency", current: 95, alt: 95 },
+          dx: { label: "Ease of Model Swaps", current: 65, alt: 90 },
+          security: { label: "Configuration Audit", current: 95, alt: 70 },
+          resilience: { label: "Setup Reliability", current: 90, alt: 80 },
+          simplicity: { label: "Component Count", current: 95, alt: 75 }
+        },
+        debate: [
+          {
+            speaker: "ops",
+            name: "Ops & Security",
+            role: "Reliability",
+            avatar: "avatar-ops",
+            side: "left",
+            text: "Explicit paths prevent silent configuration errors. `mlx_lm.server` expects direct file paths or HF repos. Introducing an alias mapping layer creates a point of failure where a script thinks it is calling one model, but the backend is actually serving another."
+          },
+          {
+            speaker: "dx",
+            name: "DX Engineer",
+            role: "Integration",
+            avatar: "avatar-dx",
+            side: "right",
+            text: "Yes, but updating paths across multiple plists, launch daemons, and script files is tedious. If I update a model version, I have to touch 5 files. If we used LiteLLM as an alias gateway, I would update one configuration map, and all client apps would route correctly."
+          },
+          {
+            speaker: "arch",
+            name: "Systems Architect",
+            role: "Infrastructure",
+            avatar: "avatar-arch",
+            side: "left",
+            text: "Adding LiteLLM or another gateway means adding a third server daemon to start, stop, and monitor. The `.env` file serves as a flat config database that maps these paths. As long as we reference environment variables rather than hardcoding paths in scripts, we have a clean central control point."
+          },
+          {
+            speaker: "dx",
+            name: "DX Engineer",
+            role: "Integration",
+            avatar: "avatar-dx",
+            side: "right",
+            text: "Fair enough. If our configuration scripts pull directly from `.env`, that gives us the central control point we need without adding proxy layers."
+          }
+        ],
+        verdict: "Optimal. Enforcing explicit paths preserves stability and transparency. DX friction is resolved by routing all path mappings through the central `.env` file."
+      },
+      6: {
+        title: "Git Worktree Isolation",
+        subtitle: "Creating isolated git worktrees dynamically for each agent execution run, preventing modifications to the user's primary workspace.",
+        status: "optimal",
+        statusLabel: "Optimal",
+        meter: 90,
+        consensus: "Strong Agreement (Safety and isolation are key)",
+        tradeoffs: {
+          latency: { label: "Start-up Speed", current: 75, alt: 95 },
+          dx: { label: "Clean Workspaces", current: 95, alt: 50 },
+          security: { label: "Agent Isolation", current: 95, alt: 40 },
+          resilience: { label: "State Recoverability", current: 95, alt: 60 },
+          simplicity: { label: "System Complexity", current: 70, alt: 90 }
+        },
+        debate: [
+          {
+            speaker: "dx",
+            name: "DX Engineer",
+            role: "Integration",
+            avatar: "avatar-dx",
+            side: "left",
+            text: "Using worktrees is an incredible experience. The local agent writes code, compiles, and tests in a separate subdirectory. The developer can keep working in their primary editor branch without having their code modified out from under them."
+          },
+          {
+            speaker: "arch",
+            name: "Systems Architect",
+            role: "Infrastructure",
+            avatar: "avatar-arch",
+            side: "right",
+            text: "My concern is setup overhead. In large repositories, creating a worktree and copying or linking ignored folders like `node_modules` or `.venv` takes time. If a user has a 5GB build directory, worktree setup can feel sluggish."
+          },
+          {
+            speaker: "ops",
+            name: "Ops & Security",
+            role: "Reliability",
+            avatar: "avatar-ops",
+            side: "left",
+            text: "The isolation benefits outweigh the setup time. An agent running test commands or modifying code can easily corrupt a workspace. With worktrees, if the agent fails or writes dangerous scripts, we simply throw the worktree directory away. It protects the primary repo state."
+          },
+          {
+            speaker: "dx",
+            name: "DX Engineer",
+            role: "Integration",
+            avatar: "avatar-dx",
+            side: "left",
+            text: "We can optimize the startup time by using directory symlinks for dependencies, making worktree creation almost instant."
+          }
+        ],
+        verdict: "Highly optimal. Dynamic git worktrees provide clean boundary protection for the host developer. Any performance overhead must be addressed via folder symlinking."
+      },
+      7: {
+        title: "Process Domain Split",
+        subtitle: "Using a user-level LaunchAgent for Machine 1, but system-level LaunchDaemons for Machine 2.",
+        status: "optimal",
+        statusLabel: "Optimal",
+        meter: 88,
+        consensus: "Good Agreement (Pragmatic service management)",
+        tradeoffs: {
+          latency: { label: "System Load", current: 90, alt: 90 },
+          dx: { label: "Ease of Debugging", current: 75, alt: 85 },
+          security: { label: "Privilege Isolation", current: 80, alt: 85 },
+          resilience: { label: "Reboot Recovery", current: 95, alt: 60 },
+          simplicity: { label: "Unified Config", current: 70, alt: 90 }
+        },
+        debate: [
+          {
+            speaker: "ops",
+            name: "Ops & Security",
+            role: "Reliability",
+            avatar: "avatar-ops",
+            side: "left",
+            text: "Machine 1 is an active workstation; running the Orchestrator as a user LaunchAgent is perfect since it inherits the active user environment and graphical session context. Machine 2 is a headless server; using system LaunchDaemons ensures the model servers boot and run *before* any console login. This is vital for unattended power-recovery on FileVault-encrypted disks."
+          },
+          {
+            speaker: "arch",
+            name: "Systems Architect",
+            role: "Infrastructure",
+            avatar: "avatar-arch",
+            side: "right",
+            text: "This domain split complicates operations. Debugging a LaunchDaemon on Machine 2 requires root/sudo access, whereas managing the LaunchAgent on Machine 1 does not. It also means we maintain two different plist layouts."
+          },
+          {
+            speaker: "dx",
+            name: "DX Engineer",
+            role: "Integration",
+            avatar: "avatar-dx",
+            side: "right",
+            text: "Yes, having different status commands is confusing. Checking the developer status requires SSH and sudo launchctl, while the orchestrator is just standard user launchctl."
+          },
+          {
+            speaker: "ops",
+            name: "Ops & Security",
+            role: "Reliability",
+            avatar: "avatar-ops",
+            side: "left",
+            text: "True, but the reliability aspect is absolute. We solved the DX friction by wrapping status and start/stop operations into unified shell scripts (`m1-ai-status.sh` and `m2-ai-status.sh`)."
+          }
+        ],
+        verdict: "Optimal and necessary. The split accommodates the functional differences between an active workstation (M1) and a headless model server (M2). Direct command complexity is resolved via script wrappers."
+      },
+      8: {
+        title: "Weight Backup Policy",
+        subtitle: "Excluding the massive 200+ GB models/ directory from automatic iCloud and remote system backups, treating them as re-downloadable assets.",
+        status: "action",
+        statusLabel: "Action Req",
+        meter: 60,
+        consensus: "Low Alignment (Storage bandwidth vs Restore speed)",
+        tradeoffs: {
+          latency: { label: "Sync Overhead", current: 98, alt: 20 },
+          dx: { label: "Developer Restore Speed", current: 40, alt: 95 },
+          security: { label: "Data Protection", current: 95, alt: 95 },
+          resilience: { label: "Network Independence", current: 45, alt: 90 },
+          simplicity: { label: "Backup Management", current: 90, alt: 50 }
+        },
+        debate: [
+          {
+            speaker: "ops",
+            name: "Ops & Security",
+            role: "Reliability",
+            avatar: "avatar-ops",
+            side: "left",
+            text: "Backing up 200+ GB of model weights over iCloud or Arq backup to the cloud will throttle local network links and cost significant storage fees. Since these model weights are static and public on Hugging Face, excluding them from daily cloud backups is the logical choice."
+          },
+          {
+            speaker: "arch",
+            name: "Systems Architect",
+            role: "Infrastructure",
+            avatar: "avatar-arch",
+            side: "right",
+            text: "I disagree. In a disaster recovery situation, pulling 200+ GB from Hugging Face on a standard consumer internet connection can take half a day. If our developer setup is down, that is massive lost developer productivity. We should mandate a secondary, physical backup path."
+          },
+          {
+            speaker: "dx",
+            name: "DX Engineer",
+            role: "Integration",
+            avatar: "avatar-dx",
+            side: "right",
+            text: "Agreed. Having a simple local `rsync` task that backs up `~/ai/models/` to an external USB-C drive would give us the best of both worlds: no network clogging, but a 15-minute disaster recovery path."
+          },
+          {
+            speaker: "ops",
+            name: "Ops & Security",
+            role: "Reliability",
+            avatar: "avatar-ops",
+            side: "left",
+            text: "That is a reasonable compromise. We should officially recommend excluding models from automatic cloud syncs, but adding an operational runbook task for physical USB backups."
+          }
+        ],
+        verdict: "Action Required. While excluding weights from network-choked cloud backups is correct, relying entirely on Hugging Face downloads represents a severe recovery risk. System administrators should configure a local physical backup routine."
+      }
+    };
+
+    // Toggle theme function
+    function toggleTheme() {
+      const body = document.body;
+      const themeIcon = document.getElementById('theme-icon');
+      const themeText = document.getElementById('theme-text');
+      
+      if (body.classList.contains('light-mode')) {
+        body.classList.remove('light-mode');
+        themeIcon.textContent = '☀️';
+        themeText.textContent = 'Light Mode';
+      } else {
+        body.classList.add('light-mode');
+        themeIcon.textContent = '🌙';
+        themeText.textContent = 'Dark Mode';
+      }
+    }
+
+    // Load active decision data
+    function showDecision(id) {
+      // Update sidebar active class
+      const items = document.querySelectorAll('.decision-item');
+      items.forEach((item, index) => {
+        if (index + 1 === id) {
+          item.classList.add('active');
+        } else {
+          item.classList.remove('active');
+        }
+      });
+
+      const data = decisionsData[id];
+      if (!data) return;
+
+      // Update active title
+      document.getElementById('active-debate-title').textContent = `Decision ${id}: ${data.title}`;
+      
+      // Load Tradeoff Matrix Bars
+      const tradeoffContainer = document.getElementById('tradeoff-container');
+      tradeoffContainer.innerHTML = '';
+      
+      Object.keys(data.tradeoffs).forEach(key => {
+        const item = data.tradeoffs[key];
+        const tradeoffItem = document.createElement('div');
+        tradeoffItem.className = 'tradeoff-item';
+        tradeoffItem.innerHTML = `
+          <div class="tradeoff-label">
+            <span>${item.label}</span>
+            <span>Current: ${item.current}% vs Alt: ${item.alt}%</span>
+          </div>
+          <div class="tradeoff-bars">
+            <div class="tradeoff-bar-current" style="width: ${item.current}%"></div>
+            <div class="tradeoff-bar-alt" style="width: ${item.alt}%"></div>
+          </div>
+        `;
+        tradeoffContainer.appendChild(tradeoffItem);
+      });
+
+      // Load Debate Bubbles
+      const debateArena = document.getElementById('active-debate-arena');
+      debateArena.innerHTML = '';
+      
+      data.debate.forEach(msg => {
+        const bubbleContainer = document.createElement('div');
+        bubbleContainer.className = `speech-bubble-container ${msg.side === 'left' ? 'bubble-left' : 'bubble-right'}`;
+        
+        bubbleContainer.innerHTML = `
+          <div class="expert-avatar ${msg.avatar}">${msg.name.split(' ').map(n=>n[0]).join('')}</div>
+          <div class="speech-bubble">
+            <div class="expert-meta">
+              <span class="expert-name">${msg.name}</span>
+              <span>•</span>
+              <span>${msg.role}</span>
+            </div>
+            <p>${msg.text}</p>
+          </div>
+        `;
+        debateArena.appendChild(bubbleContainer);
+      });
+
+      // Load Verdict Box
+      const verdictBox = document.getElementById('active-verdict-box');
+      
+      // Determine border color based on status
+      let color = 'var(--color-indigo)';
+      if (data.status === 'conditional') color = 'var(--color-amber)';
+      if (data.status === 'action') color = 'var(--color-rose)';
+      verdictBox.style.borderLeftColor = color;
+      
+      verdictBox.innerHTML = `
+        <div class="verdict-header">
+          <div class="verdict-title">
+            <span>⚖️</span>
+            <span>Synthesis & Verdict</span>
+          </div>
+          <div class="consensus-meter">
+            <span class="meter-label">Consensus strength:</span>
+            <div class="meter-bar">
+              <div class="meter-fill" style="width: ${data.meter}%"></div>
+            </div>
+            <span class="meter-label">${data.meter}%</span>
+          </div>
+        </div>
+        <p class="verdict-content"><strong>Recommendation:</strong> ${data.verdict}</p>
+        <p class="verdict-content" style="font-size: 0.85rem; font-style: italic; margin-top: 0.5rem; color: var(--text-secondary)">Status context: ${data.consensus}</p>
+      `;
+    }
+
+    // Initialize with Decision 1
+    window.onload = function() {
+      showDecision(1);
+    };
+  </script>
+</body>
+</html>
