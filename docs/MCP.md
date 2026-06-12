@@ -2,7 +2,7 @@
 
 The MCP bridge lets Claude Code and Codex hand work off to the local
 multi-agent stack without giving them shell access to the rest of the
-machine. It exposes three tools over stdio.
+machine. It exposes four tools over stdio.
 
 Source: `mcp/local_delegate_mcp/server.py`.
 
@@ -28,6 +28,22 @@ and returns the combined output (truncated to 20 KB).
 
 The `workspace` argument is resolved against the configured allowed
 roots (see below) and must be inside one of them.
+
+### `local_review(workspace=".", scope="uncommitted", instructions="", timeout_seconds=300) -> str`
+
+Sends the workspace's git diff to the local Reviewer model
+(`REVIEW_BASE_URL`, port 8003) for a genuine code review and returns the
+model's findings (Blocking issues / Non-blocking suggestions / Verdict).
+
+- `scope`: `uncommitted` (working tree vs HEAD), `staged`, or `since-main`.
+- `instructions`: optional focus areas passed to the reviewer.
+- The model id is discovered at call time from `GET {REVIEW_BASE_URL}/models`,
+  so no model name needs to be configured.
+- Diffs are truncated middle-out at 60 KB; empty diffs return early without
+  calling the model.
+
+This is the cheap second-opinion tool — for executing a plan with the full
+orchestrator/developer/reviewer loop, use `run_local_plan` instead.
 
 ### `run_local_plan(plan_file, workspace=".", in_place=False, timeout_minutes=60) -> str`
 
@@ -98,6 +114,7 @@ claude mcp list
 Inside Claude Code, `/mcp` shows the registered server. Tool calls are
 prefixed: `local-ai-delegate__local_ai_status`,
 `local-ai-delegate__git_local_summary`,
+`local-ai-delegate__local_review`,
 `local-ai-delegate__run_local_plan`.
 
 The repo's three Claude skills (`delegate-local`, `local-review`,
@@ -121,6 +138,30 @@ tool_timeout_sec = 3600
 
 The default Codex tool timeout is too short for `run_local_plan`.
 
+### Recommended `~/.codex/AGENTS.md` section
+
+So Codex reaches for the local stack unprompted, add this to the (global)
+`~/.codex/AGENTS.md`:
+
+```markdown
+## Local AI stack (two-Mac, always running)
+
+A local MLX stack is available via the `local-ai-delegate` MCP server:
+
+- `local_review` — send the current git diff to the local Reviewer model
+  for a second opinion. Use it before merging non-trivial changes, then
+  state where you agree, disagree, and what it missed. Treat it as input,
+  not a verdict.
+- `run_local_plan` — execute an approved plan file with the local
+  multi-agent loop (long-running).
+- `local_ai_status` — check the endpoints if either tool errors.
+
+The endpoints are OpenAI-compatible if direct calls are ever needed
+(orchestrator 127.0.0.1:8001, developer 10.10.10.2:8002, reviewer
+10.10.10.2:8003); the `model` field must be the exact id from
+`GET /v1/models`, never an alias.
+```
+
 ## Smoke testing the MCP server directly
 
 ```bash
@@ -137,7 +178,7 @@ run the HTML guide §14b acceptance flow.
 - The server has no auth: anyone who can speak stdio to the process can
   invoke any tool. That's fine when it's launched by Claude/Codex on
   your own machine.
-- `git_local_summary` and `run_local_plan` are confined to
+- `git_local_summary`, `local_review`, and `run_local_plan` are confined to
   `LOCAL_AI_ALLOWED_ROOTS`. Do not point those at `/` or your home dir.
 - `local_ai_status` makes outbound HTTP calls to the three configured
   endpoints. Keep those endpoints on `127.0.0.1` / Thunderbolt-only.

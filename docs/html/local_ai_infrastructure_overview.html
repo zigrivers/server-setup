@@ -721,7 +721,7 @@ python local_agents.py \
       <tr><td><code>local_ai_status()</code></td><td>Check Orchestrator, Developer, Reviewer endpoints.</td></tr>
       <tr><td><code>run_local_plan(plan_file, workspace, in_place=false)</code></td><td>Run local execution against a frontier-generated plan.</td></tr>
       <tr><td><code>git_local_summary(workspace)</code></td><td>Show git status and diff stat for a workspace.</td></tr>
-      <tr><td><code>local_review_diff(...)</code></td><td>Future optional local review-only tool.</td></tr>
+      <tr><td><code>local_review(workspace, scope="uncommitted", instructions="")</code></td><td>Sends the workspace's git diff to the Reviewer model (8003) for a genuine local code review.</td></tr>
     </tbody>
   </table>
 
