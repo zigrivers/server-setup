@@ -5,9 +5,16 @@ set -euo pipefail
 # model output and exit status for each so it's obvious which one is
 # misconfigured.
 
+# Source .env for model paths (dev/reviewer live on Machine 2 under /Users/admin)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ENV_FILE="$SCRIPT_DIR/../.env"
+if [[ -f "$ENV_FILE" ]]; then
+  set -a; source "$ENV_FILE"; set +a
+fi
+
 ORCH_MODEL="${ORCH_MODEL:-$HOME/ai/models/orchestrator-qwen36-35b-a3b-heretic-bf16}"
-DEV_MODEL="${DEV_MODEL:-$HOME/ai/models/developer-qwen36-27b-heretic2-mixed94}"
-REVIEW_MODEL="${REVIEW_MODEL:-$HOME/ai/models/reviewer-qwen36-27b-heretic-bf16}"
+DEV_MODEL="${DEV_MODEL:-/Users/admin/ai/models/developer-qwen36-27b-heretic2-mixed94}"
+REVIEW_MODEL="${REVIEW_MODEL:-/Users/admin/ai/models/reviewer-llmfan46-qwen36-27b-heretic-v2-bf16}"
 
 build_payload() {
   local model="$1"
