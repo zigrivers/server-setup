@@ -127,6 +127,34 @@ def _post_json(url: str, payload: dict, timeout: int) -> dict:
         return json.loads(r.read().decode())
 
 
+def _review_base_url() -> str:
+    """Endpoint local_review generates against.
+
+    Defaults to the orchestrator (ORCH_BASE_URL — a fast MoE on localhost),
+    NOT the dense reviewer model on 8003, which generates at ~10 tok/s and blows
+    the request timeout on any substantive review. Override with
+    LOCAL_REVIEW_BASE_URL to force a specific endpoint (e.g. the 8003 reviewer).
+    """
+    return (
+        os.environ.get("LOCAL_REVIEW_BASE_URL")
+        or os.environ.get("ORCH_BASE_URL")
+        or "http://127.0.0.1:8001/v1"
+    )
+
+
+def _review_max_tokens() -> int:
+    """Output-token cap for a review (LOCAL_REVIEW_MAX_TOKENS, default 3000).
+
+    Bounds generation time: at the orchestrator's ~34 tok/s, 3000 tokens is
+    ~90s — well under the request timeout — while still fitting a thorough
+    structured review without truncation.
+    """
+    try:
+        return max(256, int(os.environ.get("LOCAL_REVIEW_MAX_TOKENS", "3000")))
+    except ValueError:
+        return 3000
+
+
 @mcp.tool()
 def local_ai_status() -> str:
     """Check whether the local MLX model servers appear reachable."""
@@ -155,14 +183,17 @@ def git_local_summary(workspace: str = ".") -> str:
 
 
 @mcp.tool()
-def local_review(workspace: str = ".", scope: str = "uncommitted", instructions: str = "", timeout_seconds: int = 300) -> str:
+def local_review(workspace: str = ".", scope: str = "uncommitted", instructions: str = "", timeout_seconds: int = 600) -> str:
     """
-    Send the workspace's git diff to the local Reviewer model for a real code review.
+    Send the workspace's git diff to a local model for a real code review.
 
     workspace: repo path (resolved against allowed roots).
     scope: 'uncommitted' (working tree vs HEAD), 'staged', or 'since-main'.
     instructions: optional extra focus areas for the reviewer.
-    timeout_seconds: max time to wait for the reviewer model.
+    timeout_seconds: max time to wait for the model.
+
+    Targets LOCAL_REVIEW_BASE_URL or the orchestrator (ORCH_BASE_URL) by
+    default — the dense reviewer on 8003 is too slow for interactive use.
     """
     ws = resolve_allowed(workspace)
     diff = _collect_diff(ws, scope)
@@ -170,7 +201,7 @@ def local_review(workspace: str = ".", scope: str = "uncommitted", instructions:
         return f"No changes found for scope '{scope}' in {ws} — nothing to review."
 
     status = run(["git", "status", "--short"], ws, timeout=60)
-    base_url = os.environ.get("REVIEW_BASE_URL", "http://10.10.10.2:8003/v1")
+    base_url = _review_base_url()
     model = _review_model(base_url)
 
     user_parts = []
@@ -186,13 +217,36 @@ def local_review(workspace: str = ".", scope: str = "uncommitted", instructions:
             {"role": "user", "content": "\n\n".join(user_parts)},
         ],
         "temperature": 0.1,
-        # Generous cap: reasoning-tuned models spend hidden thinking tokens
-        # from the same budget, so 2000 truncates verdicts mid-sentence.
-        "max_tokens": 4096,
+        "max_tokens": _review_max_tokens(),
+        # Disable the model's hidden reasoning channel. The orchestrator is a
+        # thinking model that otherwise spends the whole token budget in a
+        # `reasoning` field and emits no `content` (finish_reason=length). This
+        # kwarg makes it answer directly — faster, and the review lands in
+        # `content` where we can read it.
+        "chat_template_kwargs": {"enable_thinking": False},
     }
-    data = _post_json(base_url.rstrip("/") + "/chat/completions", payload, timeout=max(30, timeout_seconds))
-    text = data["choices"][0]["message"]["content"]
-    return f"{text}\n\n---\nReviewer: {model} via {base_url} (scope: {scope})"
+    try:
+        data = _post_json(base_url.rstrip("/") + "/chat/completions", payload, timeout=max(30, timeout_seconds))
+    except (TimeoutError, OSError) as e:
+        return (
+            f"Local review timed out or failed against {base_url} "
+            f"({type(e).__name__}: {e}). The model may be generating too slowly. "
+            f"Try a smaller scope, lower LOCAL_REVIEW_MAX_TOKENS, raise timeout_seconds, "
+            f"or point LOCAL_REVIEW_BASE_URL at a faster endpoint."
+        )
+    choice = data["choices"][0]
+    text = (choice.get("message", {}).get("content") or "").strip()
+    if not text:
+        fr = choice.get("finish_reason")
+        return (
+            f"Local review produced no answer from {model} via {base_url} "
+            f"(finish_reason={fr}). The model likely hit the token cap before "
+            f"answering — raise LOCAL_REVIEW_MAX_TOKENS or timeout_seconds."
+        )
+    footer = f"Reviewer: {model} via {base_url} (scope: {scope})"
+    if choice.get("finish_reason") == "length":
+        footer += " [truncated at max_tokens — raise LOCAL_REVIEW_MAX_TOKENS for a longer review]"
+    return f"{text}\n\n---\n{footer}"
 
 
 @mcp.tool()
