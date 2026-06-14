@@ -29,18 +29,27 @@ and returns the combined output (truncated to 20 KB).
 The `workspace` argument is resolved against the configured allowed
 roots (see below) and must be inside one of them.
 
-### `local_review(workspace=".", scope="uncommitted", instructions="", timeout_seconds=300) -> str`
+### `local_review(workspace=".", scope="uncommitted", instructions="", timeout_seconds=600) -> str`
 
-Sends the workspace's git diff to the local Reviewer model
-(`REVIEW_BASE_URL`, port 8003) for a genuine code review and returns the
-model's findings (Blocking issues / Non-blocking suggestions / Verdict).
+Sends the workspace's git diff to a local model for a genuine code review
+and returns the findings (Blocking issues / Non-blocking suggestions /
+Verdict).
 
 - `scope`: `uncommitted` (working tree vs HEAD), `staged`, or `since-main`.
 - `instructions`: optional focus areas passed to the reviewer.
-- The model id is discovered at call time from `GET {REVIEW_BASE_URL}/models`,
-  so no model name needs to be configured.
+- **Targets the orchestrator** (`ORCH_BASE_URL`, the fast MoE on localhost)
+  by default — NOT the dense reviewer on 8003, which generates at ~10 tok/s
+  and times out on substantive reviews. Override with `LOCAL_REVIEW_BASE_URL`
+  to force a specific endpoint.
+- The model id is discovered at call time from `GET {base}/models`, so no
+  model name needs to be configured.
+- Output is capped via `LOCAL_REVIEW_MAX_TOKENS` (default 3000). The
+  orchestrator's hidden reasoning channel is disabled
+  (`chat_template_kwargs.enable_thinking=false`) so it answers directly
+  instead of spending the budget thinking.
 - Diffs are truncated middle-out at 60 KB; empty diffs return early without
-  calling the model.
+  calling the model. Timeouts and empty responses return a clear message
+  (with the env knobs to adjust), not an error.
 
 This is the cheap second-opinion tool — for executing a plan with the full
 orchestrator/developer/reviewer loop, use `run_local_plan` instead.
