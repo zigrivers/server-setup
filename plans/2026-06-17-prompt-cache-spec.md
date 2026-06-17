@@ -77,6 +77,26 @@ win with a benchmark.
 ## Rollback
 - Revert the start-script edits and restart; the server returns to default (size 10, unbounded bytes).
 
+## Revisions from multi-model review (incorporated)
+- **Byte-unit confirmed (no conversion needed):** `--prompt-cache-bytes` uses mlx_lm's `_parse_size`
+  (`utils.py`), which accepts `"8GB"`/`"12GB"` (decimal, ×1e9) **and** bare integers. We pass the
+  readable `GB` form. Documented so the unit can't be misread.
+- **M2 entry point confirmed:** `start-worker-models.sh` runs `start-developer.sh &` and
+  `start-reviewer.sh &` — so editing those two scripts is correct and applies on M2. No separate path.
+- **M1 OOM headroom:** bounding `--prompt-cache-bytes` *reduces* OOM risk vs the current **unbounded**
+  default (which can grow to 10 long-prompt KV caches). M1 currently runs ~31% memory pressure with
+  ample headroom, so an 8GB cap is conservative; it's env-tunable and the Hardware page is the check.
+  The cap is the safety win, not a risk.
+- **Benchmark hardened:** (a) cold vs warm uses a **byte-identical** long prompt so the prefix is
+  guaranteed to match (rules out false negatives from whitespace/format drift); (b) after the warm
+  hit, it also fires **several distinct long prefixes then re-sends the first** to confirm the server
+  stays up under the byte cap (a light eviction/stability sanity check, not a full eviction proof);
+  (c) if warm ≥ cold, it prints a hint to check the server's `Prompt Cache:` log line.
+- **Log-format note:** verification's *primary* proof is the measured TTFT delta, not log parsing; the
+  `Prompt Cache: N sequences, X GB` line is a secondary confirmation and we read it as-is.
+- **Rollback completeness:** revert the script edits **and** unset `PROMPT_CACHE_SIZE`/
+  `PROMPT_CACHE_BYTES` in any env file, then restart — otherwise an env-set value would persist.
+
 ## Risks
 - **Most of the win may already be delivered by the default** — F2's measurable delta is the
   *byte-bounding* (safety) plus making it explicit/measured. The benchmark will quantify the actual

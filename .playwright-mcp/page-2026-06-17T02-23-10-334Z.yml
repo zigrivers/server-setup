@@ -1,0 +1,62 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e4]: ◴ Local AI
+      - link "Overview" [ref=e5] [cursor=pointer]:
+        - /url: /
+      - link "Performance" [ref=e6] [cursor=pointer]:
+        - /url: /performance
+      - link "Reliability" [ref=e7] [cursor=pointer]:
+        - /url: /reliability
+      - link "Usage" [ref=e8] [cursor=pointer]:
+        - /url: /usage
+      - link "Cost" [ref=e9] [cursor=pointer]:
+        - /url: /cost
+      - link "Hardware" [ref=e10] [cursor=pointer]:
+        - /url: /hardware
+      - link "Explorer" [ref=e11] [cursor=pointer]:
+        - /url: /explorer
+  - main [ref=e13]:
+    - generic [ref=e14]:
+      - heading "Overview" [level=1] [ref=e15]
+      - paragraph [ref=e16]: Activity across the local model stack — last 24 hours.
+    - generic [ref=e18]: "m1: only 1/3 endpoints reachable"
+    - generic [ref=e20]:
+      - generic [ref=e21]:
+        - generic [ref=e22]: Requests (24h)
+        - generic [ref=e23]: "16"
+      - generic [ref=e24]:
+        - generic [ref=e25]: Errors (24h)
+        - generic [ref=e26]: "0"
+      - generic [ref=e27]:
+        - generic [ref=e28]: Error rate
+        - generic [ref=e29]: 0.0%
+    - heading "Endpoints" [level=2] [ref=e30]
+    - table [ref=e32]:
+      - rowgroup [ref=e33]:
+        - row "Endpoint Requests Avg speed Last seen" [ref=e34]:
+          - columnheader "Endpoint" [ref=e35]
+          - columnheader "Requests" [ref=e36]
+          - columnheader "Avg speed" [ref=e37]
+          - columnheader "Last seen" [ref=e38]
+      - rowgroup [ref=e39]:
+        - row "ok orchestrator 16 7.8 tok/s 2m ago" [ref=e40]:
+          - cell "ok orchestrator" [ref=e41]:
+            - generic "ok" [ref=e42]
+            - text: orchestrator
+          - cell "16" [ref=e43]
+          - cell "7.8 tok/s" [ref=e44]
+          - cell "2m ago" [ref=e45]
+    - heading "Top clients" [level=2] [ref=e46]
+    - generic [ref=e47]:
+      - generic [ref=e48]:
+        - generic [ref=e49]: unknown
+        - generic [ref=e52]: "13"
+      - generic [ref=e53]:
+        - generic [ref=e54]: codex
+        - generic [ref=e57]: "2"
+      - generic [ref=e58]:
+        - generic [ref=e59]: peptides
+        - generic [ref=e62]: "1"
+  - contentinfo [ref=e63]: Auto-refreshes live · metrics only — no prompt or response text is stored.
+  - alert [ref=e64]

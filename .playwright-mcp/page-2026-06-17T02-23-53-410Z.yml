@@ -1,0 +1,52 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e4]: ◴ Local AI
+      - link "Overview" [ref=e5] [cursor=pointer]:
+        - /url: /
+      - link "Performance" [ref=e6] [cursor=pointer]:
+        - /url: /performance
+      - link "Reliability" [ref=e7] [cursor=pointer]:
+        - /url: /reliability
+      - link "Usage" [ref=e8] [cursor=pointer]:
+        - /url: /usage
+      - link "Cost" [ref=e9] [cursor=pointer]:
+        - /url: /cost
+      - link "Hardware" [ref=e10] [cursor=pointer]:
+        - /url: /hardware
+      - link "Explorer" [ref=e11] [cursor=pointer]:
+        - /url: /explorer
+  - main [ref=e13]:
+    - heading "Cost-avoided" [level=1] [ref=e14]
+    - paragraph [ref=e15]: What these tokens would have cost on a frontier API (assuming $3/M input, $15/M output) — last 24 hours.
+    - generic [ref=e16]:
+      - generic [ref=e17]:
+        - generic [ref=e18]: Saved (24h)
+        - generic [ref=e19]: $0.0002
+      - generic [ref=e20]:
+        - generic [ref=e21]: ≈ Monthly
+        - generic [ref=e22]: $0.0073
+        - generic [ref=e23]: at this rate
+      - generic [ref=e24]:
+        - generic [ref=e25]: Tokens (24h)
+        - generic [ref=e26]: "57"
+        - generic [ref=e27]: 51 in · 6 out
+    - heading "By client" [level=2] [ref=e28]
+    - generic [ref=e29]:
+      - generic [ref=e30]:
+        - generic [ref=e31]: codex
+        - generic [ref=e34]: $0.0001
+      - generic [ref=e35]:
+        - generic [ref=e36]: peptides
+        - generic [ref=e39]: $0.0001
+      - generic [ref=e40]:
+        - generic [ref=e41]: unknown
+        - generic [ref=e44]: $0.0001
+    - paragraph [ref=e45]:
+      - text: Rates are estimates — set
+      - code [ref=e46]: DASHBOARD_COST_INPUT_PER_MTOK
+      - text: and
+      - code [ref=e47]: DASHBOARD_COST_OUTPUT_PER_MTOK
+      - text: to match the frontier model you're comparing against.
+  - contentinfo [ref=e48]: Auto-refreshes live · metrics only — no prompt or response text is stored.
+  - alert [ref=e49]

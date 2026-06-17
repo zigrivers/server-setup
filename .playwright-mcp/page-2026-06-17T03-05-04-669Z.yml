@@ -1,0 +1,88 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e4]: ◴ Local AI
+      - link "Overview" [ref=e5] [cursor=pointer]:
+        - /url: /
+      - link "Performance" [ref=e6] [cursor=pointer]:
+        - /url: /performance
+      - link "Reliability" [ref=e7] [cursor=pointer]:
+        - /url: /reliability
+      - link "Usage" [ref=e8] [cursor=pointer]:
+        - /url: /usage
+      - link "Cost" [ref=e9] [cursor=pointer]:
+        - /url: /cost
+      - link "Hardware" [ref=e10] [cursor=pointer]:
+        - /url: /hardware
+      - link "Explorer" [ref=e11] [cursor=pointer]:
+        - /url: /explorer
+  - main [ref=e13]:
+    - generic [ref=e14]:
+      - heading "Overview" [level=1] [ref=e15]
+      - paragraph [ref=e16]: Activity across the local model stack — last 24 hours.
+    - generic [ref=e17]:
+      - generic [ref=e18]: "High error rate: 22.22%"
+      - generic [ref=e20]: "m1: only 1/3 endpoints reachable"
+    - generic [ref=e22]:
+      - generic [ref=e23]:
+        - generic [ref=e24]: Requests (24h)
+        - generic [ref=e25]: "9"
+      - generic [ref=e26]:
+        - generic [ref=e27]: Errors (24h)
+        - generic [ref=e28]: "2"
+      - generic [ref=e29]:
+        - generic [ref=e30]: Error rate
+        - generic [ref=e31]: 22.2%
+    - heading "Endpoints" [level=2] [ref=e32]
+    - table [ref=e34]:
+      - rowgroup [ref=e35]:
+        - row "Endpoint Requests Avg speed Last seen" [ref=e36]:
+          - columnheader "Endpoint" [ref=e37]
+          - columnheader "Requests" [ref=e38]
+          - columnheader "Avg speed" [ref=e39]
+          - columnheader "Last seen" [ref=e40]
+      - rowgroup [ref=e41]:
+        - row "err developer 1 (1 err) — 2m ago" [ref=e42]:
+          - cell "err developer" [ref=e43]:
+            - generic "err" [ref=e44]
+            - text: developer
+          - cell "1 (1 err)" [ref=e45]:
+            - text: "1"
+            - generic [ref=e46]: (1 err)
+          - cell "—" [ref=e47]
+          - cell "2m ago" [ref=e48]
+        - row "ok orchestrator 7 13.3 tok/s 3m ago" [ref=e49]:
+          - cell "ok orchestrator" [ref=e50]:
+            - generic "ok" [ref=e51]
+            - text: orchestrator
+          - cell "7" [ref=e52]
+          - cell "13.3 tok/s" [ref=e53]
+          - cell "3m ago" [ref=e54]
+        - row "err reviewer 1 (1 err) — 2m ago" [ref=e55]:
+          - cell "err reviewer" [ref=e56]:
+            - generic "err" [ref=e57]
+            - text: reviewer
+          - cell "1 (1 err)" [ref=e58]:
+            - text: "1"
+            - generic [ref=e59]: (1 err)
+          - cell "—" [ref=e60]
+          - cell "2m ago" [ref=e61]
+    - heading "Top clients" [level=2] [ref=e62]
+    - generic [ref=e63]:
+      - generic [ref=e64]:
+        - generic [ref=e65]: unknown
+        - generic [ref=e68]: "5"
+      - generic [ref=e69]:
+        - generic [ref=e70]: claude-code
+        - generic [ref=e73]: "1"
+      - generic [ref=e74]:
+        - generic [ref=e75]: codex
+        - generic [ref=e78]: "1"
+      - generic [ref=e79]:
+        - generic [ref=e80]: mcp-local-review
+        - generic [ref=e83]: "1"
+      - generic [ref=e84]:
+        - generic [ref=e85]: peptides
+        - generic [ref=e88]: "1"
+  - contentinfo [ref=e89]: Auto-refreshes live · metrics only — no prompt or response text is stored.
+  - alert [ref=e90]

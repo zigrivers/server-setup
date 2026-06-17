@@ -12,6 +12,9 @@ fi
 HOST="${WORKER_HOST:-10.10.10.2}"
 PORT="${REVIEW_PORT:-8003}"
 MODEL="${REVIEW_MODEL_PATH:-$HOME/ai/models/reviewer-qwen36-27b-heretic-bf16}"
+# Explicit, byte-bounded prompt/prefix KV cache (mlx_lm default: size 10, bytes unbounded).
+PROMPT_CACHE_SIZE="${PROMPT_CACHE_SIZE:-10}"
+PROMPT_CACHE_BYTES="${PROMPT_CACHE_BYTES:-12GB}"
 
 if lsof -nP -iTCP:"$PORT" -sTCP:LISTEN >/dev/null 2>&1; then
   echo "Something is already listening on port $PORT:"
@@ -25,4 +28,6 @@ exec mlx_lm.server \
   --model "$MODEL" \
   --host "$HOST" \
   --port "$PORT" \
+  --prompt-cache-size "$PROMPT_CACHE_SIZE" \
+  --prompt-cache-bytes "$PROMPT_CACHE_BYTES" \
   >> "$HOME/ai/logs/reviewer.log" 2>&1

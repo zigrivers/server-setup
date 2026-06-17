@@ -1,0 +1,67 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e4]: ◴ Local AI
+      - link "Overview" [ref=e5] [cursor=pointer]:
+        - /url: /
+      - link "Performance" [ref=e6] [cursor=pointer]:
+        - /url: /performance
+      - link "Reliability" [ref=e7] [cursor=pointer]:
+        - /url: /reliability
+      - link "Usage" [ref=e8] [cursor=pointer]:
+        - /url: /usage
+      - link "Cost" [ref=e9] [cursor=pointer]:
+        - /url: /cost
+      - link "Hardware" [ref=e10] [cursor=pointer]:
+        - /url: /hardware
+      - link "Explorer" [ref=e11] [cursor=pointer]:
+        - /url: /explorer
+  - main [ref=e13]:
+    - generic [ref=e14]:
+      - heading "Overview" [level=1] [ref=e15]
+      - paragraph [ref=e16]: Activity across the local model stack — last 24 hours.
+    - generic [ref=e17]:
+      - generic [ref=e18]:
+        - generic [ref=e19]: Requests (24h)
+        - generic [ref=e20]: "5"
+      - generic [ref=e21]:
+        - generic [ref=e22]: Errors (24h)
+        - generic [ref=e23]: "0"
+      - generic [ref=e24]:
+        - generic [ref=e25]: Error rate
+        - generic [ref=e26]: 0.0%
+    - heading "Endpoints" [level=2] [ref=e27]
+    - table [ref=e29]:
+      - rowgroup [ref=e30]:
+        - row "Endpoint Requests Avg speed Last seen" [ref=e31]:
+          - columnheader "Endpoint" [ref=e32]
+          - columnheader "Requests" [ref=e33]
+          - columnheader "Avg speed" [ref=e34]
+          - columnheader "Last seen" [ref=e35]
+      - rowgroup [ref=e36]:
+        - row "ok orchestrator 5 13.3 tok/s 53s ago" [ref=e37]:
+          - cell "ok orchestrator" [ref=e38]:
+            - generic "ok" [ref=e39]
+            - text: orchestrator
+          - cell "5" [ref=e40]
+          - cell "13.3 tok/s" [ref=e41]
+          - cell "53s ago" [ref=e42]
+    - heading "Top clients" [level=2] [ref=e43]
+    - generic [ref=e44]:
+      - generic [ref=e45]:
+        - generic [ref=e46]: claude-code
+        - generic [ref=e49]: "1"
+      - generic [ref=e50]:
+        - generic [ref=e51]: codex
+        - generic [ref=e54]: "1"
+      - generic [ref=e55]:
+        - generic [ref=e56]: mcp-local-review
+        - generic [ref=e59]: "1"
+      - generic [ref=e60]:
+        - generic [ref=e61]: peptides
+        - generic [ref=e64]: "1"
+      - generic [ref=e65]:
+        - generic [ref=e66]: unknown
+        - generic [ref=e69]: "1"
+  - contentinfo [ref=e70]: Auto-refreshes live · metrics only — no prompt or response text is stored.
+  - alert [ref=e71]

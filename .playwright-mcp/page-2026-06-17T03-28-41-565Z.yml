@@ -1,0 +1,73 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e4]: ◴ Local AI
+      - link "Overview" [ref=e5] [cursor=pointer]:
+        - /url: /
+      - link "Performance" [ref=e6] [cursor=pointer]:
+        - /url: /performance
+      - link "Reliability" [ref=e7] [cursor=pointer]:
+        - /url: /reliability
+      - link "Errors" [ref=e8] [cursor=pointer]:
+        - /url: /errors
+      - link "Usage" [ref=e9] [cursor=pointer]:
+        - /url: /usage
+      - link "Cost" [ref=e10] [cursor=pointer]:
+        - /url: /cost
+      - link "Hardware" [ref=e11] [cursor=pointer]:
+        - /url: /hardware
+      - link "Explorer" [ref=e12] [cursor=pointer]:
+        - /url: /explorer
+  - main [ref=e14]:
+    - heading "Errors" [level=1] [ref=e15]
+    - paragraph [ref=e16]: What failed and why — last 24 hours. Diagnostics only; prompt/response text is not stored.
+    - heading "By endpoint & type" [level=2] [ref=e17]
+    - generic [ref=e18]:
+      - generic [ref=e19]:
+        - generic [ref=e20]: developer · other
+        - generic [ref=e23]: "1"
+      - generic [ref=e24]:
+        - generic [ref=e25]: orchestrator · other
+        - generic [ref=e28]: "1"
+      - generic [ref=e29]:
+        - generic [ref=e30]: reviewer · other
+        - generic [ref=e33]: "1"
+    - heading "Recent failures" [level=2] [ref=e34]
+    - table [ref=e36]:
+      - rowgroup [ref=e37]:
+        - row "When Endpoint Client Type Detail" [ref=e38]:
+          - columnheader "When" [ref=e39]
+          - columnheader "Endpoint" [ref=e40]
+          - columnheader "Client" [ref=e41]
+          - columnheader "Type" [ref=e42]
+          - columnheader "Detail" [ref=e43]
+      - rowgroup [ref=e44]:
+        - row "38s ago err orchestrator codex other (400) HTTP 400" [ref=e45]:
+          - cell "38s ago" [ref=e46]
+          - cell "err orchestrator" [ref=e47]:
+            - generic "err" [ref=e48]
+            - text: orchestrator
+          - cell "codex" [ref=e49]
+          - cell "other (400)" [ref=e50]
+          - cell "HTTP 400" [ref=e51]:
+            - code [ref=e52]: HTTP 400
+        - row "25m ago err reviewer unknown other —" [ref=e53]:
+          - cell "25m ago" [ref=e54]
+          - cell "err reviewer" [ref=e55]:
+            - generic "err" [ref=e56]
+            - text: reviewer
+          - cell "unknown" [ref=e57]
+          - cell "other" [ref=e58]
+          - cell "—" [ref=e59]:
+            - code [ref=e60]: —
+        - row "25m ago err developer unknown other —" [ref=e61]:
+          - cell "25m ago" [ref=e62]
+          - cell "err developer" [ref=e63]:
+            - generic "err" [ref=e64]
+            - text: developer
+          - cell "unknown" [ref=e65]
+          - cell "other" [ref=e66]
+          - cell "—" [ref=e67]:
+            - code [ref=e68]: —
+  - contentinfo [ref=e69]: Auto-refreshes live · metrics + error diagnostics — successful prompt/response text is never stored.
+  - alert [ref=e70]
