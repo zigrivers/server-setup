@@ -26,6 +26,7 @@ def allowed_roots() -> list[Path]:
             Path.home() / "code",
             Path.home() / "Developer",
             Path.home() / "projects",
+            Path.home() / "Documents" / "dev-projects",
         ]
     )
     return [p.resolve() for p in roots if p.exists()]
