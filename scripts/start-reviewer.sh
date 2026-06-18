@@ -15,6 +15,12 @@ MODEL="${REVIEW_MODEL_PATH:-$HOME/ai/models/reviewer-qwen36-27b-heretic-bf16}"
 # Explicit, byte-bounded prompt/prefix KV cache (mlx_lm default: size 10, bytes unbounded).
 PROMPT_CACHE_SIZE="${PROMPT_CACHE_SIZE:-10}"
 PROMPT_CACHE_BYTES="${PROMPT_CACHE_BYTES:-12GB}"
+# Optional speculative decoding: set DRAFT_MODEL (a small model sharing this model's tokenizer).
+# Off by default → zero behavior change. NOT for the MoE orchestrator; measure acceptance first.
+DRAFT_ARGS=()
+if [ -n "${DRAFT_MODEL:-}" ]; then
+  DRAFT_ARGS=(--draft-model "$DRAFT_MODEL" --num-draft-tokens "${NUM_DRAFT_TOKENS:-3}")
+fi
 
 # Abort only if OUR mlx_lm server is already answering here (avoid a duplicate). A bare lsof
 # check false-positives on unrelated listeners sharing the port (e.g. a Docker container on
@@ -33,4 +39,5 @@ exec mlx_lm.server \
   --port "$PORT" \
   --prompt-cache-size "$PROMPT_CACHE_SIZE" \
   --prompt-cache-bytes "$PROMPT_CACHE_BYTES" \
+  ${DRAFT_ARGS[@]+"${DRAFT_ARGS[@]}"} \
   >> "$HOME/ai/logs/reviewer.log" 2>&1
