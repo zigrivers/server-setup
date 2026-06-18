@@ -29,22 +29,20 @@ The cache keys on **identical leading tokens for the same model**. To get hits:
 Revert the start-script edits **and** unset `PROMPT_CACHE_SIZE` / `PROMPT_CACHE_BYTES` in any env
 file, then restart. The server returns to the mlx_lm defaults (size 10, bytes unbounded).
 
-## Operational notes uncovered while shipping this (read before restarting a server)
-- **Port collision with the `nibble` project.** Docker/OrbStack containers from `nibble`
-  (`nibble-research-engine` → 8001, `nibble-backtesting-engine` → 8002, `nibble-trading-engine`
-  → 8003) publish `0.0.0.0:8001/8002/8003` — the SAME ports as orchestrator/developer/reviewer.
-  mlx can still bind `127.0.0.1:PORT` alongside them, but the start scripts' old
-  `lsof -iTCP:PORT` pre-flight false-positived on the Docker listener and **crash-looped** the
-  orchestrator on restart. Fixed: the pre-flight now only aborts if *our own* mlx server already
-  answers `/v1/models` (and exits 0, so launchd doesn't treat "already running" as a crash).
-  **Longer-term: move one of the two stacks off 8001–8003 to remove the collision entirely.**
-- **Diverged script copies.** The launchd agents run
-  `~/ai/local-ai-stack/scripts/*.sh`, NOT the canonical `~/Developer/server-setup/scripts/*.sh`
-  (the `~/ai/bin` symlinks point at server-setup, but the plists do not). After editing the
-  server-setup copies you MUST deploy them to `~/ai/local-ai-stack/scripts/` (and to M2's
-  `~/ai/local-ai-stack/scripts/`) for the running services to pick them up. **Longer-term: point
-  the plists at the server-setup copies (or the `~/ai/bin` symlinks) so there's one source of
-  truth.**
+## Operational notes (the two issues below are now RESOLVED — kept for history)
+- **Port collision with the `nibble` project — RESOLVED.** `nibble`'s Docker containers used to
+  publish `0.0.0.0:8001/8002/8003` (the AI stack's ports), which false-positived the start scripts'
+  old `lsof` pre-flight and **crash-looped** the orchestrator on restart. **Fixed two ways:** (1)
+  `nibble` was moved to host ports **18001/18002/18003**; (2) the pre-flight was hardened to abort
+  only if *our own* mlx server already answers `/v1/models` (exit 0, so "already running" isn't a
+  crash) — so the stack now coexists with any future port squatter.
+- **Diverged script copies — RESOLVED.** The launchd agents run `~/ai/local-ai-stack/scripts/*.sh`,
+  which were *separate copies* from the canonical `~/Developer/server-setup/scripts/*.sh`. Those
+  copies are now **symlinks** to the server-setup originals, so there is **one source of truth**:
+  editing `server-setup/scripts/` takes effect on the next restart with no manual deploy.
+  Verified: the orchestrator restarts cleanly from the canonical script via the symlink.
+  (M2's worker copies are still deployed by `scp` since server-setup isn't checked out on M2 — a
+  future `com.localai.workers` LaunchAgent + a server-setup checkout on M2 would close that gap.)
 - **M2 workers are not under launchd.** Only `com.localai.collector.m2` is a LaunchAgent on M2;
   the developer/reviewer servers run manually (no autostart). The cache flags + hardened pre-flight
   are deployed to M2's scripts and apply on the **next** worker restart/reboot — the currently
