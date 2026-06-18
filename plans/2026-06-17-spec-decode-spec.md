@@ -52,6 +52,24 @@ safely — without forcing a disruptive reload of the manually-managed M2 worker
 - M1 benchmark: tok/s_with_draft vs tok/s_without on the Qwen2.5 pair → report the speedup (the proof).
 - (M2 live enablement is the documented opt-in step, not run in v1.)
 
+## Revisions from multi-model review (incorporated) + the honest result
+- **The M1 proof showed NO win — and that's the point.** Qwen2.5-7B-4bit + 0.5B-4bit draft measured
+  **0.89×** (127.8 → 114.2 tok/s): a fast, bandwidth-bound target gets *slower*. This matches the
+  research — spec decoding helps *slow, memory-bound* targets (the 27B workers at ~10 tok/s), not
+  fast ones. So the feature ships as **measure-before-enable**, not a blanket speedup, and the docs
+  lead with this finding rather than over-claiming "2×".
+- **Tokenizer-compat is a hard requirement** — mlx errors on load if the draft's vocab differs; the
+  enable guide says to verify the draft loads with the target *first*. (No silent mismatch.)
+- **`num_draft_tokens` tuning** — the benchmark takes it as an arg; docs say try 2–5 (a weaker draft
+  wants fewer). Default 3.
+- **Acceptance rate** — mlx doesn't cleanly expose it across versions, so the **tok/s delta is the
+  practical proxy** the benchmark reports; documented.
+- **Benchmark vs server path** — `bench-spec-decode.py` uses `stream_generate` (the server's decode
+  core); absolute numbers differ under server load but the *relative* speedup is the signal. Noted.
+- **Memory** — ~1GB for a 0.5B-4bit draft; larger/less-quantized drafts cost more. Noted.
+- **Bash-3.2-safe** — the env-gated flags use `${DRAFT_ARGS[@]+"${DRAFT_ARGS[@]}"}` so an unset
+  `DRAFT_MODEL` adds nothing even under `set -u` on macOS's old bash.
+
 ## Risks
 - **Speedup is workload/acceptance-dependent** — drafting helps most when the draft's proposals are
   often accepted (similar model family). The benchmark measures the real number; we don't over-claim.
