@@ -63,6 +63,13 @@ Logs:
 - launchd stdout/stderr: `~/ai/logs/*-launchd.{out,err}`
 - worker logs: `~/ai/logs/{orchestrator,developer,reviewer}.log`
 
+## RAG proxy (port 9200)
+
+A transparent per-project RAG proxy runs on `127.0.0.1:9200` as the `com.localai.rag-proxy`
+LaunchAgent (autostarts at login). It grounds chat completions for projects that have a Qdrant
+collection and is a no-op for everything else. Health: `curl -s :9200/healthz`. Add/refresh a
+project: `scripts/rag-add-project.sh <name>`. Full guide: [`rag-proxy.md`](rag-proxy.md).
+
 ## Endpoint smoke test
 
 From Machine 1:

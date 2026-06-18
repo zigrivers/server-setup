@@ -34,6 +34,12 @@ Env knobs: `COLLECTION` (default `server_setup`), `RAG_TOP_K` (4), `RAG_MIN_SCOR
 - **Freshness** — re-ingesting a file deletes its old chunks (stable id = hash(path+ord)).
 - **L2-normalized** vectors; cosine distance in Qdrant.
 
+## Point a whole project at RAG (transparent proxy)
+This toolkit also powers a transparent, per-project **RAG proxy** on `127.0.0.1:9200` — point a
+project's `base_url`+`api_key` at it and its answers get grounded automatically (no-op for projects
+without a collection). One command ingests a project: `scripts/rag-add-project.sh <name>`. See
+[`rag-proxy.md`](rag-proxy.md).
+
 ## Measuring whether RAG helps (don't assume)
 Adopt RAG for a use case **only if it measurably beats no-RAG**. Use the F1 eval harness: add an arm
 that prepends `build_rag_prompt(query, retrieve(...))` and A/B it against baseline on a relevant
