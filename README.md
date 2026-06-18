@@ -50,6 +50,7 @@ configs/
 
 docs/
   architecture, setup, operations, troubleshooting, and workflow docs
+  rag.md / rag-proxy.md    local RAG toolkit + the transparent per-project RAG proxy (:9200)
 
 prompts/
   reusable prompts for frontier planning and review

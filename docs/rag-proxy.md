@@ -115,6 +115,29 @@ see the injected `--- context ---` block). **Note:** the meter attributes reques
 configured client list, so an arbitrary collection-key shows as `client=unknown` unless that key is a
 known meter client — the *prompt* is recorded either way, but it is not attributed by collection name.
 
+## Does it actually help? (measured, not assumed)
+
+A/B'd via the eval harness on the **peptides** project (8 project-specific questions, judged blind by
+the reviewer model, judge κ=1.0):
+
+| arm | McNemar | mean generation | completion tokens | + retrieval |
+|---|---|---|---|---|
+| baseline | — | 16.0 s | 182 | — |
+| **rag** | **6W / 0L / 2T, p=0.031** ✅ | 8.9 s | 80 | +1.78 s |
+
+RAG **significantly beat baseline** on project-specific knowledge — and was *faster* end-to-end
+(~10.7 s vs 16.0 s): grounding let the model answer concisely (80 vs 182 tokens) instead of padding
+toward the token cap with guesses. The ~1.8 s retrieval cost was more than repaid by shorter
+generation.
+
+**Where it's not worth it:** for generic, off-domain questions the score gate returns nothing, so the
+proxy auto-skips and the answer is identical to baseline. Measured: a contrast eval of 6 generic CS
+questions against the same peptides collection scored **0W / 0L / 6T, p=1.000** — RAG was a true
+no-op (per-case latencies within ~0.1 s of baseline; retrieval returned 0 hits every time). Config:
+`local-ai-dashboard/eval/eval-config-peptides-general.json`. **Takeaway:** RAG clearly helps for
+project-specific factual recall and is a deliberate, measured no-op for general questions — so it is
+safe to route all traffic through the proxy. Re-run the A/B per project before assuming it helps there.
+
 ## v1 scope — honest about what's deferred
 
 Built (v1): transparent proxy, per-project collection routing, no-downtime ingest + calibration,
