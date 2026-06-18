@@ -13,10 +13,14 @@ HOST="${ORCH_HOST:-127.0.0.1}"
 PROMPT_CACHE_SIZE="${PROMPT_CACHE_SIZE:-10}"
 PROMPT_CACHE_BYTES="${PROMPT_CACHE_BYTES:-8GB}"
 
-if lsof -nP -iTCP:"$PORT" -sTCP:LISTEN >/dev/null 2>&1; then
-  echo "Something is already listening on port $PORT:"
-  lsof -nP -iTCP:"$PORT" -sTCP:LISTEN
-  exit 1
+# Abort only if OUR OpenAI-compatible server is already answering here (avoid a duplicate).
+# A bare lsof check false-positives on unrelated listeners that may share the port on another
+# interface (e.g. a Docker/OrbStack container publishing 0.0.0.0:PORT), which would crash-loop
+# under launchd. Distinguish by probing /v1/models for a real model list. Exit 0 (not 1) so
+# launchd never treats "already running" as a crash.
+if curl -s --max-time 3 "http://$HOST:$PORT/v1/models" 2>/dev/null | grep -q '"data"'; then
+  echo "An mlx_lm server is already responding on $HOST:$PORT — not starting a duplicate."
+  exit 0
 fi
 
 echo "Starting Machine 1 Orchestrator:"

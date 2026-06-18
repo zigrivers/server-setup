@@ -24,10 +24,14 @@ body = json.dumps({"model": model, "stream": True, "max_tokens": 8,
 req = urllib.request.Request(base + "/chat/completions", data=body,
                              headers={"content-type": "application/json"}, method="POST")
 t0 = time.time()
+first = None
 with urllib.request.urlopen(req, timeout=180) as r:
+    # Record time-to-first-token, but DRAIN the whole (tiny, 8-token) stream — do not close
+    # early, which would send the server a broken pipe.
     for line in r:
-        if line.strip().startswith(b"data:") and b"[DONE]" not in line:
-            print(f"{time.time()-t0:.2f}"); break
+        if first is None and line.strip().startswith(b"data:") and b"[DONE]" not in line:
+            first = time.time() - t0
+print(f"{first:.2f}" if first is not None else "nan")
 PY
 }
 
