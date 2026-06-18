@@ -173,16 +173,34 @@ def _embedder():
     return _model, _tok
 
 
+EMBED_BATCH = int(os.environ.get("RAG_EMBED_BATCH", "16"))
+
+
 def embed(texts: List[str]) -> List[List[float]]:
-    """Embed + L2-normalize."""
+    """Embed + L2-normalize. Processes in small batches and clears the MLX cache between them so a
+    bulk ingest (hundreds of generate() calls in one process) doesn't accumulate GPU memory and get
+    killed. Batch size is RAG_EMBED_BATCH (default 16)."""
     import numpy as np
     import mlx_embeddings
+    try:
+        import mlx.core as mx
+    except Exception:  # noqa: BLE001
+        mx = None
     model, tok = _embedder()
-    out = mlx_embeddings.generate(model, tok, texts)
-    arr = np.array(out.text_embeds if hasattr(out, "text_embeds") else out, dtype="float32")
-    norms = np.linalg.norm(arr, axis=1, keepdims=True)
-    norms[norms == 0] = 1.0
-    return (arr / norms).tolist()
+    vecs: List[List[float]] = []
+    for i in range(0, len(texts), EMBED_BATCH):
+        batch = texts[i:i + EMBED_BATCH]
+        out = mlx_embeddings.generate(model, tok, batch)
+        arr = np.array(out.text_embeds if hasattr(out, "text_embeds") else out, dtype="float32")
+        norms = np.linalg.norm(arr, axis=1, keepdims=True)
+        norms[norms == 0] = 1.0
+        vecs.extend((arr / norms).tolist())
+        if mx is not None:
+            try:
+                mx.clear_cache()
+            except Exception:  # noqa: BLE001 — best-effort; older mlx may lack it
+                pass
+    return vecs
 
 
 def client():
