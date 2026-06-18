@@ -1,0 +1,9 @@
+- generic [ref=e1]:
+  - main [ref=e3]:
+    - generic [ref=e4]:
+      - heading "Local AI Dashboard" [level=1] [ref=e5]
+      - paragraph [ref=e6]: Enter the dashboard password.
+      - textbox "Password" [active] [ref=e7]
+      - button "Sign in" [ref=e8] [cursor=pointer]
+  - contentinfo [ref=e9]: Auto-refreshes live · metrics only — no prompt or response text is stored.
+  - alert [ref=e10]

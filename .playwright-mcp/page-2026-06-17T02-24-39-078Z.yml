@@ -1,0 +1,123 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e4]: ◴ Local AI
+      - link "Overview" [ref=e5] [cursor=pointer]:
+        - /url: /
+      - link "Performance" [ref=e6] [cursor=pointer]:
+        - /url: /performance
+      - link "Reliability" [ref=e7] [cursor=pointer]:
+        - /url: /reliability
+      - link "Usage" [ref=e8] [cursor=pointer]:
+        - /url: /usage
+      - link "Cost" [ref=e9] [cursor=pointer]:
+        - /url: /cost
+      - link "Hardware" [ref=e10] [cursor=pointer]:
+        - /url: /hardware
+      - link "Explorer" [ref=e11] [cursor=pointer]:
+        - /url: /explorer
+  - main [ref=e13]:
+    - heading "Reliability" [level=1] [ref=e14]
+    - paragraph [ref=e15]: Errors, timeouts, and the slowest calls — last 24 hours.
+    - generic [ref=e16]:
+      - generic [ref=e17]:
+        - generic [ref=e18]: Requests (24h)
+        - generic [ref=e19]: "16"
+      - generic [ref=e20]:
+        - generic [ref=e21]: Error rate
+        - generic [ref=e22]: 0.0%
+      - generic [ref=e23]:
+        - generic [ref=e24]: Timeout rate
+        - generic [ref=e25]: 0.0%
+    - heading "Slowest requests" [level=2] [ref=e26]
+    - table [ref=e28]:
+      - rowgroup [ref=e29]:
+        - row "When Endpoint Client Latency Status" [ref=e30]:
+          - columnheader "When" [ref=e31]
+          - columnheader "Endpoint" [ref=e32]
+          - columnheader "Client" [ref=e33]
+          - columnheader "Latency" [ref=e34]
+          - columnheader "Status" [ref=e35]
+      - rowgroup [ref=e36]:
+        - row "6m ago orchestrator codex 1.0s 200" [ref=e37]:
+          - cell "6m ago" [ref=e38]
+          - cell "orchestrator" [ref=e39]
+          - cell "codex" [ref=e40]
+          - cell "1.0s" [ref=e41]
+          - cell "200" [ref=e42]
+        - row "6m ago orchestrator codex 769ms 200" [ref=e43]:
+          - cell "6m ago" [ref=e44]
+          - cell "orchestrator" [ref=e45]
+          - cell "codex" [ref=e46]
+          - cell "769ms" [ref=e47]
+          - cell "200" [ref=e48]
+        - row "6m ago orchestrator peptides 198ms 200" [ref=e49]:
+          - cell "6m ago" [ref=e50]
+          - cell "orchestrator" [ref=e51]
+          - cell "peptides" [ref=e52]
+          - cell "198ms" [ref=e53]
+          - cell "200" [ref=e54]
+        - row "6m ago orchestrator unknown 186ms 200" [ref=e55]:
+          - cell "6m ago" [ref=e56]
+          - cell "orchestrator" [ref=e57]
+          - cell "unknown" [ref=e58]
+          - cell "186ms" [ref=e59]
+          - cell "200" [ref=e60]
+        - row "6m ago orchestrator unknown 11ms 200" [ref=e61]:
+          - cell "6m ago" [ref=e62]
+          - cell "orchestrator" [ref=e63]
+          - cell "unknown" [ref=e64]
+          - cell "11ms" [ref=e65]
+          - cell "200" [ref=e66]
+        - row "3m ago orchestrator unknown 9ms 200" [ref=e67]:
+          - cell "3m ago" [ref=e68]
+          - cell "orchestrator" [ref=e69]
+          - cell "unknown" [ref=e70]
+          - cell "9ms" [ref=e71]
+          - cell "200" [ref=e72]
+        - row "3m ago orchestrator unknown 6ms 200" [ref=e73]:
+          - cell "3m ago" [ref=e74]
+          - cell "orchestrator" [ref=e75]
+          - cell "unknown" [ref=e76]
+          - cell "6ms" [ref=e77]
+          - cell "200" [ref=e78]
+        - row "3m ago orchestrator unknown 3ms 200" [ref=e79]:
+          - cell "3m ago" [ref=e80]
+          - cell "orchestrator" [ref=e81]
+          - cell "unknown" [ref=e82]
+          - cell "3ms" [ref=e83]
+          - cell "200" [ref=e84]
+        - row "3m ago orchestrator unknown 3ms 200" [ref=e85]:
+          - cell "3m ago" [ref=e86]
+          - cell "orchestrator" [ref=e87]
+          - cell "unknown" [ref=e88]
+          - cell "3ms" [ref=e89]
+          - cell "200" [ref=e90]
+        - row "3m ago orchestrator unknown 3ms 200" [ref=e91]:
+          - cell "3m ago" [ref=e92]
+          - cell "orchestrator" [ref=e93]
+          - cell "unknown" [ref=e94]
+          - cell "3ms" [ref=e95]
+          - cell "200" [ref=e96]
+    - heading "Recent errors" [level=2] [ref=e97]
+    - table [ref=e99]:
+      - rowgroup [ref=e100]:
+        - row "When Endpoint Client Type Status" [ref=e101]:
+          - columnheader "When" [ref=e102]
+          - columnheader "Endpoint" [ref=e103]
+          - columnheader "Client" [ref=e104]
+          - columnheader "Type" [ref=e105]
+          - columnheader "Status" [ref=e106]
+      - rowgroup [ref=e107]:
+        - row "No errors. 🎉" [ref=e108]:
+          - cell "No errors. 🎉" [ref=e109]
+    - heading "Endpoint events" [level=2] [ref=e110]
+    - table [ref=e112]:
+      - rowgroup [ref=e113]:
+        - 'row "-8218336921s ago err m1: 3 → 1/3 endpoints reachable" [ref=e114]':
+          - cell "-8218336921s ago" [ref=e115]
+          - 'cell "err m1: 3 → 1/3 endpoints reachable" [ref=e116]':
+            - generic "err" [ref=e117]
+            - text: "m1: 3 → 1/3 endpoints reachable"
+  - contentinfo [ref=e118]: Auto-refreshes live · metrics only — no prompt or response text is stored.
+  - alert [ref=e119]

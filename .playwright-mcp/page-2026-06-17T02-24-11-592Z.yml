@@ -1,0 +1,43 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e4]: ◴ Local AI
+      - link "Overview" [ref=e5] [cursor=pointer]:
+        - /url: /
+      - link "Performance" [ref=e6] [cursor=pointer]:
+        - /url: /performance
+      - link "Reliability" [ref=e7] [cursor=pointer]:
+        - /url: /reliability
+      - link "Usage" [ref=e8] [cursor=pointer]:
+        - /url: /usage
+      - link "Cost" [ref=e9] [cursor=pointer]:
+        - /url: /cost
+      - link "Hardware" [ref=e10] [cursor=pointer]:
+        - /url: /hardware
+      - link "Explorer" [ref=e11] [cursor=pointer]:
+        - /url: /explorer
+  - main [ref=e13]:
+    - heading "Hardware" [level=1] [ref=e14]
+    - paragraph [ref=e15]: Per-machine memory, load, and model residency.
+    - generic [ref=e17]:
+      - heading "M1 · -8218336948s ago" [level=2] [ref=e18]:
+        - text: M1
+        - generic [ref=e19]: · -8218336948s ago
+      - generic [ref=e20]: Not enough data yet.
+      - generic [ref=e21]:
+        - generic [ref=e22]: Memory used
+        - generic [ref=e23]: 146.5 GB
+        - generic [ref=e24]: Resident model
+        - generic [ref=e25]: —
+        - generic [ref=e26]: Model RSS
+        - generic [ref=e27]: —
+        - generic [ref=e28]: Load (1m)
+        - generic [ref=e29]: —
+        - generic [ref=e30]: Endpoints up
+        - generic [ref=e31]: 1 / 3
+        - generic [ref=e32]: Thunderbolt
+        - generic [ref=e33]: —
+        - generic [ref=e34]: GPU / thermal
+        - generic [ref=e35]: needs elevated collector
+  - contentinfo [ref=e36]: Auto-refreshes live · metrics only — no prompt or response text is stored.
+  - alert [ref=e37]
