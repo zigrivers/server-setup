@@ -111,9 +111,11 @@ Logs: `~/ai/logs/rag-proxy.log` (app) and `~/ai/logs/rag-proxy-launchd.{out,err}
 ## Observability
 
 The grounded prompt is recorded by the meter and visible in the dashboard's request content (you can
-see the injected `--- context ---` block). **Note:** the meter attributes requests by its own
-configured client list, so an arbitrary collection-key shows as `client=unknown` unless that key is a
-known meter client — the *prompt* is recorded either way, but it is not attributed by collection name.
+see the injected `--- context ---` block). Requests are **attributed by collection name** in the
+dashboard's "Top Clients": because the proxy forwards the original `Authorization: Bearer <collection>`
+to the meter, and the meter labels any safe identifier by its key, per-project RAG traffic shows up as
+`peptides`, `my-mordor`, etc. (Credential-looking tokens like `sk-…`, and requests with no api-key,
+still collapse to `unknown` so secrets never surface in the dashboard.)
 
 ## Does it actually help? (measured, not assumed)
 
