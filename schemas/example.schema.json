@@ -1,0 +1,10 @@
+{
+  "type": "object",
+  "properties": {
+    "severity": { "type": "string", "enum": ["low", "medium", "high"] },
+    "summary": { "type": "string" },
+    "line": { "type": "integer" }
+  },
+  "required": ["severity", "summary", "line"],
+  "additionalProperties": false
+}

@@ -59,6 +59,23 @@ prompting fails, and the integration pattern for using it in the stack.
 - The raw-vs-constrained demo visibly differs (constrained always valid; raw may not be).
 - M1 RAM headroom stays healthy (175GB free; a 1GB demo model is trivial).
 
+## Revisions from multi-model review (incorporated) — and verified live
+- **API confirmed empirically.** outlines **1.3.0** + mlx_lm **0.31.3**: `outlines.from_mlxlm(*mlx_lm.load(model))`
+  (mlx_lm.load returns `(model, tokenizer)` — the unpack is correct), then
+  `outlines.Generator(model, outlines.types.JsonSchema(schema))`. **Tested: produced schema-valid
+  JSON from a 0.5B model.** Tokenizer is handled by `from_mlxlm` (no separate wiring).
+- **Pinned versions** documented (`outlines==1.3.0`, mlx_lm 0.31.3); installed via `uv pip` (the venv
+  is uv-managed and has no `pip`).
+- **Schema-subset honesty:** the example schema is simple (object + enum + required + int); docs warn
+  that deeply nested `anyOf`/`oneOf` may be unsupported — keep tool/extraction schemas simple.
+- **Log raw on failure:** `structured-gen.py` prints the RAW output and exits non-zero if the
+  belt-and-suspenders `jsonschema` validation ever fails (diagnosability).
+- **Download idempotency:** the demo relies on HuggingFace's cache (first run downloads ~0.5B, later
+  runs reuse it) — no custom flag needed.
+- **Model existence verified:** `mlx-community/Qwen2.5-0.5B-Instruct-4bit` loads cleanly in MLX.
+- **Constrained-vs-raw proof:** the raw 0.5B wrapped its (correct) JSON in ```` ```json ```` fences →
+  `json.loads` fails; the constrained generator is valid by construction. The constraint does real work.
+
 ## Risks
 - **Outlines ↔ mlx_lm 0.31.3 API drift** — `from_mlxlm` signature / API may differ by version; the
   build verifies the exact import path against the installed versions and pins what works.
