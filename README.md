@@ -51,6 +51,8 @@ configs/
 docs/
   architecture, setup, operations, troubleshooting, and workflow docs
   rag.md / rag-proxy.md    local RAG toolkit + the transparent per-project RAG proxy (:9200)
+  observability.md         every model in one dashboard (metered + reported paths)
+  dev-stack-models.md      drive local + GLM-5.2 + DeepSeek from OpenCode and MMR
 
 prompts/
   reusable prompts for frontier planning and review
