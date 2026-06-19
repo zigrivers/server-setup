@@ -1,0 +1,21 @@
+# MMR review channels for the metered remote models, driven through OpenCode.
+#
+# MMR channels are CLI commands; OpenCode is the adapter that turns a model id into a CLI call, so an
+# `opencode run` channel lets `mmr review` use GLM-5.2 and DeepSeek as reviewers (alongside your local
+# reviewer + claude/codex/gemini). Requires configs/opencode/opencode.json.example installed to
+# ~/.config/opencode/opencode.json AND the meter's remote ports up (ZAI_API_KEY / DEEPSEEK_API_KEY set,
+# so 9004/9005 are serving).
+#
+# Merge these into your global MMR channel config, or a project `.mmr.yaml` `channels:` block, then:
+#   mmr review --staged --sync --channels opencode-glm opencode-deepseek
+channels:
+  opencode-glm:
+    enabled: true
+    command: opencode run
+    flags: ["--model", "glm-meter/glm-5.2", "--format", "default"]
+    parser: default
+  opencode-deepseek:
+    enabled: true
+    command: opencode run
+    flags: ["--model", "deepseek-meter/deepseek-v4-pro", "--format", "default"]
+    parser: default

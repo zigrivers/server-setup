@@ -1,0 +1,46 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "local-orch": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Local Orchestrator (metered)",
+      "options": { "baseURL": "http://127.0.0.1:9001/v1", "apiKey": "opencode" },
+      "models": {
+        "/Users/kenallred/ai/models/orchestrator-qwen36-35b-a3b-heretic-bf16": { "name": "Orchestrator 35B MoE" }
+      }
+    },
+    "local-dev": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Local Developer (metered)",
+      "options": { "baseURL": "http://127.0.0.1:9002/v1", "apiKey": "opencode" },
+      "models": {
+        "llmfan46/Qwen3.6-27B-uncensored-heretic-v2": { "name": "Developer 27B" }
+      }
+    },
+    "local-review": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Local Reviewer (metered)",
+      "options": { "baseURL": "http://127.0.0.1:9003/v1", "apiKey": "opencode" },
+      "models": {
+        "llmfan46/Qwen3.6-27B-uncensored-heretic-v2": { "name": "Reviewer 27B" }
+      }
+    },
+    "glm-meter": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "GLM-5.2 (Z.ai via meter)",
+      "options": { "baseURL": "http://127.0.0.1:9004/v1", "apiKey": "opencode" },
+      "models": {
+        "glm-5.2": { "name": "GLM-5.2", "limit": { "context": 1000000, "output": 65536 } }
+      }
+    },
+    "deepseek-meter": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "DeepSeek (via meter)",
+      "options": { "baseURL": "http://127.0.0.1:9005/v1", "apiKey": "opencode" },
+      "models": {
+        "deepseek-v4-pro": { "name": "DeepSeek v4 Pro" },
+        "deepseek-v4-flash": { "name": "DeepSeek v4 Flash" }
+      }
+    }
+  }
+}
