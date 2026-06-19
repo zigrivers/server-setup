@@ -1,17 +1,19 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Apply Machine 2 keep-alive from Machine 1 over SSH. Requires passwordless SSH to M2 first:
-#   ssh-copy-id -o PreferredAuthentications=password -o PubkeyAuthentication=no \
-#       -i ~/.ssh/id_ed25519.pub kenallred@10.10.10.2
+# Apply Machine 2 keep-alive from Machine 1 over SSH. M2's account is `admin` (the Mac Studio).
+# Requires passwordless SSH to M2 first. NOTE M2's SSH closes the connection on keyboard-interactive
+# auth, so force password auth when installing the key:
+#   cat ~/.ssh/id_ed25519.pub | ssh -o PreferredAuthentications=password admin@10.10.10.2 \
+#       'umask 077; mkdir -p ~/.ssh; cat >> ~/.ssh/authorized_keys; echo KEY_ADDED'
 #
 # Does two things on M2, idempotently, then verifies:
 #   1) pmset anti-sleep   (needs sudo on M2 — you'll be prompted once; run this in a real terminal)
 #   2) installs + loads the com.localai.caffeinate LaunchAgent (no sudo)
 #
-# Env overrides: M2_SSH (default kenallred@10.10.10.2)
+# Env overrides: M2_SSH (default admin@10.10.10.2)
 
-M2="${M2_SSH:-kenallred@10.10.10.2}"
+M2="${M2_SSH:-admin@10.10.10.2}"
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TEMPLATE="$REPO_DIR/configs/launchd/com.localai.caffeinate.plist.template"
 
