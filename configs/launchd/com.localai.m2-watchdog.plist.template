@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Template: replace __HOME__ with the absolute path of the user's home directory before
+     installing into ~/Library/LaunchAgents/. scripts/install-launchd-machine1.sh does this.
+     M1 watchdog for Machine 2: probes M2 every 60s and auto-recovers (WoL + meter restart). -->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.localai.m2-watchdog</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>__HOME__/ai/local-ai-stack/scripts/m2-watchdog.sh</string>
+  </array>
+  <key>RunAtLoad</key><true/>
+  <key>StartInterval</key><integer>60</integer>
+  <key>ProcessType</key><string>Background</string>
+  <key>StandardOutPath</key><string>__HOME__/ai/logs/m2-watchdog-launchd.out</string>
+  <key>StandardErrorPath</key><string>__HOME__/ai/logs/m2-watchdog-launchd.err</string>
+</dict>
+</plist>

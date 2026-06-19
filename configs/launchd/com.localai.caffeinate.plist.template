@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Template: replace __HOME__ with the absolute path of the user's home directory before
+     installing into ~/Library/LaunchAgents/ ON MACHINE 2. scripts/setup-m2-keepalive.sh renders
+     and installs this remotely. Keeps M2 awake at runtime regardless of pmset (belt-and-suspenders);
+     KeepAlive relaunches caffeinate if it ever exits, RunAtLoad starts it at login. -->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.localai.caffeinate</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/usr/bin/caffeinate</string>
+    <string>-dimsu</string>
+  </array>
+  <key>RunAtLoad</key><true/>
+  <key>KeepAlive</key><true/>
+  <key>ProcessType</key><string>Background</string>
+  <key>StandardOutPath</key><string>__HOME__/ai/logs/caffeinate-launchd.out</string>
+  <key>StandardErrorPath</key><string>__HOME__/ai/logs/caffeinate-launchd.err</string>
+</dict>
+</plist>

@@ -36,7 +36,7 @@ install_agent() {
 }
 
 # Allow installing a subset: `install-launchd-machine1.sh rag-proxy` installs only that one.
-AGENTS=("com.localai.orchestrator" "com.localai.rag-proxy")
+AGENTS=("com.localai.orchestrator" "com.localai.rag-proxy" "com.localai.m2-watchdog")
 if [ $# -gt 0 ]; then
   AGENTS=()
   for a in "$@"; do AGENTS+=("com.localai.$a"); done
@@ -48,5 +48,5 @@ done
 
 echo "Installed: ${AGENTS[*]}"
 echo "Status:  launchctl print gui/$UID_NUM/<label> | head -20"
-echo "Logs:    $HOME/ai/logs/{orchestrator,rag-proxy}-launchd.{out,err}  + ~/ai/logs/rag-proxy.log"
+echo "Logs:    $HOME/ai/logs/{orchestrator,rag-proxy,m2-watchdog}-launchd.{out,err}  + ~/ai/logs/{rag-proxy,m2-watchdog}.log"
 echo "Uninstall: launchctl bootout gui/$UID_NUM/<label> && rm $DEST_DIR/<label>.plist"
