@@ -1,16 +1,22 @@
 # Unified observability — every model in one dashboard
 
-The dashboard now shows **every model you run**, via two ingestion paths into the same telemetry DB.
-Rows carry a `source` so the two are never confused.
+The dashboard shows **every model and agent CLI you run**, via two ingestion paths into the same
+telemetry DB. Every row carries a `source`: **metered** (full requests proxied through the meter) and
+**reported** (usage-only, for tools we don't proxy). The Overview's headline numbers — Requests (24h),
+Endpoints, Top Clients — are **metered-only** (your model stack); reported agent CLIs live in their own
+**"Agent CLIs (via MMR)"** panel so they don't inflate the model-stack figures.
 
 ```
-                                   ┌─ :9001 orchestrator (M1)  ┐
- OpenCode / MMR / any        meter ├─ :9002 developer    (M2)  │ metered  (full request + cost)
- OpenAI-compatible client ─────────┼─ :9003 reviewer     (M2)  │  source='metered'
-                                   ├─ :9004 GLM-5.2  → api.z.ai │
-                                   └─ :9005 DeepSeek → deepseek ┘
- Claude Code / Codex / Gemini ── OTLP ─→ otel-usage-bridge :4318 ─→  reported (usage only, no content)
-   (loopback)                                                         source='reported'
+                                    ┌─ :9001 orchestrator (M1)  ┐
+ OpenCode / MMR / any         meter ├─ :9002 developer    (M2)  │ metered  (full request + cost)
+ OpenAI-compatible client ──────────┼─ :9003 reviewer     (M2)  │  source='metered'
+                                    ├─ :9004 GLM-5.2  → api.z.ai │
+                                    └─ :9005 DeepSeek → deepseek ┘
+
+ reported (source='reported', usage only — never content), two ways in (both loopback):
+   Claude Code / Codex / Gemini ─── OTLP ───────→ otel-usage-bridge :4318    (tokens + cost)
+   codex / grok / agy / claude ──── /usage ping ─→ meter :9100               (count only: tool + when)
+     (wrapped by MMR, or a PATH shim for direct calls)
 ```
 
 ## Metered path (full fidelity)
@@ -41,10 +47,33 @@ The meter **skips** a remote port whose key is unset (logged) — it never crash
 never forwards a routing label to a provider as if it were a key. So `:9004`/`:9005` simply aren't
 served until the keys exist.
 
-## Reported path (subscription CLIs — usage only)
+## Reported path (usage only — never content)
 
-Claude Code, Codex, and Gemini are OAuth/first-party tools we don't proxy (doing so would force
-per-token API billing and break their auth). Instead we ingest their **OpenTelemetry** usage export:
+Tools we don't proxy still show up — two ways, both loopback-bound, both writing `source='reported'`
+rows that never contain prompt/response content.
+
+### A) Usage pings — agent CLIs (codex / grok / antigravity / claude-code)
+
+These agent CLIs call their own clouds (OpenAI / xAI / Google / Anthropic) with OAuth, so they don't
+go through the meter. We count each invocation with a tiny ping to the meter's **`POST /usage`**
+endpoint (loopback): which tool + when — **no tokens, cost, or content**. They appear in the
+dashboard's **"Agent CLIs (via MMR)"** panel. Two trigger points, deduplicated to one ping per call:
+
+- **Via MMR** — the `codex` / `grok` / `antigravity` / `claude` channels in `~/.mmr/config.yaml` are
+  wrapped in `scripts/track-cli.sh`, which pings then runs the real CLI.
+- **Direct calls** (codex / grok / agy outside MMR) — `~/.local/cli-shims/{codex,grok,agy}` are
+  transparent shims (`scripts/cli-track-shim.sh`, placed early on `PATH` via a marked block in
+  `~/.zshrc`) that ping then run the real binary. `claude` is deliberately **not** shimmed — it's the
+  active Claude Code binary — so direct `claude` calls aren't counted (only its MMR calls are).
+
+`track-cli` execs the real binary with the shim dir stripped from `PATH`, so an MMR call isn't *also*
+caught by the shim — exactly one ping per call. To disable: remove the `~/.local/cli-shims` dir or the
+marked block in `~/.zshrc`.
+
+### B) OpenTelemetry — Claude Code / Codex / Gemini (tokens + cost)
+
+For richer reported data — token counts, and cost where the CLI reports it — ingest the CLIs'
+**OpenTelemetry** usage export instead of just counting invocations:
 
 ```bash
 # 1) start the meter with the bridge on (loopback :4318)
