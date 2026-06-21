@@ -17,4 +17,10 @@ INGEST="${DASHBOARD_INGEST:-http://127.0.0.1:9100}"
 curl -s -m 2 -X POST "$INGEST/usage" -H 'content-type: application/json' \
   --data "{\"client\":\"$LABEL\"}" >/dev/null 2>&1 || true
 
-exec "$@"
+# Exec the REAL binary with the cli-shims dir stripped from PATH, so this (MMR-driven) call is NOT
+# also counted by the PATH shim — the shim only handles direct, non-MMR calls. Exactly one ping/call.
+cmd="$1"; shift
+shim_dir="$HOME/.local/cli-shims"
+clean_path="$(printf %s ":$PATH:" | sed "s#:${shim_dir}:#:#g" | sed 's/^://; s/:$//')"
+real="$(PATH="$clean_path" command -v "$cmd" 2>/dev/null || echo "$cmd")"
+exec "$real" "$@"
