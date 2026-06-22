@@ -11,8 +11,9 @@ set -uo pipefail
 
 tool="$(basename "$0")"
 case "$tool" in
-  agy) label="antigravity" ;;   # Google Antigravity CLI is invoked as `agy`
-  *)   label="$tool" ;;          # codex, grok
+  agy)          label="antigravity" ;;  # Google Antigravity CLI is invoked as `agy`
+  cursor-agent) label="cursor" ;;       # Cursor's headless agent CLI
+  *)            label="$tool" ;;         # codex, grok
 esac
 
 shim_dir="$(cd "$(dirname "$0")" 2>/dev/null && pwd || echo "")"

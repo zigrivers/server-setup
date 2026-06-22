@@ -15,8 +15,8 @@ Endpoints, Top Clients — are **metered-only** (your model stack); reported age
 
  reported (source='reported', usage only — never content), two ways in (both loopback):
    Claude Code / Codex / Gemini ─── OTLP ───────→ otel-usage-bridge :4318    (tokens + cost)
-   codex / grok / agy / claude ──── /usage ping ─→ meter :9100               (count only: tool + when)
-     (wrapped by MMR, or a PATH shim for direct calls)
+   codex / grok / agy / claude / ─── /usage ping ─→ meter :9100              (count only: tool + when)
+   cursor-agent   (wrapped by MMR, or a PATH shim for direct calls)
 ```
 
 ## Metered path (full fidelity)
@@ -52,7 +52,7 @@ served until the keys exist.
 Tools we don't proxy still show up — two ways, both loopback-bound, both writing `source='reported'`
 rows that never contain prompt/response content.
 
-### A) Usage pings — agent CLIs (codex / grok / antigravity / claude-code)
+### A) Usage pings — agent CLIs (codex / grok / antigravity / claude-code / cursor)
 
 These agent CLIs call their own clouds (OpenAI / xAI / Google / Anthropic) with OAuth, so they don't
 go through the meter. We count each invocation with a tiny ping to the meter's **`POST /usage`**
@@ -60,9 +60,10 @@ endpoint (loopback): which tool + when — **no tokens, cost, or content**. They
 dashboard's **"Agent CLIs (via MMR)"** panel. Two trigger points, deduplicated to one ping per call:
 
 - **Via MMR** — the `codex` / `grok` / `antigravity` / `claude` channels in `~/.mmr/config.yaml` are
-  wrapped in `scripts/track-cli.sh`, which pings then runs the real CLI.
-- **Direct calls** (codex / grok / agy outside MMR) — `~/.local/cli-shims/{codex,grok,agy}` are
-  transparent shims (`scripts/cli-track-shim.sh`, placed early on `PATH` via a marked block in
+  wrapped in `scripts/track-cli.sh`, which pings then runs the real CLI. (A `cursor` channel is also
+  defined, disabled — enable it to add Cursor's agent CLI to the review panel.)
+- **Direct calls** (codex / grok / agy / cursor-agent outside MMR) — `~/.local/cli-shims/{codex,grok,agy,
+  cursor-agent}` are transparent shims (`scripts/cli-track-shim.sh`, placed early on `PATH` via a marked block in
   `~/.zshrc`) that ping then run the real binary. `claude` is deliberately **not** shimmed — it's the
   active Claude Code binary — so direct `claude` calls aren't counted (only its MMR calls are).
 
