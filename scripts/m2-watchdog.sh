@@ -1,14 +1,17 @@
 #!/usr/bin/env bash
 set -uo pipefail
 
-# M1 watchdog for Machine 2 (the inference worker). Installed as a launchd StartInterval agent
-# (com.localai.m2-watchdog) that fires ~every 60s. Each tick it probes M2's worker ports; if M2 has
-# dropped it performs SAFE recovery only — a best-effort Wake-on-LAN packet, a restart of the LOCAL
-# meter to clear stale connection state (the exact fix from the live incident), and a desktop notify.
-# It acts on state transitions / a cooldown, so it never thrashes. No destructive actions, ever.
+# M1-side health watchdog for the local AI stack. Installed as a launchd StartInterval agent
+# (com.localai.m2-watchdog) that fires ~every 60s and performs SAFE recovery only (best-effort
+# Wake-on-LAN + restarts of LOCAL launchd services; cooldown-gated so it never thrashes). It covers:
+#   1. M2 worker reachability (nc) → WoL + meter restart if M2 dropped.
+#   2. The meter wedging on stale connections after a link flap (M2 up but the proxy 502s) → meter restart.
+#   3. The M1 orchestrator wedging (answers /models but hangs on /chat/completions after long uptime) →
+#      orchestrator restart, distinguishing a true wedge from a merely-busy server via telemetry.
+# No destructive actions, ever.
 #
-# Env overrides: M2_HOST, M2_PORTS, METER_LABEL, M2_RECOVER_COOLDOWN, M2_WATCHDOG_DRYRUN(=1 to log
-# intended actions without performing them — used by the test harness).
+# Env overrides: M2_HOST, M2_PORTS, METER_PORTS, METER_LABEL, M2_RECOVER_COOLDOWN, ORCH_URL, ORCH_MODEL,
+# ORCH_LABEL, ORCH_BAD_LIMIT, ORCH_BUSY_WINDOW, M2_WATCHDOG_DRYRUN(=1 to log intended actions only).
 
 HOME_DIR="${HOME:-/Users/$(id -un)}"
 SCRIPTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -45,6 +48,34 @@ probe_meter() {  # 0 iff the local meter can actually PROXY to each M2 worker (H
   return 0
 }
 
+# --- Orchestrator (M1, local) wedge detection ---
+ORCH_URL="${ORCH_URL:-http://127.0.0.1:8001}"
+ORCH_MODEL="${ORCH_MODEL:-/Users/kenallred/ai/models/orchestrator-qwen36-35b-a3b-heretic-bf16}"
+ORCH_LABEL="${ORCH_LABEL:-com.localai.orchestrator}"
+ORCH_PROBE_TIMEOUT="${ORCH_PROBE_TIMEOUT:-30}"
+ORCH_BAD_LIMIT="${ORCH_BAD_LIMIT:-3}"        # consecutive wedged ticks before the (expensive) 35B reload
+ORCH_BUSY_WINDOW="${ORCH_BUSY_WINDOW:-180}"  # a real orchestrator completion this recent => busy, not wedged
+ORCH_STATE="${ORCH_STATE:-$HOME_DIR/ai/logs/m2-watchdog-orch.state}"
+TELEMETRY_DB="${TELEMETRY_DB:-$HOME_DIR/ai/dashboard/telemetry.db}"
+
+probe_orchestrator() {  # 0 iff the orchestrator COMPLETES a tiny request (real inference, not just /models)
+  command -v curl >/dev/null 2>&1 || return 0  # no curl → can't check; don't false-trigger
+  local code
+  code="$(curl -s -m "$ORCH_PROBE_TIMEOUT" -o /dev/null -w '%{http_code}' "$ORCH_URL/v1/chat/completions" \
+    -H 'content-type: application/json' \
+    --data "{\"model\":\"$ORCH_MODEL\",\"messages\":[{\"role\":\"user\",\"content\":\"ping\"}],\"max_tokens\":1}" 2>/dev/null || echo 000)"
+  [ "$code" = "200" ]
+}
+
+orchestrator_served_recently() {  # 0 iff a successful orchestrator completion is in telemetry within the window
+  command -v sqlite3 >/dev/null 2>&1 || return 1  # can't tell → treat as not-recent, lean on the probe
+  [ -f "$TELEMETRY_DB" ] || return 1
+  local last
+  last="$(sqlite3 "$TELEMETRY_DB" "SELECT COALESCE(MAX(ts),0) FROM requests WHERE upstream='orchestrator' AND error_class='ok';" 2>/dev/null || echo 0)"
+  [ -n "$last" ] || last=0
+  [ $(( now * 1000 - last )) -lt $(( ORCH_BUSY_WINDOW * 1000 )) ]
+}
+
 # ---- load prior state (status=up|down, last_recover=epoch) ----
 status="unknown"; last_recover=0; meter_bad=0
 # shellcheck disable=SC1090
@@ -54,6 +85,39 @@ now="$(date +%s)"
 
 # status=up|down, last_recover=epoch of last recovery action, meter_bad=consecutive wedged-meter ticks
 write_state() { printf 'status=%s\nlast_recover=%s\nmeter_bad=%s\n' "$1" "$2" "${3:-0}" > "$STATE"; }
+
+# ---- Orchestrator (M1) wedge check — independent of M2; runs every tick, then falls through ----
+# The mlx server can answer /models yet hang on /chat/completions after long uptime (the 12-day
+# incident: process idle at 0% CPU). A real completion probe is the only true health test, but it ALSO
+# times out when the orchestrator is merely BUSY (mlx serializes), so a probe failure counts as
+# "wedged" only when no real orchestrator completion succeeded recently. Same pattern as the meter fix.
+orch_bad=0; orch_last_recover=0
+# shellcheck disable=SC1090
+[ -f "$ORCH_STATE" ] && . "$ORCH_STATE" 2>/dev/null || true
+write_orch() { printf 'orch_bad=%s\norch_last_recover=%s\n' "$1" "$2" > "$ORCH_STATE"; }
+
+if probe_orchestrator; then
+  [ "${orch_bad:-0}" -gt 0 ] && { logln "orchestrator RECOVERED — serving completions"; notify "Orchestrator recovered ✅"; }
+  write_orch 0 "$orch_last_recover"
+elif orchestrator_served_recently; then
+  logln "  orchestrator completion probe timed out but it served recently — busy, not wedged"
+  write_orch 0 "$orch_last_recover"
+else
+  orch_bad=$(( orch_bad + 1 ))
+  if [ "$orch_bad" -ge "$ORCH_BAD_LIMIT" ] && [ $(( now - orch_last_recover )) -ge "$COOLDOWN" ]; then
+    if [ "$DRYRUN" = "1" ]; then
+      logln "  [dry-run] orchestrator WEDGED (completion probe failed x$orch_bad, no recent traffic) — would restart $ORCH_LABEL"
+    else
+      logln "  orchestrator WEDGED — hangs on completions while idle (probe x$orch_bad); restarting $ORCH_LABEL"
+      launchctl kickstart -k "gui/$UID_NUM/$ORCH_LABEL" >> "$LOG" 2>&1 || logln "  orchestrator kickstart failed"
+      notify "Orchestrator unwedged 🔧 — it was hung on completions; restarting (reloads the 35B)"
+    fi
+    write_orch 0 "$now"
+  else
+    logln "  orchestrator completion probe failing (x$orch_bad) — watching before the (expensive) reload"
+    write_orch "$orch_bad" "$orch_last_recover"
+  fi
+fi
 
 # ---- M2 reachable directly ----
 if probe; then
