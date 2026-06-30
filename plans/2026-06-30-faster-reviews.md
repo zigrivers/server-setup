@@ -1,7 +1,18 @@
 # Plan: Faster Reviews (optimize + M1 overflow)
 
-Status: **DRAFT — awaiting approval.** Do not implement source changes until approved.
-Owner: senior architect (this plan) → local agents (execution).
+Status: **IMPLEMENTED 2026-06-30** (approved via /goal). Summary of what shipped:
+- **A (titles off the reviewer):** OpenCode `small_model: glm-meter/glm-5.2` — title/summary generation
+  no longer hits the local reviewer. Verifiable on the dashboard as new sessions run.
+- **B (lean reviews):** OpenCode `review` agent (tools disabled) cut review prompts **~27.5k → 11.6k
+  tokens (~58%)** with good verdict quality (caught a planted bug); MMR `opencode-local` uses
+  `--agent review` and routes via the `:9006` review router.
+- **C (concurrency cap):** meter caps the reviewer at `METER_REVIEWER_MAX_INFLIGHT` (default 2)
+  concurrent completions; trivial calls (`/models`) bypass it.
+- **D (M1 overflow router):** meter `:9006` prefers the reviewer, spills to a healthy idle M1
+  orchestrator. **BLOCKER:** M1's orchestrator currently HANGS on `/chat/completions` (answers
+  `/models` only), so overflow is health-gated OFF until it serves again — reviews safely queue on the
+  reviewer meanwhile. Set `METER_ORCH_REVIEW_MODEL` to M1's served id once the orchestrator is fixed.
+
 Direction chosen by user: **"Optimize + M1 overflow."**
 
 ## Goal

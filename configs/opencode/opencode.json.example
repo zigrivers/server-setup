@@ -1,5 +1,17 @@
 {
   "$schema": "https://opencode.ai/config.json",
+  "small_model": "glm-meter/glm-5.2",
+  "agent": {
+    "review": {
+      "description": "Lean one-shot code reviewer for MMR — no tools, minimal context, smaller prompts.",
+      "prompt": "You are a precise senior code reviewer. Review ONLY the diff/code provided in the message and report concrete, actionable issues. Do not call tools.",
+      "tools": {
+        "write": false, "edit": false, "patch": false, "bash": false,
+        "read": false, "grep": false, "glob": false, "list": false,
+        "webfetch": false, "task": false, "todowrite": false, "todoread": false
+      }
+    }
+  },
   "provider": {
     "local-orch": {
       "npm": "@ai-sdk/openai-compatible",
@@ -19,8 +31,8 @@
     },
     "local-review": {
       "npm": "@ai-sdk/openai-compatible",
-      "name": "Local Reviewer (metered)",
-      "options": { "baseURL": "http://127.0.0.1:9003/v1", "apiKey": "opencode" },
+      "name": "Local Reviewer (metered, via review router)",
+      "options": { "baseURL": "http://127.0.0.1:9006/v1", "apiKey": "opencode" },
       "models": {
         "llmfan46/Qwen3.6-27B-uncensored-heretic-v2": { "name": "Reviewer 27B" }
       }
@@ -42,5 +54,32 @@
         "deepseek-v4-flash": { "name": "DeepSeek v4 Flash" }
       }
     }
-  }
+  },
+  "mcp": {
+    "context7": {
+      "type": "remote",
+      "url": "https://mcp.context7.com/mcp",
+      "enabled": true,
+      "headers": {
+        "CONTEXT7_API_KEY": "{env:CONTEXT7_API_KEY}"
+      }
+    },
+    "local-ai-delegate": {
+      "type": "local",
+      "command": [
+        "/Users/kenallred/Developer/server-setup/.venv/bin/python",
+        "/Users/kenallred/Developer/server-setup/mcp/local_delegate_mcp/server.py"
+      ],
+      "enabled": true,
+      "environment": {
+        "LOCAL_AI_ALLOWED_ROOTS": "/Users/kenallred/ai/workspaces:/Users/kenallred/code:/Users/kenallred/Developer:/Users/kenallred/projects:/Users/kenallred/Developer/server-setup:/Users/kenallred/Documents/dev-projects",
+        "LOCAL_AI_DEFAULT_WORKSPACE": "/Users/kenallred/ai/workspaces",
+        "LOCAL_EXEC_PLAN_BIN": "/Users/kenallred/Developer/server-setup/.venv/bin/local-exec-plan",
+        "ORCH_BASE_URL": "http://127.0.0.1:8001/v1",
+        "DEV_BASE_URL": "http://10.10.10.2:8002/v1",
+        "REVIEW_BASE_URL": "http://10.10.10.2:8003/v1"
+      }
+    }
+  },
+  "plugin": ["superpowers@git+https://github.com/obra/superpowers.git"]
 }
