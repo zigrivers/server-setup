@@ -14,6 +14,11 @@ set -uo pipefail
 # ORCH_LABEL, ORCH_BAD_LIMIT, ORCH_BUSY_WINDOW, M2_WATCHDOG_DRYRUN(=1 to log intended actions only).
 
 HOME_DIR="${HOME:-/Users/$(id -un)}"
+# launchd hands an agent only /usr/bin:/bin:/usr/sbin:/sbin, so user-installed
+# tools (launchpad in ~/.local/bin, homebrew binaries) are invisible unless we
+# add them back. Without this, notify() below silently found no launchpad and
+# every outage alert no-opped — how the 2026-08-02..06 M2 outage went unreported.
+PATH="$HOME_DIR/.local/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"
 SCRIPTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 M2_HOST="${M2_HOST:-10.10.10.2}"
 read -r -a PORTS <<< "${M2_PORTS:-8002 8003}"
@@ -28,7 +33,15 @@ mkdir -p "$(dirname "$LOG")"
 
 ts()   { date "+%Y-%m-%dT%H:%M:%S%z"; }
 logln() { printf "%s  %s\n" "$(ts)" "$1" >> "$LOG"; }
-notify() { command -v launchpad >/dev/null 2>&1 && launchpad notify "$1" >/dev/null 2>&1 || true; }
+# A watchdog that cannot raise an alarm is worse than none, so a notify that
+# cannot be delivered is recorded in the log rather than swallowed.
+notify() {
+  if command -v launchpad >/dev/null 2>&1; then
+    launchpad notify "$1" >/dev/null 2>&1 || logln "  NOTIFY FAILED (launchpad error): $1"
+  else
+    logln "  NOTIFY FAILED (launchpad not on PATH): $1"
+  fi
+}
 
 probe() {  # 0 iff every worker port is reachable
   local p
