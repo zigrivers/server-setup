@@ -78,6 +78,17 @@ From Machine 1:
 scripts/smoke-test-endpoints.sh
 ```
 
+## M2 watchdog routes
+
+`com.localai.m2-watchdog` checks meter routes 9002, 9003, 9004, and 9006 at
+`/v1/models`. Ports 9004 and 9006 back the required `opencode-glm` and
+`opencode-local` MMR channels. The existing two-failure debounce, cooldown, and
+shared meter restart apply to every route.
+
+If a provider route is intentionally disabled, set `METER_PORTS` in the
+LaunchAgent to the remaining required routes before reinstalling the watchdog.
+For example, `METER_PORTS="9002 9003 9006"` omits disabled GLM port 9004.
+
 ## Plan → execute workflow
 
 In a project repo:
