@@ -85,9 +85,14 @@ scripts/smoke-test-endpoints.sh
 `opencode-local` MMR channels. The existing two-failure debounce, cooldown, and
 shared meter restart apply to every route.
 
-If a provider route is intentionally disabled, set `METER_PORTS` in the
-LaunchAgent to the remaining required routes before reinstalling the watchdog.
-For example, `METER_PORTS="9002 9003 9006"` omits disabled GLM port 9004.
+If a provider route is intentionally disabled, reinstall the watchdog with the
+remaining routes. This persists the override in the rendered LaunchAgent:
+
+```bash
+METER_PORTS="9002 9003 9006" scripts/install-launchd-machine1.sh m2-watchdog
+```
+
+That example omits disabled GLM port 9004.
 
 ## Plan → execute workflow
 

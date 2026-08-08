@@ -1,3 +1,4 @@
+import plistlib
 import subprocess
 import textwrap
 from pathlib import Path
@@ -6,6 +7,7 @@ import pytest
 
 REPO = Path(__file__).resolve().parents[1]
 SCRIPT = REPO / "scripts" / "m2-watchdog.sh"
+INSTALLER = REPO / "scripts" / "install-launchd-machine1.sh"
 METER_URL = "http://127.0.0.1:{port}/v1/models"
 
 
@@ -74,3 +76,61 @@ def test_meter_routes_cover_required_mmr_ports_and_honor_override(
         if part.startswith("http://127.0.0.1:9")
     }
     assert actual_urls == expected_urls
+
+
+@pytest.mark.parametrize(
+    ("meter_ports", "expected_value"),
+    [
+        (None, "9002 9003 9004 9006"),
+        ("9002 9003 9006", "9002 9003 9006"),
+    ],
+)
+def test_installer_persists_meter_ports(
+    tmp_path: Path,
+    meter_ports: str | None,
+    expected_value: str,
+) -> None:
+    home = tmp_path / "home"
+    fake_bin = tmp_path / "bin"
+    fake_bin.mkdir()
+    fake_launchctl = fake_bin / "launchctl"
+    fake_launchctl.write_text("#!/bin/sh\n[ \"$1\" != print ]\n")
+    fake_launchctl.chmod(0o755)
+
+    env = {
+        "HOME": str(home),
+        "PATH": f"{fake_bin}:/usr/bin:/bin:/usr/sbin:/sbin",
+    }
+    if meter_ports is not None:
+        env["METER_PORTS"] = meter_ports
+
+    subprocess.run(
+        ["/bin/bash", str(INSTALLER), "m2-watchdog"],
+        env=env,
+        timeout=30,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    plist_path = home / "Library" / "LaunchAgents" / "com.localai.m2-watchdog.plist"
+    with plist_path.open("rb") as plist_file:
+        plist = plistlib.load(plist_file)
+    assert plist["EnvironmentVariables"]["METER_PORTS"] == expected_value
+
+
+def test_installer_rejects_malformed_meter_ports(tmp_path: Path) -> None:
+    result = subprocess.run(
+        ["/bin/bash", str(INSTALLER), "m2-watchdog"],
+        env={
+            "HOME": str(tmp_path / "home"),
+            "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+            "METER_PORTS": "9002 & 9006",
+        },
+        timeout=30,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 1
+    assert "space-separated list of port numbers" in result.stderr
