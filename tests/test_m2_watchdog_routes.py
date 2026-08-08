@@ -119,13 +119,18 @@ def test_installer_persists_meter_ports(
     assert plist["EnvironmentVariables"]["METER_PORTS"] == expected_value
 
 
-def test_installer_rejects_malformed_meter_ports(tmp_path: Path) -> None:
+@pytest.mark.parametrize("meter_ports", ["9002 & 9006", "9002\n9006"])
+def test_installer_rejects_malformed_meter_ports(tmp_path: Path, meter_ports: str) -> None:
+    plist_path = tmp_path / "home" / "Library" / "LaunchAgents" / "com.localai.m2-watchdog.plist"
+    plist_path.parent.mkdir(parents=True)
+    plist_path.write_text("existing plist")
+
     result = subprocess.run(
         ["/bin/bash", str(INSTALLER), "m2-watchdog"],
         env={
             "HOME": str(tmp_path / "home"),
             "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
-            "METER_PORTS": "9002 & 9006",
+            "METER_PORTS": meter_ports,
         },
         timeout=30,
         capture_output=True,
@@ -134,3 +139,4 @@ def test_installer_rejects_malformed_meter_ports(tmp_path: Path) -> None:
 
     assert result.returncode == 1
     assert "space-separated list of port numbers" in result.stderr
+    assert plist_path.read_text() == "existing plist"

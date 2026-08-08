@@ -16,6 +16,7 @@ install_agent() {
   local SRC="$REPO_DIR/configs/launchd/${LABEL}.plist.template"
   local DEST="$DEST_DIR/${LABEL}.plist"
   local METER_PORTS_VALUE="${METER_PORTS:-9002 9003 9004 9006}"
+  local METER_PORTS_PATTERN='^[0-9]+( [0-9]+)*$'
 
   if [ ! -f "$SRC" ]; then
     echo "Template not found: $SRC" >&2
@@ -23,7 +24,7 @@ install_agent() {
   fi
 
   if [ "$LABEL" = "com.localai.m2-watchdog" ] &&
-     [[ ! "$METER_PORTS_VALUE" =~ ^[0-9]+([[:space:]][0-9]+)*$ ]]; then
+     [[ ! "$METER_PORTS_VALUE" =~ $METER_PORTS_PATTERN ]]; then
     echo "METER_PORTS must be a space-separated list of port numbers" >&2
     exit 1
   fi
