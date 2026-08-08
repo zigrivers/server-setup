@@ -22,7 +22,7 @@ PATH="$HOME_DIR/.local/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"
 SCRIPTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 M2_HOST="${M2_HOST:-10.10.10.2}"
 read -r -a PORTS <<< "${M2_PORTS:-8002 8003}"
-read -r -a METER_PORTS <<< "${METER_PORTS:-9002 9003}"  # local meter ports that proxy to the M2 workers
+read -r -a METER_PORTS <<< "${METER_PORTS:-9002 9003 9004 9006}"  # required local meter routes, including MMR GLM and local review
 METER_LABEL="${METER_LABEL:-com.localai.dashboard.meter}"
 UID_NUM="$(id -u)"
 LOG="${M2_WATCHDOG_LOG:-$HOME_DIR/ai/logs/m2-watchdog.log}"

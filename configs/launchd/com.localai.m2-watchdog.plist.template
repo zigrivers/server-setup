@@ -13,6 +13,10 @@
   </array>
   <key>RunAtLoad</key><true/>
   <key>StartInterval</key><integer>60</integer>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>METER_PORTS</key><string>__METER_PORTS__</string>
+  </dict>
   <key>ProcessType</key><string>Background</string>
   <key>StandardOutPath</key><string>__HOME__/ai/logs/m2-watchdog-launchd.out</string>
   <key>StandardErrorPath</key><string>__HOME__/ai/logs/m2-watchdog-launchd.err</string>
