@@ -12,9 +12,31 @@ if [[ -f "$ENV_FILE" ]]; then
   set -a; source "$ENV_FILE"; set +a
 fi
 
-ORCH_MODEL="${ORCH_MODEL:-$HOME/ai/models/orchestrator-qwen36-35b-a3b-heretic-bf16}"
-DEV_MODEL="${DEV_MODEL:-/Users/admin/ai/models/developer-qwen36-27b-heretic2-mixed94}"
-REVIEW_MODEL="${REVIEW_MODEL:-/Users/admin/ai/models/reviewer-llmfan46-qwen36-27b-heretic-v2-bf16}"
+# Ask each endpoint which model it is serving instead of hardcoding a path. This is not tidiness:
+# mlx_lm.server LOADS whatever model id it is sent, so a stale path here does not fail the smoke
+# test — it silently pulls a SECOND copy of old weights into memory (a 65 GB surprise on M1) and
+# reports "OK" from the wrong model. The served model is the id that is a filesystem path; the
+# other ids in /v1/models are whatever else sits in the HF cache.
+served_model() {
+  curl -s --max-time 5 "$1/models" | python3 -c '
+import json, sys
+try:
+    ids = [d["id"] for d in json.load(sys.stdin).get("data", [])]
+except Exception:
+    sys.exit(1)
+print(next((i for i in ids if i.startswith("/")), ids[0] if ids else ""))'
+}
+
+ORCH_MODEL="${ORCH_MODEL:-$(served_model http://127.0.0.1:8001/v1)}"
+DEV_MODEL="${DEV_MODEL:-$(served_model http://10.10.10.2:8002/v1)}"
+REVIEW_MODEL="${REVIEW_MODEL:-$(served_model http://10.10.10.2:8003/v1)}"
+
+for pair in "orchestrator:$ORCH_MODEL" "developer:$DEV_MODEL" "reviewer:$REVIEW_MODEL"; do
+  if [[ -z "${pair#*:}" ]]; then
+    echo "Could not read a served model from the ${pair%%:*} endpoint — is it up?" >&2
+    exit 1
+  fi
+done
 
 build_payload() {
   local model="$1"
