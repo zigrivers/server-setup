@@ -12,9 +12,11 @@ docker run -d --name qdrant-local -p 6333:6333 -v ~/ai/qdrant-storage:/qdrant/st
 # Python deps in the stack venv
 uv pip install --python ~/ai/local-ai-stack/.venv/bin/python qdrant-client mlx-embeddings
 ```
-Embedder: `~/ai/models/qwen3-embedding-8b-mxfp8` (Qwen3-Embedding-8B, 4096-dim), since 2026-08-09.
-Verified locally: related pair ≈0.78, unrelated ≈0.30 cosine; ~88 chunks/s on M1 (machine 1).
-Previously `mlx-community/bge-small-en-v1.5-bf16` (384-dim, a 2023 model).
+Embedder: `~/ai/models/qwen3-embedding-0.6b-8bit` (Qwen3-Embedding-0.6B, 1024-dim), since
+2026-08-09. Verified locally on real 800-char chunks: related pair ≈0.75, unrelated ≈0.32 cosine;
+~200 chunks/s and 22 ms per query on machine 1. Previously
+`mlx-community/bge-small-en-v1.5-bf16` (384-dim, a 2023 model). The 8B variant scored the same and
+ran 40x slower — see docs/MODELS.md.
 
 **The embedder and the index are one unit.** Dimensions differ per model, so changing
 `RAG_EMBED_MODEL` without re-ingesting leaves every query failing against a mismatched index.

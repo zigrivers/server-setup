@@ -72,10 +72,14 @@ Two prerequisites before it can load:
 Then repoint meter port `:9004` from `https://api.z.ai/...` to `http://127.0.0.1:8005`, keeping the
 cloud upstream on a new port as fallback.
 
-### 4. RAG embedder → Qwen3-Embedding-8B — IN PROGRESS
+### 4. RAG embedder → Qwen3-Embedding-0.6B — IN PROGRESS
 
-`mlx-community/Qwen3-Embedding-8B-mxfp8`, 4096-dim, 7.3 GB. Measured on M1: 88 chunks/s,
-related pair 0.78 vs unrelated 0.30 cosine. `rag_lib.EMBED_MODEL` now defaults to it.
+`mlx-community/Qwen3-Embedding-0.6B-8bit`, 1024-dim, 619 MB. `rag_lib.EMBED_MODEL` defaults to it.
+
+The 8B model was tried first and rejected on measurement: on real 800-char chunks (not the short
+strings an initial smoke test used) it did **5 chunks/s vs the 0.6B's 200**, and added ~300 ms to
+every query instead of 22 ms — for the same separation (0.78/0.30 vs 0.75/0.32). Both are on disk;
+`docs/MODELS.md` records the comparison.
 
 Because the dimension changes (384 → 4096) every collection is dropped and re-ingested from the
 same source files (6,958 of 7,019 still on disk; the 61 missing are moved/deleted files, and the

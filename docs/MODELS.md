@@ -53,10 +53,15 @@ The BF16 copies stay on disk (`…-heretic-v2-bf16`, and the 51 GB HF cache entr
 ### Embedding model (RAG) — Machine 1
 
 ```text
-mlx-community/Qwen3-Embedding-8B-mxfp8   (4096-dim, 7.3 GB)
-Local path: ~/ai/models/qwen3-embedding-8b-mxfp8
+mlx-community/Qwen3-Embedding-0.6B-8bit   (1024-dim, 619 MB)
+Local path: ~/ai/models/qwen3-embedding-0.6b-8bit
 Used by: scripts/rag_lib.py (RAG_EMBED_MODEL), rag-proxy on 127.0.0.1:9200
 ```
+
+The 8B sibling (`~/ai/models/qwen3-embedding-8b-mxfp8`, 4096-dim, 7.3 GB) is on disk and was
+benchmarked head-to-head on real 800-char chunks: same separation (related 0.78 / unrelated 0.30
+vs 0.75 / 0.32) but **5 chunks/s against 200**, and ~300 ms of added query latency instead of 22 ms.
+Retrieval quality did not pay for it at this corpus size.
 
 Replaced `mlx-community/bge-small-en-v1.5-bf16` (384-dim, 2023) on 2026-08-09. Changing it requires
 re-ingesting every collection and re-running `scripts/rag-calibrate.py --write`; see `docs/rag.md`.
