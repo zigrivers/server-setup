@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- LaunchDAEMON (system domain, root) — not a LaunchAgent, and NOT installed by
+     scripts/install-launchd-machine1.sh. It needs no __HOME__ substitution.
+
+     Raises the GPU wired-memory ceiling at boot so a 418 GB model (GLM-5.2 4-bit) can be resident
+     on a 512 GiB Mac Studio. The macOS default caps GPU-wired memory near 75% of RAM (~384 GB),
+     which is below the model. 480 GiB (491520 MB) leaves ~32 GiB for macOS and everything else.
+
+     Install (requires sudo, once):
+       sudo cp configs/launchd/com.localai.wiredlimit.plist.template \
+              /Library/LaunchDaemons/com.localai.wiredlimit.plist
+       sudo chown root:wheel /Library/LaunchDaemons/com.localai.wiredlimit.plist
+       sudo launchctl bootstrap system /Library/LaunchDaemons/com.localai.wiredlimit.plist
+     Verify: sysctl iogpu.wired_limit_mb   ->   491520
+     Undo:   sudo launchctl bootout system/com.localai.wiredlimit
+             sudo rm /Library/LaunchDaemons/com.localai.wiredlimit.plist
+             sudo sysctl iogpu.wired_limit_mb=0   (or reboot) -->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.localai.wiredlimit</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/usr/sbin/sysctl</string>
+    <string>iogpu.wired_limit_mb=491520</string>
+  </array>
+  <key>RunAtLoad</key><true/>
+  <key>KeepAlive</key><false/>
+  <key>StandardOutPath</key><string>/var/log/localai-wiredlimit.out</string>
+  <key>StandardErrorPath</key><string>/var/log/localai-wiredlimit.err</string>
+</dict>
+</plist>

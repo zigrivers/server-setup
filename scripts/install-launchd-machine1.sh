@@ -45,6 +45,7 @@ install_agent() {
 
 # Allow installing a subset: `install-launchd-machine1.sh rag-proxy` installs only that one.
 AGENTS=("com.localai.orchestrator" "com.localai.rag-proxy" "com.localai.m2-watchdog")
+# com.localai.glm is opt-in: install-launchd-machine1.sh glm  (418 GB resident — see docs/MODELS.md)
 if [ $# -gt 0 ]; then
   AGENTS=()
   for a in "$@"; do AGENTS+=("com.localai.$a"); done
