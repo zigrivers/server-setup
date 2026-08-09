@@ -220,6 +220,14 @@ def ensure_collection(cl, dim: int, name: str = COLLECTION):
     existing = {c.name for c in cl.get_collections().collections}
     if name not in existing:
         cl.create_collection(name, vectors_config=VectorParams(size=dim, distance=Distance.COSINE))
+    # Index `path`: ingest deletes a file's old chunks with a path filter on every file, and an
+    # unindexed filter is a full scan — measured at ~0.7 points/s on a 7k-point collection, ~15x
+    # slower than with the index. Idempotent, so it also back-fills collections made before this.
+    try:
+        from qdrant_client.models import PayloadSchemaType
+        cl.create_payload_index(name, field_name="path", field_schema=PayloadSchemaType.KEYWORD)
+    except Exception:  # noqa: BLE001 — already indexed, or an older server: ingest still works
+        pass
 
 
 def list_collections(cl) -> set:
