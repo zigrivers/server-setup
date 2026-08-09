@@ -28,17 +28,57 @@ Endpoint: http://10.10.10.2:8002/v1
 ### Reviewer — Machine 2
 
 ```text
-TheCluster/Qwen3.6-27B-Heretic-MLX-bf16
-Local path: ~/ai/models/reviewer-qwen36-27b-heretic-bf16
+llmfan46/Qwen3.6-27B-uncensored-heretic-v2, quantized locally to 8-bit (affine, group 32)
+Local path: ~/ai/models/reviewer-llmfan46-qwen36-27b-heretic-v2-q8
 Endpoint: http://10.10.10.2:8003/v1
 ```
 
-Alternative Reviewer candidate:
+Was BF16 (`…-heretic-v2-bf16`, 50 GB, ~6 tok/s) until 2026-08-09. The 8-bit rebuild is 28 GB and
+measured ~19.5 tok/s on the same prompt — same weights, same recipe the Developer already used.
+Rebuild command:
 
 ```text
-llmfan46/Qwen3.6-27B-uncensored-heretic-v2
-Convert to MLX BF16 if desired.
+mlx_lm.convert --hf-path ~/ai/models/reviewer-llmfan46-qwen36-27b-heretic-v2-bf16 \
+  --mlx-path ~/ai/models/reviewer-llmfan46-qwen36-27b-heretic-v2-q8 \
+  -q --q-bits 8 --q-group-size 32 --q-mode affine
 ```
+
+The BF16 copies stay on disk (`…-heretic-v2-bf16`, and the 51 GB HF cache entry) as rollback.
+
+> **Model ids are load instructions.** `mlx_lm.server` LOADS whatever id a client sends, so a client
+> still asking for `llmfan46/Qwen3.6-27B-uncensored-heretic-v2` would pull the old BF16 out of the HF
+> cache and quietly get the slow model. The meter now pins each local endpoint to its served weights
+> via `METER_REVIEW_MODEL` / `METER_DEV_MODEL` in `~/ai/dashboard/dashboard.env`.
+
+### Embedding model (RAG) — Machine 1
+
+```text
+mlx-community/Qwen3-Embedding-8B-mxfp8   (4096-dim, 7.3 GB)
+Local path: ~/ai/models/qwen3-embedding-8b-mxfp8
+Used by: scripts/rag_lib.py (RAG_EMBED_MODEL), rag-proxy on 127.0.0.1:9200
+```
+
+Replaced `mlx-community/bge-small-en-v1.5-bf16` (384-dim, 2023) on 2026-08-09. Changing it requires
+re-ingesting every collection and re-running `scripts/rag-calibrate.py --write`; see `docs/rag.md`.
+
+## Local GLM — Machine 1 (in progress, 2026-08-09)
+
+```text
+mlx-community/GLM-5.2-4bit   (glm_moe_dsa, 743B total / 40B active, MIT, 1M ctx, 418 GB on disk)
+Local path: ~/ai/models/glm-5.2-4bit
+Endpoint: http://127.0.0.1:8005/v1   (8004 is the MTP lane)
+Launcher: scripts/start-glm.sh + configs/launchd/com.localai.glm.plist
+```
+
+Replaces the paid z.ai endpoint the meter fronts on `:9004`. Two prerequisites:
+
+1. `iogpu.wired_limit_mb` must be raised — the macOS default (~75% of RAM, ~384 GB) is below the
+   418 GB the model needs resident. Install `configs/launchd/com.localai.wiredlimit.plist`.
+2. It cannot share Machine 1 with a resident Orchestrator: 418 + 65 GB exceeds 512 GiB. Drop the
+   Orchestrator to its 8-bit build (`…-mixed9`, 38 GB) or stop it while GLM is loaded.
+
+Known quant caveat: the mlx-community 4-bit build ships without the MTP block, so GLM-5.2's
+speculative-decoding speedup is not available in this conversion.
 
 ## Experimental MTP lane
 

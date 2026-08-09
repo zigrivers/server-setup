@@ -12,7 +12,11 @@ import json
 import os
 from typing import List, Dict, Any, Optional, Callable, Tuple
 
-EMBED_MODEL = os.environ.get("RAG_EMBED_MODEL", "mlx-community/bge-small-en-v1.5-bf16")
+# Qwen3-Embedding-8B (4096-dim) since 2026-08-09; was bge-small-en-v1.5 (384-dim, 2023). The whole
+# index was rebuilt for it — an older embedder here would query a 4096-dim index with 384-dim
+# vectors and fail, so change this only together with a full re-ingest.
+EMBED_MODEL = os.environ.get(
+    "RAG_EMBED_MODEL", os.path.expanduser("~/ai/models/qwen3-embedding-8b-mxfp8"))
 COLLECTION = os.environ.get("COLLECTION", "server_setup")
 QDRANT_URL = os.environ.get("QDRANT_URL", "http://127.0.0.1:6333")
 DEFAULT_K = int(os.environ.get("RAG_TOP_K", "4"))
