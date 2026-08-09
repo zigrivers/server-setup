@@ -56,7 +56,7 @@ Options, in the user's hands:
   GLM-5.2 (`glm_moe_dsa`) both runs on `mlx-lm` 0.31.3 and beats Qwen3.6-27B — but at 418 GB it
   cannot share M2 with the Reviewer.
 
-### 3. Local GLM-5.2 on Machine 1 — IN PROGRESS
+### 3. Local GLM-5.2 on Machine 1 — DOWNLOADED, WAITING ON ONE SUDO STEP
 
 `mlx-community/GLM-5.2-4bit`, 418 GB, MIT, 1M context, arch confirmed supported by the installed
 `mlx-lm`. Download running; serve script (`scripts/start-glm.sh`, port **8005** — 8004 is the MTP
@@ -69,10 +69,40 @@ Two prerequisites before it can load:
 2. **Machine-1 residency**: 418 GB (GLM) + 65 GB (Orchestrator bf16) exceeds 512 GiB. Drop the
    Orchestrator to its 8-bit build (38 GB, already on disk) or stop it while GLM is loaded.
 
-Then repoint meter port `:9004` from `https://api.z.ai/...` to `http://127.0.0.1:8005`, keeping the
-cloud upstream on a new port as fallback.
+**State as of this writing:** all 91 shards downloaded and verified (389.6 GiB on disk). The
+Orchestrator has been moved to its 8-bit build — 65 GB → **37.2 GB resident** — via
+`ORCH_MODEL_PATH` in the LaunchAgent, with `METER_ORCH_REVIEW_MODEL` updated to match so a review
+spilled to M1 cannot make mlx load the BF16 copy as well. Machine 1 now has ~475 GiB free for GLM.
 
-### 4. RAG embedder → Qwen3-Embedding-0.6B — IN PROGRESS
+The meter side is done and inert: `METER_GLM_LOCAL_URL` flips `:9004` from z.ai to the local
+server, and the cloud has a permanent fallback home on `:9007`. Unset, nothing changes.
+
+Remaining steps, in order (the first needs sudo, which the agent does not have):
+
+```bash
+# 1. raise the GPU wired-memory ceiling (once; survives reboot)
+sudo cp ~/Developer/server-setup/configs/launchd/com.localai.wiredlimit.plist.template \
+        /Library/LaunchDaemons/com.localai.wiredlimit.plist
+sudo chown root:wheel /Library/LaunchDaemons/com.localai.wiredlimit.plist
+sudo launchctl bootstrap system /Library/LaunchDaemons/com.localai.wiredlimit.plist
+sysctl iogpu.wired_limit_mb        # expect 491520
+
+# 2. start the local GLM server (takes several minutes to page in 390 GiB)
+~/Developer/server-setup/scripts/install-launchd-machine1.sh glm
+curl -s http://127.0.0.1:8005/v1/models | head -c 200
+
+# 3. flip the meter, keeping z.ai on :9007
+cat >> ~/ai/dashboard/dashboard.env <<'ENV'
+METER_GLM_LOCAL_URL=http://127.0.0.1:8005
+METER_GLM_MODEL=/Users/kenallred/ai/models/glm-5.2-4bit
+ENV
+launchctl kickstart -k gui/$(id -u)/com.localai.dashboard.meter
+```
+
+Rollback is deleting those two env lines and restarting the meter; clients on `:9004` go back to
+the cloud without touching their config.
+
+### 4. RAG embedder → Qwen3-Embedding-0.6B — DONE
 
 `mlx-community/Qwen3-Embedding-0.6B-8bit`, 1024-dim, 619 MB. `rag_lib.EMBED_MODEL` defaults to it.
 
@@ -93,6 +123,13 @@ filter, and no payload index existed — an unindexed filter is a full scan, whi
 After ingest, gates must be recalibrated — `min_score` from the old embedder is meaningless for the
 new one. The existing `scripts/rag-calibrate.py <collection>` does this: it probes with a relevant
 and an off-topic query and writes the midpoint to `rag-collections/<collection>.json`.
+
+**Result:** all 9 collections rebuilt at 1024 dimensions, every one with the same point count as
+before or more (files that grew since the original ingest — `nibble` +55%, `server_setup` +18%).
+All 9 gates recalibrated with clean separation (relevant 0.51–0.78 vs off-topic 0.37–0.50; gates
+0.45–0.64). The RAG proxy was restarted onto the new embedder and a live query
+("Which port does the reviewer endpoint listen on?") returned the correct `docs/ARCHITECTURE.md`
+chunk at 0.636.
 
 ## Files changed
 

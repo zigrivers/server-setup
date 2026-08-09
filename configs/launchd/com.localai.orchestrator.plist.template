@@ -7,6 +7,14 @@
 <plist version="1.0">
 <dict>
   <key>Label</key><string>com.localai.orchestrator</string>
+  <!-- 8-bit build since 2026-08-09: 38 GB instead of 65 GB, so a resident GLM-5.2 (390 GiB) fits
+       alongside it on Machine 1. Keep METER_ORCH_REVIEW_MODEL in ~/ai/dashboard/dashboard.env
+       pointed at the SAME path — a review spilled to M1 carrying the other id makes mlx load a
+       second copy of the weights. -->
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>ORCH_MODEL_PATH</key><string>__HOME__/ai/models/orchestrator-qwen36-35b-a3b-heretic-mixed9</string>
+  </dict>
   <key>ProgramArguments</key>
   <array>
     <string>/bin/bash</string>
