@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Template: replace __HOME__ with the absolute path of the user's home
+     directory before installing into ~/Library/LaunchAgents/. The
+     scripts/install-launchd-machine1.sh helper does this substitution
+     for you:  install-launchd-machine1.sh glm
+
+     Machine-1 local GLM-5.2 (4-bit MLX) on 127.0.0.1:8005 — the in-house
+     replacement for the paid z.ai endpoint the meter fronts on :9004.
+     Needs the raised GPU wired-memory ceiling first; see
+     com.localai.wiredlimit.plist.template. -->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.localai.glm</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>__HOME__/ai/local-ai-stack/scripts/start-glm.sh</string>
+  </array>
+  <key>RunAtLoad</key><true/>
+  <key>KeepAlive</key>
+  <dict>
+    <key>SuccessfulExit</key><false/>
+    <key>Crashed</key><true/>
+  </dict>
+  <key>ThrottleInterval</key><integer>60</integer>
+  <key>ProcessType</key><string>Interactive</string>
+  <key>StandardOutPath</key><string>__HOME__/ai/logs/glm-launchd.out</string>
+  <key>StandardErrorPath</key><string>__HOME__/ai/logs/glm-launchd.err</string>
+</dict>
+</plist>

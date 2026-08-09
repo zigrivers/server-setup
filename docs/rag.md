@@ -12,8 +12,16 @@ docker run -d --name qdrant-local -p 6333:6333 -v ~/ai/qdrant-storage:/qdrant/st
 # Python deps in the stack venv
 uv pip install --python ~/ai/local-ai-stack/.venv/bin/python qdrant-client mlx-embeddings
 ```
-Embedder: `mlx-community/bge-small-en-v1.5-bf16` (384-dim). Verified locally: similar pairs ≈0.74,
-unrelated ≈0.36 cosine — so the default gate **`RAG_MIN_SCORE=0.55`** cleanly separates them.
+Embedder: `~/ai/models/qwen3-embedding-0.6b-8bit` (Qwen3-Embedding-0.6B, 1024-dim), since
+2026-08-09. Verified locally on real 800-char chunks: related pair ≈0.75, unrelated ≈0.32 cosine;
+~200 chunks/s and 22 ms per query on machine 1. Previously
+`mlx-community/bge-small-en-v1.5-bf16` (384-dim, a 2023 model). The 8B variant scored the same and
+ran 40x slower — see docs/MODELS.md.
+
+**The embedder and the index are one unit.** Dimensions differ per model, so changing
+`RAG_EMBED_MODEL` without re-ingesting leaves every query failing against a mismatched index.
+To change embedders: re-ingest every collection, then re-run `scripts/rag-calibrate.py` for each one
+— a score gate calibrated for one model means nothing for another.
 
 ## Use
 ```
@@ -22,6 +30,9 @@ unrelated ≈0.36 cosine — so the default gate **`RAG_MIN_SCORE=0.55`** cleanl
 
 # Query (shows each hit's score + the augmented prompt)
 ~/ai/local-ai-stack/.venv/bin/python scripts/rag-query.py "How do I enable prompt caching?"
+
+# Recalibrate one collection's score gate for the current embedder (writes rag-collections/<name>.json)
+~/ai/local-ai-stack/.venv/bin/python scripts/rag-calibrate.py cortex
 ```
 Env knobs: `COLLECTION` (default `server_setup`), `RAG_TOP_K` (4), `RAG_MIN_SCORE` (0.55),
 `RAG_EMBED_MODEL`, `QDRANT_URL`.

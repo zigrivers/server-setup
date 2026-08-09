@@ -12,7 +12,14 @@ import json
 import os
 from typing import List, Dict, Any, Optional, Callable, Tuple
 
-EMBED_MODEL = os.environ.get("RAG_EMBED_MODEL", "mlx-community/bge-small-en-v1.5-bf16")
+# Qwen3-Embedding-0.6B (1024-dim) since 2026-08-09; was bge-small-en-v1.5 (384-dim, a 2023 model).
+# The 8B sibling was measured too: same separation (0.78/0.30 vs 0.75/0.32 on the same probes) but
+# 40x slower on real 800-char chunks (5 vs 200 chunks/s) and ~300ms of query latency instead of
+# 22ms — not worth it for retrieval this size.
+# The embedder and the index are one unit: changing this without a full re-ingest leaves queries
+# hitting an index of a different dimension. See docs/rag.md.
+EMBED_MODEL = os.environ.get(
+    "RAG_EMBED_MODEL", os.path.expanduser("~/ai/models/qwen3-embedding-0.6b-8bit"))
 COLLECTION = os.environ.get("COLLECTION", "server_setup")
 QDRANT_URL = os.environ.get("QDRANT_URL", "http://127.0.0.1:6333")
 DEFAULT_K = int(os.environ.get("RAG_TOP_K", "4"))
