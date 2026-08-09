@@ -38,7 +38,12 @@ the HF cache and silently kept the slow path. The meter now pins each local endp
 weights (`forceModel` in `src/meter/upstreams.ts`, env `METER_REVIEW_MODEL` / `METER_DEV_MODEL`).
 Verified: a request carrying the stale id is served by the q8 path.
 
-### 2. Developer → DeepSeek-V4-Flash — BLOCKED (needs a decision)
+### 2. Developer → DeepSeek-V4-Flash — BLOCKED on mlx-lm (deferred by decision)
+
+**Decision (2026-08-09): wait for upstream.** The Developer stays on Qwen3.6-27B; the 4-bit
+DeepSeek weights finish downloading to `/Users/admin/ai/models/DeepSeek-V4-Flash-4bit` and wait
+there. No third-party model code goes into the serving venv.
+
 
 284B/13B-active MoE, MIT, 1M context, 151 GB at 4-bit. Weights download fine, but
 **`mlx-lm` 0.31.3 — the latest release — has no `deepseek_v4` module**, so the model cannot load
@@ -56,7 +61,28 @@ Options, in the user's hands:
   GLM-5.2 (`glm_moe_dsa`) both runs on `mlx-lm` 0.31.3 and beats Qwen3.6-27B — but at 418 GB it
   cannot share M2 with the Reviewer.
 
-### 3. Local GLM-5.2 on Machine 1 — DOWNLOADED, WAITING ON ONE SUDO STEP
+### 3. Local GLM-5.2 on Machine 1 — DOWNLOADED, BLOCKED ON mlx-lm (deferred by decision)
+
+**Outcome:** the wired-memory ceiling was raised (`iogpu.wired_limit_mb = 491520`, verified) and the
+server started, but the model will not load on mlx-lm 0.31.3:
+
+```
+ValueError: Missing 285 parameters: model.layers.{…}.self_attn.indexer.{k_norm,weights_proj,wk,wq_b}
+```
+
+GLM-5.2's IndexShare shares one attention indexer across every four layers — the checkpoint has
+indexer weights on 21 of its 78 layers, while stock mlx-lm builds one per layer (57 × 5 = the 285).
+Support is [mlx-lm PR #1410](https://github.com/ml-explore/mlx-lm/pull/1410), which is **open, not
+merged**; the mlx-community quant's own card says it was converted with that PR applied.
+
+**Decision (2026-08-09): stay on the z.ai cloud on `:9004` and revisit when the PR merges.** The
+GLM LaunchAgent was removed so nothing crashloops at login; the 389.6 GiB of weights, the serve
+script, and the meter's env flip all stay in place. `mlx-community/GLM-5-4bit` (June predecessor,
+indexer on every layer) was verified as a stock-mlx-lm-compatible fallback if a local GLM becomes
+urgent first.
+
+Machine 1 keeps the 8-bit Orchestrator (37.2 GB instead of 65 GB) — revert with `ORCH_MODEL_PATH`
+in the LaunchAgent plus `METER_ORCH_REVIEW_MODEL` in `dashboard.env` if the BF16 is wanted back.
 
 `mlx-community/GLM-5.2-4bit`, 418 GB, MIT, 1M context, arch confirmed supported by the installed
 `mlx-lm`. Download running; serve script (`scripts/start-glm.sh`, port **8005** — 8004 is the MTP

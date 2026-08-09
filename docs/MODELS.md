@@ -66,7 +66,18 @@ Retrieval quality did not pay for it at this corpus size.
 Replaced `mlx-community/bge-small-en-v1.5-bf16` (384-dim, 2023) on 2026-08-09. Changing it requires
 re-ingesting every collection and re-running `scripts/rag-calibrate.py --write`; see `docs/rag.md`.
 
-## Local GLM — Machine 1 (in progress, 2026-08-09)
+## Local GLM — Machine 1 (BLOCKED on mlx-lm, 2026-08-09)
+
+> **Does not load on mlx-lm 0.31.3.** GLM-5.2's IndexShare reuses one attention indexer across
+> every four layers, so the checkpoint carries indexer weights on 21 of 78 layers; stock mlx-lm
+> builds one per layer and fails with `Missing 285 parameters`. Support is
+> [mlx-lm PR #1410](https://github.com/ml-explore/mlx-lm/pull/1410) — **open, not merged**.
+> Decision 2026-08-09: stay on the z.ai cloud endpoint and revisit when the PR lands. The weights
+> and launcher below stay in place for that day.
+>
+> `mlx-community/GLM-5-4bit` (the June predecessor) *does* carry an indexer on every layer and
+> would load on stock mlx-lm, if a local GLM becomes urgent before the PR merges.
+
 
 ```text
 mlx-community/GLM-5.2-4bit   (glm_moe_dsa, 743B total / 40B active, MIT, 1M ctx, 418 GB on disk)
