@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Template: replace __HOME__ with the absolute path of the user's home directory before
+     installing into ~/Library/LaunchAgents/. The scripts/install-launchd-machine1.sh helper does
+     this substitution:  install-launchd-machine1.sh mlx-blocker-watch
+
+     Weekly (Monday 09:00) check on the two upstream blockers keeping GLM-5.2 and DeepSeek-V4 off
+     this stack. Notifies via `launchpad notify` only when the state CHANGES, so quiet weeks are
+     silent. If the Mac is asleep at 09:00, launchd runs it at wake. Log: ~/ai/logs/mlx-blockers.log
+     Run by hand any time: scripts/check-mlx-blockers.sh -->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.localai.mlx-blocker-watch</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>__HOME__/ai/local-ai-stack/scripts/check-mlx-blockers.sh</string>
+  </array>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <!-- launchd hands agents a minimal PATH; `launchpad` lives in Homebrew's bin. -->
+    <key>PATH</key><string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+  </dict>
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Weekday</key><integer>1</integer>
+    <key>Hour</key><integer>9</integer>
+    <key>Minute</key><integer>0</integer>
+  </dict>
+  <key>RunAtLoad</key><false/>
+  <key>ProcessType</key><string>Background</string>
+  <key>StandardOutPath</key><string>__HOME__/ai/logs/mlx-blocker-watch.out</string>
+  <key>StandardErrorPath</key><string>__HOME__/ai/logs/mlx-blocker-watch.err</string>
+</dict>
+</plist>
