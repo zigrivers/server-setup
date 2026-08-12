@@ -59,6 +59,14 @@ install_daemon() {
   if sudo launchctl print "system/$LABEL" >/dev/null 2>&1; then
     echo "Unloading existing system/$LABEL"
     sudo launchctl bootout "system/$LABEL" || true
+    # bootout is asynchronous — bootstrapping immediately after it races the
+    # teardown and fails with "Bootstrap failed: 5: Input/output error"
+    # (observed live 2026-08-12, twice in a row). Wait for the label to
+    # actually disappear before proceeding.
+    for _ in $(seq 1 10); do
+      sudo launchctl print "system/$LABEL" >/dev/null 2>&1 || break
+      sleep 1
+    done
   fi
 
   sudo install -o root -g wheel -m 644 "$TMP" "$DEST"
@@ -66,7 +74,19 @@ install_daemon() {
   echo "Wrote $DEST (root:wheel 644)"
 
   echo "Loading system/$LABEL"
-  sudo launchctl bootstrap system "$DEST"
+  # Belt and braces: bootstrap can still hit the same transient EIO.
+  BOOTSTRAPPED=0
+  for ATTEMPT in 1 2 3; do
+    if sudo launchctl bootstrap system "$DEST"; then
+      BOOTSTRAPPED=1
+      break
+    fi
+    [ "$ATTEMPT" -lt 3 ] && { echo "  bootstrap busy (attempt $ATTEMPT/3) — retrying in 2s"; sleep 2; }
+  done
+  if [ "$BOOTSTRAPPED" != "1" ]; then
+    echo "bootstrap failed for system/$LABEL after 3 attempts" >&2
+    exit 1
+  fi
   sudo launchctl enable "system/$LABEL"
 }
 
