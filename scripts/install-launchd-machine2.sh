@@ -72,17 +72,21 @@ install_daemon() {
 
 install_daemon com.localai.developer
 install_daemon com.localai.reviewer
+install_daemon com.localai.vlm-judge
 
 echo
 echo "Installed. Status:"
 sudo launchctl print "system/com.localai.developer" | head -10 || true
 echo "---"
 sudo launchctl print "system/com.localai.reviewer"  | head -10 || true
+echo "---"
+sudo launchctl print "system/com.localai.vlm-judge" | head -10 || true
 echo
 echo "Logs:"
-echo "  $HOME/ai/logs/{developer,reviewer}-launchd.{out,err}"
-echo "  $HOME/ai/logs/{developer,reviewer}.log  (from the launcher scripts)"
+echo "  $HOME/ai/logs/{developer,reviewer,vlm-judge}-launchd.{out,err}"
+echo "  $HOME/ai/logs/{developer,reviewer,vlm-judge}.log  (from the launcher scripts)"
 echo
-echo "To uninstall both:"
+echo "To uninstall:"
 echo "  sudo launchctl bootout system/com.localai.developer && sudo rm '$DAEMON_DIR/com.localai.developer.plist'"
 echo "  sudo launchctl bootout system/com.localai.reviewer  && sudo rm '$DAEMON_DIR/com.localai.reviewer.plist'"
+echo "  sudo launchctl bootout system/com.localai.vlm-judge && sudo rm '$DAEMON_DIR/com.localai.vlm-judge.plist'"

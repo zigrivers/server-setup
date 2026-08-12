@@ -98,3 +98,30 @@ memory_pressure
 ```
 
 If Machine 1 is sluggish, switch the Orchestrator from BF16 to mixed-9bit.
+
+## Orchestrator answers ~50% instant 403/404 (port hijack by Docker)
+
+**Symptom (2026-08-12, real incident):** the dashboard showed a ~50% orchestrator
+error rate — tens of thousands of `HTTP 403` rows, all 1-3 ms latency — while the
+orchestrator's own log showed nothing but 200s. Direct `curl` to
+`127.0.0.1:8001` intermittently got 403/404/dropped connections.
+
+**Cause:** a Docker container (OrbStack) published `0.0.0.0:8001->8001`
+(`nibble-research-engine-1`, itself unhealthy). mlx_lm.server binds
+`127.0.0.1:8001` specifically; with a second wildcard listener on the same
+port, macOS distributes incoming loopback connections between BOTH listeners —
+roughly half of all requests landed on the container, which instantly rejected
+them. The failures never appear in the orchestrator's log because those
+requests never reached it.
+
+**Diagnose:**
+
+```bash
+lsof -nP -iTCP:8001 -sTCP:LISTEN     # more than one listener = the bug
+docker ps --format '{{.Names}}\t{{.Ports}}' | grep 8001
+```
+
+**Fix:** stop the container (`docker stop <name>`) or remap its host port in
+its compose file (e.g. `127.0.0.1:18001:8001`, or a high port like the nibble
+worktree variants already use). The AI-stack ports to keep clear of published
+container ports: 8001-8006, 9001-9008, 9100, 9200, 3111.

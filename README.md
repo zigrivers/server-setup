@@ -20,6 +20,7 @@ Machine 2 / inference worker
   - Developer model on 10.10.10.2:8002
   - Reviewer model on 10.10.10.2:8003
   - optional experimental MTP / security reviewer on 10.10.10.2:8004
+  - VLM judge (2d-3d-pipeline) on 10.10.10.2:8006
 ```
 
 ## What this repo contains
