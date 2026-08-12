@@ -166,3 +166,40 @@ def test_local_review_timeout_returns_clear_message(git_repo, monkeypatch):
     out = server.local_review(workspace=str(git_repo))
     assert "timed out" in out.lower() or "failed" in out.lower()
     assert "LOCAL_REVIEW" in out  # actionable guidance names the override knobs
+
+
+# --- _review_model picks the served model, not just models[0] ---------------
+
+def _fake_models_response(monkeypatch, ids):
+    import io, json, urllib.request
+
+    def fake_urlopen(url, timeout=10):
+        body = json.dumps({"data": [{"id": i} for i in ids]}).encode()
+        return io.BytesIO(body)
+
+    monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
+
+
+def test_review_model_prefers_local_path_entry(monkeypatch):
+    # mlx_lm.server lists every HF-cache entry; only the served model appears
+    # as a filesystem path. models[0] here is an embedding model (the real
+    # incident: chatting with it 404s).
+    _fake_models_response(monkeypatch, [
+        "mlx-community/bge-small-en-v1.5-bf16",
+        "llmfan46/Qwen3.6-27B-uncensored-heretic-v2",
+        "/Users/x/ai/models/orchestrator-mixed9",
+    ])
+    monkeypatch.delenv("LOCAL_REVIEW_MODEL", raising=False)
+    assert server._review_model("http://h:1/v1") == "/Users/x/ai/models/orchestrator-mixed9"
+
+
+def test_review_model_env_override_wins(monkeypatch):
+    _fake_models_response(monkeypatch, ["/Users/x/ai/models/served"])
+    monkeypatch.setenv("LOCAL_REVIEW_MODEL", "forced-id")
+    assert server._review_model("http://h:1/v1") == "forced-id"
+
+
+def test_review_model_falls_back_to_first_without_path_entry(monkeypatch):
+    _fake_models_response(monkeypatch, ["only/hf-repo-id"])
+    monkeypatch.delenv("LOCAL_REVIEW_MODEL", raising=False)
+    assert server._review_model("http://h:1/v1") == "only/hf-repo-id"

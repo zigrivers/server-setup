@@ -108,12 +108,26 @@ def _collect_diff(ws: Path, scope: str) -> str:
 
 
 def _review_model(base_url: str, timeout: int = 10) -> str:
+    """Pick the model id to request from the review endpoint.
+
+    mlx_lm.server's /v1/models lists every HF-cache entry on the machine, not
+    just the served model — models[0] can be anything (observed: the retired
+    bge embedding model, which 404s on /chat/completions). The model actually
+    being served is the one listed as a local filesystem path, so prefer that;
+    LOCAL_REVIEW_MODEL overrides outright.
+    """
+    forced = os.environ.get("LOCAL_REVIEW_MODEL")
+    if forced:
+        return forced
     url = base_url.rstrip("/") + "/models"
     with urllib.request.urlopen(url, timeout=timeout) as r:
         data = json.loads(r.read().decode())
     models = data.get("data") or []
     if not models:
         raise ValueError(f"Reviewer endpoint serves no models: {url}")
+    for m in models:
+        if str(m.get("id", "")).startswith("/"):
+            return m["id"]
     return models[0]["id"]
 
 
