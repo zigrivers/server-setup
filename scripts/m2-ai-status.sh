@@ -6,7 +6,7 @@ date
 
 echo
 echo "=== Listening ports ==="
-lsof -nP -iTCP:8002 -iTCP:8003 -iTCP:8004 -sTCP:LISTEN || true
+lsof -nP -iTCP:8002 -iTCP:8003 -iTCP:8004 -iTCP:8006 -sTCP:LISTEN || true
 
 echo
 echo "=== Developer API ==="
@@ -16,6 +16,11 @@ echo
 echo
 echo "=== Reviewer API ==="
 curl -s http://10.10.10.2:8003/v1/models || echo "Reviewer API unavailable"
+
+echo
+echo
+echo "=== VLM judge API ==="
+curl -s http://10.10.10.2:8006/v1/models || echo "VLM judge API unavailable"
 
 echo
 echo

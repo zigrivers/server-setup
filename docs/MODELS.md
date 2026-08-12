@@ -50,6 +50,29 @@ The BF16 copies stay on disk (`…-heretic-v2-bf16`, and the 51 GB HF cache entr
 > cache and quietly get the slow model. The meter now pins each local endpoint to its served weights
 > via `METER_REVIEW_MODEL` / `METER_DEV_MODEL` in `~/ai/dashboard/dashboard.env`.
 
+### VLM judge — Machine 2
+
+```text
+mlx-community/Qwen3-VL-30B-A3B-Instruct-4bit   (17 GB, HF cache)
+Served by: mlx_vlm server (own venv: ~/ai/venvs/vlm, mlx-vlm 0.6.12)
+Endpoint: http://10.10.10.2:8006/v1
+Metered lane (Machine 1): http://127.0.0.1:9008/v1
+Launcher: scripts/start-vlm-judge.sh + configs/launchd/com.localai.vlm-judge.plist
+```
+
+Serves the **2d-3d-pipeline's** concept/mesh judge (`vlm_judge.py`, items 17-18
+of that repo's 2026-08 refresh) so judge calls need no in-process model load and
+no vlm-env on the calling machine. The pipeline opts in via
+`PIPELINE_JUDGE_ENDPOINT=http://127.0.0.1:9008/v1` (generic OpenAI-compatible
+endpoint flag on the pipeline side; nothing there assumes this stack). Scores
+verified identical to the in-process path on real fixtures (2026-08-12).
+
+Measured on 2026-08-12 with developer+reviewer serving live traffic on the same
+Studio: ~18-19 s per fresh judge call (decode 4-6 tok/s under contention),
+~2.6 s on a repeat image (server-side vision cache). The meter caps the lane at
+`METER_VLM_MAX_INFLIGHT` (default 2) so judge fan-out never starves the
+developer/reviewer lanes.
+
 ### Embedding model (RAG) — Machine 1
 
 ```text
