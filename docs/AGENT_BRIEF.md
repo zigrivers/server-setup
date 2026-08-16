@@ -11,8 +11,8 @@ Machine 1 is the control plane; Machine 2 is the inference worker on 10.10.10.2.
 
 ENDPOINTS — always use the 9xxx "meter" ports, never the raw 800x ports.
   http://127.0.0.1:9001/v1   orchestrator  Qwen3.6-35B-A3B (MoE, 8-bit)   fast, general
-  http://127.0.0.1:9002/v1   developer     Qwen3.6-27B (8-bit)            code writing
-  http://127.0.0.1:9003/v1   reviewer      Qwen3.6-27B (8-bit)            code review, max 2 in flight
+  http://127.0.0.1:9002/v1   developer     Qwen3.8-27B (8-bit)            code writing
+  http://127.0.0.1:9003/v1   reviewer      Qwen3.8-27B (8-bit)            code review, max 2 in flight
   http://127.0.0.1:9006/v1   review router prefers reviewer, spills to orchestrator when busy
   http://127.0.0.1:9004/v1   GLM           PAID cloud (z.ai) — costs money
   http://127.0.0.1:9005/v1   DeepSeek      PAID cloud — costs money
@@ -31,9 +31,14 @@ RULE 2 — SEND A ROUTING LABEL AS THE API KEY, NOT A SECRET.
   Never send a real provider key (anything starting with sk-); the meter injects real keys itself
   for the paid cloud ports.
 
-RULE 3 — THESE ARE THINKING MODELS.
-  Responses carry both "reasoning" and "content". With a small max_tokens the model can spend the
-  whole budget reasoning and return empty content. Use max_tokens >= 800 for real answers.
+RULE 3 — THESE ARE THINKING MODELS, AND QWEN3.8 THINKS A LOT.
+  Responses carry both "reasoning" and "content". With a small max_tokens the model spends the whole
+  budget reasoning and returns EMPTY content — it does not truncate the answer, there is no answer.
+  Reasoning scales with how open-ended the prompt is:
+    closed question ("name two causes of X")      -> answers inside 256 tokens, seconds
+    open-ended review ("list every bug")          -> can exceed 16,000 tokens and run 25+ minutes
+  So: use max_tokens >= 8000 for open-ended analysis and review, >= 800 for ordinary answers, or
+  send chat_template_kwargs: {"enable_thinking": false} for a fast, slightly shallower answer.
 
 RULE 4 — PREFER LOCAL. Ports 9004 and 9005 bill a vendor per token. 9001/9002/9003/9006 are free.
 
@@ -69,8 +74,12 @@ use the meter ports.
 attribution views. Anything matching `^sk[-_]` is rejected as a label so a leaked provider key never
 lands in telemetry.
 
-**Rule 3**: these are reasoning-tuned Qwen3.6 finetunes. The dashboard tracks the reasoning share of
-output tokens ("reasoning tax") precisely because it is large.
+**Rule 3**: the dashboard tracks the reasoning share of output tokens ("reasoning tax") precisely
+because it is large. Measured on one open-ended review prompt at temperature 0: Qwen3.6 finished in
+4,970 tokens / 372 s; Qwen3.8 was still generating past 16,000 tokens at 25 minutes and had to be
+killed; the same prompt with `enable_thinking: false` came back in 4 s. The failure mode when the
+budget is too small is an empty `content`, not a short answer — which reads like a broken endpoint
+if you are not expecting it.
 
 **Reviewer concurrency**: `:9003` is capped at 2 in-flight requests (`METER_REVIEWER_MAX_INFLIGHT`)
 so a fan-out cannot thrash one Mac Studio. Excess requests queue rather than fail. `:9006` is the

@@ -56,14 +56,45 @@ a 2.4T-A95B (`qwen3_5_moe_text`, ~1.2 TB at 4-bit, unsupported by mlx-lm 0.31.3)
 ### Reviewer — Machine 2
 
 ```text
-llmfan46/Qwen3.6-27B-uncensored-heretic-v2, quantized locally to 8-bit (affine, group 32)
-Local path: ~/ai/models/reviewer-llmfan46-qwen36-27b-heretic-v2-q8
+mlx-community/Qwen3.8-27B-8bit   (same weights the Developer serves — one copy on disk)
+Local path: ~/ai/models/developer-qwen38-27b-8bit
 Endpoint: http://10.10.10.2:8003/v1
 ```
 
-Was BF16 (`…-heretic-v2-bf16`, 50 GB, ~6 tok/s) until 2026-08-09. The 8-bit rebuild is 28 GB and
-measured ~19.5 tok/s on the same prompt — same weights, same recipe the Developer already used.
-Rebuild command:
+Upgraded from `reviewer-llmfan46-qwen36-27b-heretic-v2-q8` on 2026-08-16. Both 27B endpoints now
+serve the same file; each `mlx_lm.server` keeps its own copy resident (~27 GB each), so the cost is
+memory, not disk.
+
+> ### ⚠️ Reviewing is where this model's thinking runs longest — set a token budget
+>
+> Qwen3.8 scales its reasoning to how open-ended the prompt is, and "list every real bug" is as
+> open-ended as it gets. Measured on one identical review prompt (a 13-line function with three
+> planted bugs, temperature 0):
+>
+> | | tokens | wall clock | findings |
+> |---|---|---|---|
+> | Qwen3.6-27B heretic q8 | 4,970 | 372 s | 3 |
+> | Qwen3.8-27B, thinking on | >16,000 | **did not finish in 25 min — killed** | — |
+> | Qwen3.8-27B, `enable_thinking: false` | 52 | **4 s** | 2 |
+>
+> On a *closed* prompt ("name two causes of race conditions") it answers inside 256 tokens in 5 s,
+> so this is not general verbosity — it is unbounded deliberation on unbounded questions.
+>
+> Consequences for callers of `:8003` / `:9003`:
+> - A small `max_tokens` does not truncate politely — the budget is spent on reasoning and
+>   **`content` comes back empty**. `src/regression/run.ts` sends 256 and `src/shared/llm.ts`
+>   defaults to 500; both are below what a hard review needs.
+> - Either send `chat_template_kwargs: {"enable_thinking": false}` (fast, slightly shallower — it
+>   found 2 of 3 planted bugs instead of 3), or budget 8k+ tokens and expect minutes per review.
+> - The meter caps `:9003` at 2 in-flight (`METER_REVIEWER_MAX_INFLIGHT`), so multi-minute reviews
+>   queue behind each other. `:9006` spills to the Orchestrator instead of queueing.
+>
+> Rollback is one line — `REVIEW_MODEL_PATH` in M2's `.env` (backup `.env.bak-20260816b`); the
+> Qwen3.6 q8 weights are still on disk at `~/ai/models/reviewer-llmfan46-qwen36-27b-heretic-v2-q8`.
+
+The previous Reviewer was BF16 (`…-heretic-v2-bf16`, 50 GB, ~6 tok/s) until 2026-08-09, then the
+local 8-bit rebuild (28 GB, ~19.5 tok/s). Rebuild command, still the recipe to use for converting
+any abliterated BF16 build to MLX:
 
 ```text
 mlx_lm.convert --hf-path ~/ai/models/reviewer-llmfan46-qwen36-27b-heretic-v2-bf16 \
