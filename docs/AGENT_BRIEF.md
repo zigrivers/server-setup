@@ -36,9 +36,11 @@ RULE 3 — THESE ARE THINKING MODELS, AND QWEN3.8 THINKS A LOT.
   budget reasoning and returns EMPTY content — it does not truncate the answer, there is no answer.
   Reasoning scales with how open-ended the prompt is:
     closed question ("name two causes of X")      -> answers inside 256 tokens, seconds
-    open-ended review ("list every bug")          -> can exceed 16,000 tokens and run 25+ minutes
-  So: use max_tokens >= 8000 for open-ended analysis and review, >= 800 for ordinary answers, or
-  send chat_template_kwargs: {"enable_thinking": false} for a fast, slightly shallower answer.
+    open-ended review ("list every bug")          -> p50 47s, p90 314s, worst seen 401s / 8,000 tokens
+  So: use max_tokens >= 12000 for open-ended analysis and review, >= 800 for ordinary answers.
+  DO NOT set enable_thinking:false to make it fast — measured over 18 planted bugs that costs 17
+  points of recall (89% -> 72%) and produced the only false alarm in the run. Speed there is bought
+  with missed bugs.
 
 RULE 4 — PREFER LOCAL. Ports 9004 and 9005 bill a vendor per token. 9001/9002/9003/9006 are free.
 
@@ -75,11 +77,10 @@ attribution views. Anything matching `^sk[-_]` is rejected as a label so a leake
 lands in telemetry.
 
 **Rule 3**: the dashboard tracks the reasoning share of output tokens ("reasoning tax") precisely
-because it is large. Measured on one open-ended review prompt at temperature 0: Qwen3.6 finished in
-4,970 tokens / 372 s; Qwen3.8 was still generating past 16,000 tokens at 25 minutes and had to be
-killed; the same prompt with `enable_thinking: false` came back in 4 s. The failure mode when the
-budget is too small is an empty `content`, not a short answer — which reads like a broken endpoint
-if you are not expecting it.
+because it is large. Numbers come from the model-comparison harness in `local-ai-dashboard`
+(`src/modeleval/`, 18 planted bugs, 4 clean cases, temperature 0), not from a single prompt. The
+failure mode when the budget is too small is an empty or mid-thought `content`, not a short answer —
+which reads like a broken endpoint if you are not expecting it.
 
 **Reviewer concurrency**: `:9003` is capped at 2 in-flight requests (`METER_REVIEWER_MAX_INFLIGHT`)
 so a fan-out cannot thrash one Mac Studio. Excess requests queue rather than fail. `:9006` is the
