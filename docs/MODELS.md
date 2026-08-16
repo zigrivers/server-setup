@@ -65,27 +65,31 @@ Upgraded from `reviewer-llmfan46-qwen36-27b-heretic-v2-q8` on 2026-08-16. Both 2
 serve the same file; each `mlx_lm.server` keeps its own copy resident (~27 GB each), so the cost is
 memory, not disk.
 
-> ### ⚠️ Reviewing is where this model's thinking runs longest — set a token budget
+> ### Measured against Qwen3.6 — 18 planted bugs, 4 clean cases, temperature 0
 >
-> Qwen3.8 scales its reasoning to how open-ended the prompt is, and "list every real bug" is as
-> open-ended as it gets. Measured on one identical review prompt (a 13-line function with three
-> planted bugs, temperature 0):
+> Run with `local-ai-dashboard`'s model-comparison harness
+> (`src/modeleval/`, results in `eval/results/2026-08-16b-qwen38-vs-qwen36/`):
 >
-> | | tokens | wall clock | findings |
-> |---|---|---|---|
-> | Qwen3.6-27B heretic q8 | 4,970 | 372 s | 3 |
-> | Qwen3.8-27B, thinking on | >16,000 | **did not finish in 25 min — killed** | — |
-> | Qwen3.8-27B, `enable_thinking: false` | 52 | **4 s** | 2 |
+> | arm | recall | false alarms | truncated | p50 latency |
+> |---|---|---|---|---|
+> | Qwen3.6-27B heretic q8 | 83% (15/18) | 0/4 | 0 | 92.6 s |
+> | **Qwen3.8-27B, thinking on** | **89% (16/18)** | 0/4 | 1 | **46.7 s** |
+> | Qwen3.8-27B, `enable_thinking: false` | 72% (13/18) | 1/4 | 0 | 3.2 s |
 >
-> On a *closed* prompt ("name two causes of race conditions") it answers inside 256 tokens in 5 s,
-> so this is not general verbosity — it is unbounded deliberation on unbounded questions.
+> Blind position-swapped judge: Qwen3.8-thinking beat Qwen3.6 on 8 cases, lost 4, tied 6.
+> McNemar on discordant bug-level outcomes gives p = 1.000 — with only 18 planted bugs the recall
+> gap is **not statistically significant**. The honest reading is "no evidence of harm, several
+> signals in favour", not "proven better".
+>
+> **Do not disable thinking to make reviews fast.** It costs 17 points of recall (89% → 72%) and
+> produced the run's only false alarm. An earlier recommendation in this repo to run review
+> harnesses with `enable_thinking: false` was wrong, and this eval is what corrected it.
 >
 > Consequences for callers of `:8003` / `:9003`:
-> - A small `max_tokens` does not truncate politely — the budget is spent on reasoning and
->   **`content` comes back empty**. `src/regression/run.ts` sends 256 and `src/shared/llm.ts`
->   defaults to 500; both are below what a hard review needs.
-> - Either send `chat_template_kwargs: {"enable_thinking": false}` (fast, slightly shallower — it
->   found 2 of 3 planted bugs instead of 3), or budget 8k+ tokens and expect minutes per review.
+> - Budget **12k+ tokens** for open-ended review. At 8k, one case in nineteen still truncated
+>   mid-reasoning (400 s, 8,000 tokens, no verdict). `src/regression/run.ts` sends 256 and
+>   `src/shared/llm.ts` defaults to 500 — far below what a hard review needs.
+> - Expect a long tail: p50 is 47 s but p90 is 314 s and the max was 401 s.
 > - The meter caps `:9003` at 2 in-flight (`METER_REVIEWER_MAX_INFLIGHT`), so multi-minute reviews
 >   queue behind each other. `:9006` spills to the Orchestrator instead of queueing.
 >
