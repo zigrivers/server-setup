@@ -20,10 +20,38 @@ Local path: ~/ai/models/orchestrator-qwen36-35b-a3b-heretic-mixed9
 ### Developer — Machine 2
 
 ```text
-TheCluster/Qwen3.6-27B-Heretic2-Uncensored-Finetune-Thinking-MLX-mixed-9.4bit
-Local path: ~/ai/models/developer-qwen36-27b-heretic2-mixed94
+mlx-community/Qwen3.8-27B-8bit   (qwen3_5 arch, 8-bit affine g64, 28 GB, 262k ctx, Apache-2.0)
+Local path: ~/ai/models/developer-qwen38-27b-8bit
 Endpoint: http://10.10.10.2:8002/v1
 ```
+
+Upgraded from `developer-qwen36-27b-heretic2-mixed94` on 2026-08-16. Qwen3.8 reports the same
+`model_type: qwen3_5` as Qwen3.6, so it loads on the installed mlx-lm 0.31.3 unchanged — unlike
+GLM-5.2 and DeepSeek-V4, this generation needed no new model code.
+
+Measured on an identical prompt (merge-intervals with tests, temperature 0, 6k budget):
+
+| | Qwen3.6-27B (heretic2, 8-bit) | Qwen3.8-27B (stock, 8-bit) |
+|---|---|---|
+| completion tokens | 1,926 | **1,153** |
+| wall clock | 97.3 s | **57.5 s** |
+| tok/s | 19.8 | 20.1 |
+| reasoning chars / answer chars | 5,448 / 583 | **3,306** / 640 |
+| generated tests | pass | pass |
+| resident memory | 30 GB | **27 GB** |
+
+Same speed per token; it simply thinks less to reach a correct answer. Vendor-reported benchmarks
+put it well ahead on coding too (SWE-bench Pro 61.7 vs 53.5, LiveCodeBench v6 90.3 vs 83.9).
+
+**This one is NOT abliterated** — the previous Developer was a `heretic` finetune, this is stock
+Qwen. The only abliterated MLX build on the Hub (`PocketAiHub/Qwen3.8-27B-Abliterated-MLX`) has no
+downloads and declares no quantization, so it was not used. If refusals get in the way, convert a
+reputable abliterated BF16 build (huihui-ai, Blackfrost-AI) with the same `mlx_lm.convert` recipe
+used for the Reviewer. Rollback is one line: `DEV_MODEL_PATH` in M2's `.env` (backup:
+`.env.bak-20260816`); the Qwen3.6 weights stay on disk.
+
+There is no Qwen3.8 counterpart for the Orchestrator — the release shipped only this 27B dense and
+a 2.4T-A95B (`qwen3_5_moe_text`, ~1.2 TB at 4-bit, unsupported by mlx-lm 0.31.3).
 
 ### Reviewer — Machine 2
 
