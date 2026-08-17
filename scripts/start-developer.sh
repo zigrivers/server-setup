@@ -11,6 +11,8 @@ fi
 
 HOST="${WORKER_HOST:-10.10.10.2}"
 PORT="${DEV_PORT:-8002}"
+# NOTE: the authoritative model choice lives in .env (sourced above) as
+# DEV_MODEL_PATH / REVIEW_MODEL_PATH. This default is only the fallback if .env is absent.
 MODEL="${DEV_MODEL_PATH:-$HOME/ai/models/developer-qwen38-27b-8bit}"
 # Explicit, byte-bounded prompt/prefix KV cache (mlx_lm default: size 10, bytes unbounded).
 PROMPT_CACHE_SIZE="${PROMPT_CACHE_SIZE:-10}"
