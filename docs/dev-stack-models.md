@@ -21,7 +21,7 @@ secret. Providers:
 | `local-orch` | 9001 | the orchestrator model path |
 | `local-dev` | 9002 | `llmfan46/Qwen3.6-27B-uncensored-heretic-v2` |
 | `local-review` | 9003 | `llmfan46/Qwen3.6-27B-uncensored-heretic-v2` |
-| `glm-meter` | 9004 | `glm-5.2` |
+| `glm-meter` | 9004 | `glm-5.2`, `glm-5.3` |
 | `deepseek-meter` | 9005 | `deepseek-v4-pro`, `deepseek-v4-flash` |
 
 > The `-meter` suffix avoids colliding with OpenCode's built-in `deepseek`/`zai` providers, which
