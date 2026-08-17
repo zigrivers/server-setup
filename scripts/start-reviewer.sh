@@ -11,7 +11,7 @@ fi
 
 HOST="${WORKER_HOST:-10.10.10.2}"
 PORT="${REVIEW_PORT:-8003}"
-MODEL="${REVIEW_MODEL_PATH:-$HOME/ai/models/reviewer-qwen36-27b-heretic-bf16}"
+MODEL="${REVIEW_MODEL_PATH:-$HOME/ai/models/developer-qwen38-27b-8bit}"
 # Explicit, byte-bounded prompt/prefix KV cache (mlx_lm default: size 10, bytes unbounded).
 PROMPT_CACHE_SIZE="${PROMPT_CACHE_SIZE:-10}"
 PROMPT_CACHE_BYTES="${PROMPT_CACHE_BYTES:-12GB}"
