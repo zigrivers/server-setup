@@ -10,7 +10,8 @@ set -uo pipefail
 #      orchestrator restart, distinguishing a true wedge from a merely-busy server via telemetry.
 # No destructive actions, ever.
 #
-# Env overrides: M2_HOST, M2_PORTS, METER_PORTS, METER_LABEL, M2_RECOVER_COOLDOWN, ORCH_URL, ORCH_MODEL,
+# Env overrides: M2_HOST, M2_ALT_HOST, M2_ALT_PORT, M2_PORTS, METER_PORTS, METER_LABEL,
+# M2_RECOVER_COOLDOWN, ORCH_URL, ORCH_MODEL,
 # ORCH_LABEL, ORCH_BAD_LIMIT, ORCH_BUSY_WINDOW, M2_WATCHDOG_DRYRUN(=1 to log intended actions only).
 
 HOME_DIR="${HOME:-/Users/$(id -un)}"
@@ -21,6 +22,13 @@ HOME_DIR="${HOME:-/Users/$(id -un)}"
 PATH="$HOME_DIR/.local/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"
 SCRIPTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 M2_HOST="${M2_HOST:-10.10.10.2}"
+# A SECOND path to M2 (Tailscale), used only to tell "M2 is asleep/off" apart from "M2 is fine
+# but the private link is down". The 2026-08-17 incident: the Thunderbolt cable dropped while M2
+# sat awake with 87 days uptime, and this watchdog reported "likely asleep/off; manual wake may
+# be needed" — sending the operator to check the machine instead of the cable. WoL cannot fix a
+# cable, so the distinction decides both the advice and whether recovery is worth attempting.
+M2_ALT_HOST="${M2_ALT_HOST-100.71.251.23}"   # M2 on Tailscale (node "ai-inference"); empty disables
+M2_ALT_PORT="${M2_ALT_PORT:-22}"              # sshd — reachable regardless of the model servers
 read -r -a PORTS <<< "${M2_PORTS:-8002 8003}"
 read -r -a METER_PORTS <<< "${METER_PORTS:-9002 9003 9004 9006}"  # required local meter routes, including MMR GLM and local review
 METER_LABEL="${METER_LABEL:-com.localai.dashboard.meter}"
@@ -49,6 +57,11 @@ probe() {  # 0 iff every worker port is reachable
     nc -z -G 3 "$M2_HOST" "$p" >/dev/null 2>&1 || return 1
   done
   return 0
+}
+
+m2_alive_via_alt() {  # 0 iff M2 answers on its second path → the machine is up, only the link is down
+  [ -n "$M2_ALT_HOST" ] || return 1
+  nc -z -G 3 "$M2_ALT_HOST" "$M2_ALT_PORT" >/dev/null 2>&1
 }
 
 probe_meter() {  # 0 iff the local meter can actually PROXY to each M2 worker (HTTP 200), not just M2 being reachable
@@ -165,16 +178,31 @@ fi
 # ---- down ----
 logln "M2 DOWN — port(s) ${PORTS[*]} unreachable on $M2_HOST"
 
+# Machine down, or just the private link? The answer changes the advice entirely.
+LINK_ONLY=0
+if m2_alive_via_alt; then
+  LINK_ONLY=1
+  logln "  M2 itself is ALIVE via $M2_ALT_HOST:$M2_ALT_PORT — the machine is up; the $M2_HOST link is down"
+fi
+
 if [ $((now - last_recover)) -lt "$COOLDOWN" ]; then
   logln "  within ${COOLDOWN}s recovery cooldown — no action this tick"
   write_state down "$last_recover"
   exit 0
 fi
 
-[ "$prev_status" != "down" ] && notify "M2 worker dropped ⚠️ — attempting auto-recovery"
+if [ "$prev_status" != "down" ]; then
+  if [ "$LINK_ONLY" = "1" ]; then
+    notify "M2 link down 🔌 — M2 is awake but $M2_HOST is unreachable; check the Thunderbolt cable"
+  else
+    notify "M2 worker dropped ⚠️ — attempting auto-recovery"
+  fi
+fi
 
-# 1) best-effort wake
-if [ "$DRYRUN" = "1" ]; then
+# 1) best-effort wake — pointless when M2 is provably awake
+if [ "$LINK_ONLY" = "1" ]; then
+  logln "  skipping Wake-on-LAN — M2 is awake; WoL cannot fix a down link"
+elif [ "$DRYRUN" = "1" ]; then
   logln "  [dry-run] would send Wake-on-LAN to M2"
 else
   logln "  sending Wake-on-LAN magic packet to M2"
@@ -197,6 +225,9 @@ if [ "$DRYRUN" = "1" ]; then
 fi
 if probe; then
   logln "  RECOVERED after action"; notify "M2 worker recovered ✅"; write_state up "$now"
+elif [ "$LINK_ONLY" = "1" ]; then
+  logln "  STILL DOWN — M2 is awake via $M2_ALT_HOST but $M2_HOST is unreachable; check the Thunderbolt cable/bridge0"
+  notify "M2 link still down 🔌 — M2 is awake; check the Thunderbolt cable"; write_state down "$now"
 else
   logln "  STILL DOWN after WoL + meter restart — likely asleep/off; manual wake may be needed"
   notify "M2 still down ❌ — may need a manual wake"; write_state down "$now"

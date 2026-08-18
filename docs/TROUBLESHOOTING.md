@@ -54,6 +54,40 @@ Subnet: 255.255.255.0
 Router: blank
 ```
 
+### Is the machine down, or only the link?
+
+These look identical from Machine 1 — both make `10.10.10.2` unreachable — but the
+fixes are opposite. Ask the second path first:
+
+```bash
+nc -z -G 3 100.71.251.23 22 && echo "M2 is UP — the private link is the problem"
+```
+
+`100.71.251.23` is M2 on Tailscale (node `ai-inference`). If it answers, the machine
+is awake and Wake-on-LAN cannot help you; go look at the cable. `scripts/m2-watchdog.sh`
+now makes this call automatically and logs `M2 itself is ALIVE via ...` when it applies
+(override the address with `M2_ALT_HOST`, or set it empty to disable the check).
+
+Then confirm the bridge on **both** machines:
+
+```bash
+ifconfig bridge0 | grep -E "status|inet "
+```
+
+`status: inactive` with no `inet` line means the Thunderbolt ports see no peer — reseat
+the cable. The static addresses are stored per-machine and reapply on their own once the
+bridge comes up; you do not need to reconfigure anything:
+
+```bash
+networksetup -getinfo "Thunderbolt Bridge"   # expect Manual, 10.10.10.1 (M1) / 10.10.10.2 (M2)
+```
+
+**The workers do not need restarting after a link drop.** `mlx_lm.server` binds to
+`10.10.10.2` at startup and keeps that socket when the address disappears, so the
+processes stay alive and look healthy in `ps` while accepting nothing. Reconnecting the
+cable makes them reachable again instantly, with the models still warm in memory. Killing
+them costs a multi-minute reload and fixes nothing (observed 2026-08-17).
+
 ## SSH connection closed
 
 On Machine 2:

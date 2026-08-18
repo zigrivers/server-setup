@@ -41,6 +41,10 @@ def test_notify_reaches_launchpad_under_launchd_path(tmp_path):
         # "M2 down" branch and must notify.
         "M2_HOST": "192.0.2.1",
         "M2_PORTS": "8002",
+        # No second path to M2, so the script cannot rule out a sleeping machine and
+        # must take the plain "worker dropped" branch this test was written for.
+        # (See test_m2_watchdog_link_vs_sleep.py for the link-down-vs-asleep split.)
+        "M2_ALT_HOST": "",
         "ORCH_URL": "http://192.0.2.1:8001",
         "ORCH_PROBE_TIMEOUT": "1",
         # Dry run: no Wake-on-LAN, no launchctl kickstart, no real recovery.
