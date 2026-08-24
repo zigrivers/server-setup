@@ -10,9 +10,9 @@ set -uo pipefail
 #      orchestrator restart, distinguishing a true wedge from a merely-busy server via telemetry.
 # No destructive actions, ever.
 #
-# Env overrides: M2_HOST, M2_ALT_HOST, M2_ALT_PORT, M2_PORTS, METER_PORTS, METER_LABEL,
-# M2_RECOVER_COOLDOWN, ORCH_URL, ORCH_MODEL,
-# ORCH_LABEL, ORCH_BAD_LIMIT, ORCH_BUSY_WINDOW, M2_WATCHDOG_DRYRUN(=1 to log intended actions only).
+# Env overrides: M2_HOST, M2_ALT_HOST, M2_ALT_PORT, M2_PORTS, METER_PORTS, METER_LABEL, WATCHDOG_KEY,
+# M2_RECOVER_COOLDOWN, ORCH_URL, ORCH_MODEL, ORCH_LABEL, ORCH_BAD_LIMIT, ORCH_PROBE_INTERVAL,
+# ORCH_BUSY_WINDOW, M2_WATCHDOG_DRYRUN(=1 to log intended actions only).
 
 HOME_DIR="${HOME:-/Users/$(id -un)}"
 # launchd hands an agent only /usr/bin:/bin:/usr/sbin:/sbin, so user-installed
@@ -32,6 +32,9 @@ M2_ALT_PORT="${M2_ALT_PORT:-22}"              # sshd — reachable regardless of
 read -r -a PORTS <<< "${M2_PORTS:-8002 8003}"
 read -r -a METER_PORTS <<< "${METER_PORTS:-9002 9003 9004 9006}"  # required local meter routes, including MMR GLM and local review
 METER_LABEL="${METER_LABEL:-com.localai.dashboard.meter}"
+# Probes send this as their API key so the meter attributes them to a named client instead of
+# lumping them in with real traffic as 'unknown'. The meter treats any safe identifier as a label.
+WATCHDOG_KEY="${WATCHDOG_KEY:-watchdog}"
 UID_NUM="$(id -u)"
 LOG="${M2_WATCHDOG_LOG:-$HOME_DIR/ai/logs/m2-watchdog.log}"
 STATE="${M2_WATCHDOG_STATE:-$HOME_DIR/ai/logs/m2-watchdog.state}"
@@ -68,18 +71,26 @@ probe_meter() {  # 0 iff the local meter can actually PROXY to each M2 worker (H
   command -v curl >/dev/null 2>&1 || return 0   # no curl → can't check; don't false-trigger a restart
   local mp code
   for mp in "${METER_PORTS[@]}"; do
-    code="$(curl -s -m 5 -o /dev/null -w '%{http_code}' "http://127.0.0.1:$mp/v1/models" 2>/dev/null || echo 000)"
+    code="$(curl -s -m 5 -o /dev/null -w '%{http_code}' \
+      -H "Authorization: Bearer $WATCHDOG_KEY" "http://127.0.0.1:$mp/v1/models" 2>/dev/null || echo 000)"
     [ "$code" = "200" ] || return 1
   done
   return 0
 }
 
 # --- Orchestrator (M1, local) wedge detection ---
-ORCH_URL="${ORCH_URL:-http://127.0.0.1:8001}"
+# Probe THROUGH the meter (:9001), not the model server (:8001), so the completion this generates
+# is visible in the dashboard like any other request. The meter rewrites the model id to whatever
+# :8001 actually serves, so ORCH_MODEL below only has to be non-empty.
+ORCH_URL="${ORCH_URL:-http://127.0.0.1:9001}"
 ORCH_MODEL="${ORCH_MODEL:-/Users/kenallred/ai/models/orchestrator-qwen36-35b-a3b-heretic-bf16}"
 ORCH_LABEL="${ORCH_LABEL:-com.localai.orchestrator}"
 ORCH_PROBE_TIMEOUT="${ORCH_PROBE_TIMEOUT:-30}"
-ORCH_BAD_LIMIT="${ORCH_BAD_LIMIT:-3}"        # consecutive wedged ticks before the (expensive) 35B reload
+ORCH_BAD_LIMIT="${ORCH_BAD_LIMIT:-2}"        # consecutive wedged probes before the (expensive) 35B reload
+# Seconds between completion probes. launchd fires this script every 60s, but a real 35B generation
+# every minute is 1,440 pointless inferences a day; at 300s it is ~288, and a wedge still surfaces
+# within ORCH_BAD_LIMIT x this interval (~10 min).
+ORCH_PROBE_INTERVAL="${ORCH_PROBE_INTERVAL:-300}"
 ORCH_BUSY_WINDOW="${ORCH_BUSY_WINDOW:-180}"  # a real orchestrator completion this recent => busy, not wedged
 ORCH_STATE="${ORCH_STATE:-$HOME_DIR/ai/logs/m2-watchdog-orch.state}"
 TELEMETRY_DB="${TELEMETRY_DB:-$HOME_DIR/ai/dashboard/telemetry.db}"
@@ -89,6 +100,7 @@ probe_orchestrator() {  # 0 iff the orchestrator COMPLETES a tiny request (real 
   local code
   code="$(curl -s -m "$ORCH_PROBE_TIMEOUT" -o /dev/null -w '%{http_code}' "$ORCH_URL/v1/chat/completions" \
     -H 'content-type: application/json' \
+    -H "Authorization: Bearer $WATCHDOG_KEY" \
     --data "{\"model\":\"$ORCH_MODEL\",\"messages\":[{\"role\":\"user\",\"content\":\"ping\"}],\"max_tokens\":1}" 2>/dev/null || echo 000)"
   [ "$code" = "200" ]
 }
@@ -97,7 +109,7 @@ orchestrator_served_recently() {  # 0 iff a successful orchestrator completion i
   command -v sqlite3 >/dev/null 2>&1 || return 1  # can't tell → treat as not-recent, lean on the probe
   [ -f "$TELEMETRY_DB" ] || return 1
   local last
-  last="$(sqlite3 "$TELEMETRY_DB" "SELECT COALESCE(MAX(ts),0) FROM requests WHERE upstream='orchestrator' AND error_class='ok';" 2>/dev/null || echo 0)"
+  last="$(sqlite3 "$TELEMETRY_DB" "SELECT COALESCE(MAX(ts),0) FROM requests WHERE upstream='orchestrator' AND error_class='ok' AND client<>'$WATCHDOG_KEY';" 2>/dev/null || echo 0)"
   [ -n "$last" ] || last=0
   [ $(( now * 1000 - last )) -lt $(( ORCH_BUSY_WINDOW * 1000 )) ]
 }
@@ -117,12 +129,14 @@ write_state() { printf 'status=%s\nlast_recover=%s\nmeter_bad=%s\n' "$1" "$2" "$
 # incident: process idle at 0% CPU). A real completion probe is the only true health test, but it ALSO
 # times out when the orchestrator is merely BUSY (mlx serializes), so a probe failure counts as
 # "wedged" only when no real orchestrator completion succeeded recently. Same pattern as the meter fix.
-orch_bad=0; orch_last_recover=0
+orch_bad=0; orch_last_recover=0; orch_last_probe=0
 # shellcheck disable=SC1090
 [ -f "$ORCH_STATE" ] && . "$ORCH_STATE" 2>/dev/null || true
-write_orch() { printf 'orch_bad=%s\norch_last_recover=%s\n' "$1" "$2" > "$ORCH_STATE"; }
+write_orch() { printf 'orch_bad=%s\norch_last_recover=%s\norch_last_probe=%s\n' "$1" "$2" "${3:-$orch_last_probe}" > "$ORCH_STATE"; }
 
-if probe_orchestrator; then
+if [ $(( now - orch_last_probe )) -lt "$ORCH_PROBE_INTERVAL" ]; then
+  : # not due yet — the probe is real inference, so it runs on its own interval, not every tick
+elif { orch_last_probe="$now"; probe_orchestrator; }; then
   [ "${orch_bad:-0}" -gt 0 ] && { logln "orchestrator RECOVERED — serving completions"; notify "Orchestrator recovered ✅"; }
   write_orch 0 "$orch_last_recover"
 elif orchestrator_served_recently; then
