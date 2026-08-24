@@ -21,10 +21,27 @@ shim_dir="$(cd "$(dirname "$0")" 2>/dev/null && pwd || echo "")"
 clean_path="$(printf %s ":$PATH:" | sed "s#:${shim_dir}:#:#g" | sed 's/^://; s/:$//')"
 real="$(PATH="$clean_path" command -v "$tool" 2>/dev/null || true)"
 
+# A background poller is not a CLI run worth counting. CodexBar refreshes every 2 minutes and
+# spawns these CLIs to read quota; before this guard that alone produced ~2,165 phantom "grok
+# requests" a day in the dashboard (150,177 rows all-time). The real tool still runs either way —
+# only the count is skipped. Walks a few levels because a poller may launch the CLI via a shell.
+started_by_poller() {
+  local p="${CLI_TRACK_PPID:-$PPID}" i comm
+  for i in 1 2 3 4; do
+    case "$p" in ''|0|1) return 1 ;; esac
+    comm="$(ps -o comm= -p "$p" 2>/dev/null || true)"
+    case "$comm" in *CodexBar*) return 0 ;; esac
+    p="$(ps -o ppid= -p "$p" 2>/dev/null | tr -d ' ')"
+  done
+  return 1
+}
+
 # Best-effort usage ping (never blocks/fails the CLI).
-INGEST="${DASHBOARD_INGEST:-http://127.0.0.1:9100}"
-curl -s -m 2 -X POST "$INGEST/usage" -H 'content-type: application/json' \
-  --data "{\"client\":\"$label\"}" >/dev/null 2>&1 || true
+if ! started_by_poller; then
+  INGEST="${DASHBOARD_INGEST:-http://127.0.0.1:9100}"
+  curl -s -m 2 -X POST "$INGEST/usage" -H 'content-type: application/json' \
+    --data "{\"client\":\"$label\"}" >/dev/null 2>&1 || true
+fi
 
 if [ -n "$real" ] && [ "$real" != "$0" ]; then
   exec "$real" "$@"
