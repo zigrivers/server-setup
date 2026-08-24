@@ -175,12 +175,32 @@ Launcher: scripts/start-glm.sh + configs/launchd/com.localai.glm.plist
 Replaces the paid z.ai endpoint the meter fronts on `:9004`. Two prerequisites:
 
 1. `iogpu.wired_limit_mb` must be raised — the macOS default (~75% of RAM, ~384 GB) is below the
-   418 GB the model needs resident. Install `configs/launchd/com.localai.wiredlimit.plist`.
+   418 GB the model needs resident. **Done on both machines** (M1 2026-08-09, M2 2026-08-24):
+   `sysctl iogpu.wired_limit_mb` reports `491520` on each, applied at boot by
+   `com.localai.wiredlimit` in `/Library/LaunchDaemons/`. Nothing to redo.
 2. It cannot share Machine 1 with a resident Orchestrator: 418 + 65 GB exceeds 512 GiB. Drop the
    Orchestrator to its 8-bit build (`…-mixed9`, 38 GB) or stop it while GLM is loaded.
 
 Known quant caveat: the mlx-community 4-bit build ships without the MTP block, so GLM-5.2's
 speculative-decoding speedup is not available in this conversion.
+
+## Kimi K2.6 — on disk, runnable, not yet served (as of 2026-08-24)
+
+```text
+kimi-k26-dq3km-q8   (kimi_k25, 1.04T MoE, 4-bit, 256k ctx, modified MIT, 438 GB)
+Local path (M2): ~/ai/models/kimi-k26-dq3km-q8
+```
+
+Unlike GLM-5.2 and DeepSeek-V4, **nothing upstream blocks this one** — `kimi_k25` is implemented in
+the installed mlx-lm 0.31.3, and M2's memory ceiling is now raised. It is the strongest open-weight
+writer available here (the Kimi line ranks second on EQ-Bench Creative Writing, behind only Claude
+Opus 5), which is why it is the candidate for the `primary-intel-history` writing work rather than
+for coding.
+
+The one open question is layout, deferred 2026-08-24: at ~454 GB resident it cannot share M2 with
+the Developer and Reviewer (55 GB). Serving it means either moving those two to M1 — clients are
+unaffected, since they address meter ports and only the meter's target changes — or stopping them
+while Kimi is loaded.
 
 ## Experimental MTP lane
 
