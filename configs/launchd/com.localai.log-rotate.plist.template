@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Template: replace __HOME__ with the absolute path of the user's home directory before
+     installing into ~/Library/LaunchAgents/. The scripts/install-launchd-machine1.sh helper does
+     this substitution:  install-launchd-machine1.sh log-rotate
+
+     Daily (04:30) copy-truncate of anything in ~/ai/logs over 50 MB, keeping one previous copy.
+     Added 2026-08-24 after orchestrator.log reached 181 MB with nothing ever trimming it.
+     Run by hand any time: scripts/rotate-logs.sh -->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.localai.log-rotate</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>__HOME__/ai/local-ai-stack/scripts/rotate-logs.sh</string>
+  </array>
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Hour</key><integer>4</integer>
+    <key>Minute</key><integer>30</integer>
+  </dict>
+  <key>RunAtLoad</key><false/>
+  <key>ProcessType</key><string>Background</string>
+  <key>StandardOutPath</key><string>__HOME__/ai/logs/log-rotate.out</string>
+  <key>StandardErrorPath</key><string>__HOME__/ai/logs/log-rotate.err</string>
+</dict>
+</plist>
