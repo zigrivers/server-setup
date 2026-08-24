@@ -17,6 +17,7 @@ import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import httpx
+import pytest
 
 SCRIPTS = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "scripts")
 
@@ -81,7 +82,7 @@ def _start_server(handler_cls):
 
 
 # ---------------- harness ----------------
-def setup():
+def start_proxy():
     P = _load_proxy()
     up_srv, up_port = _start_server(FakeUpstream)
     P.DEFAULT_UPSTREAM = f"http://127.0.0.1:{up_port}"
@@ -104,6 +105,34 @@ def setup():
     prox_srv, prox_port = _start_server(P.Handler)
     base = f"http://127.0.0.1:{prox_port}"
     return P, base, live, up_srv, prox_srv
+
+
+# ---------------- pytest fixtures ----------------
+# This file predates the pytest suite: it was written to run as a script (see __main__ below), so its
+# test_* functions take `base`/`live` as plain arguments. pytest collects them either way, so without
+# these fixtures every test here ERRORed with "fixture 'base' not found" and the proxy had no
+# coverage in `pytest tests/`. Module-scoped: one proxy + upstream for the whole file, torn down after.
+@pytest.fixture(scope="module")
+def proxy():
+    P, base, live, up_srv, prox_srv = start_proxy()
+    try:
+        yield {"P": P, "base": base, "live": live}
+    finally:
+        prox_srv.shutdown()
+        prox_srv.server_close()
+        up_srv.shutdown()
+        up_srv.server_close()
+
+
+@pytest.fixture
+def base(proxy):
+    return proxy["base"]
+
+
+@pytest.fixture
+def live(proxy):
+    """The mutable set of 'existing' collections the collection-cache stub reports."""
+    return proxy["live"]
 
 
 def test_passthrough_unknown_key_verbatim(base):
@@ -190,7 +219,7 @@ def test_healthz(base):
 
 
 if __name__ == "__main__":
-    P, base, live, up_srv, prox_srv = setup()
+    P, base, live, up_srv, prox_srv = start_proxy()
     tests = [
         ("healthz", lambda: test_healthz(base)),
         ("passthrough_unknown_key_verbatim", lambda: test_passthrough_unknown_key_verbatim(base)),
