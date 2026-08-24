@@ -184,6 +184,21 @@ Replaces the paid z.ai endpoint the meter fronts on `:9004`. Two prerequisites:
 Known quant caveat: the mlx-community 4-bit build ships without the MTP block, so GLM-5.2's
 speculative-decoding speedup is not available in this conversion.
 
+## Bulk-classification lane (on demand)
+
+```text
+scripts/start-enrich-lane.sh   ->  http://127.0.0.1:8010/v1
+Orchestrator weights on mlx-vlm (no thinking template) + MTP drafter, isolated venv ~/ai/mtp-venv
+```
+
+A speed option for six-figure batch jobs, started by hand and stopped after. Measured 2026-08-24 on
+the Phase 8 enrichment prompt: `:9001` with `enable_thinking=False` does 1.17s/item with valid JSON
+every time; this lane does 0.72s (~1.6x, ~2,600 items/hour). Use `:9001` for anything smaller — it
+is already running and already metered.
+
+**Never point review or coding traffic at it.** mlx-vlm cannot enable thinking, and the code-review
+eval measured that at 89% -> 78% recall.
+
 ## Kimi K2.6 — on disk, runnable, not yet served (as of 2026-08-24)
 
 ```text
