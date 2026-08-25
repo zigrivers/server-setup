@@ -83,7 +83,6 @@ probe_meter() {  # 0 iff the local meter can actually PROXY to each M2 worker (H
 # is visible in the dashboard like any other request. The meter rewrites the model id to whatever
 # :8001 actually serves, so ORCH_MODEL below only has to be non-empty.
 ORCH_URL="${ORCH_URL:-http://127.0.0.1:9001}"
-ORCH_MODEL="${ORCH_MODEL:-/Users/kenallred/ai/models/orchestrator-qwen36-35b-a3b-heretic-bf16}"
 ORCH_LABEL="${ORCH_LABEL:-com.localai.orchestrator}"
 ORCH_PROBE_TIMEOUT="${ORCH_PROBE_TIMEOUT:-30}"
 ORCH_BAD_LIMIT="${ORCH_BAD_LIMIT:-2}"        # consecutive wedged probes before the (expensive) 35B reload
@@ -95,14 +94,65 @@ ORCH_BUSY_WINDOW="${ORCH_BUSY_WINDOW:-180}"  # a real orchestrator completion th
 ORCH_STATE="${ORCH_STATE:-$HOME_DIR/ai/logs/m2-watchdog-orch.state}"
 TELEMETRY_DB="${TELEMETRY_DB:-$HOME_DIR/ai/dashboard/telemetry.db}"
 
+# To mlx_lm.server the `model` field is a LOAD INSTRUCTION, not a selector: send a path it is not
+# already serving and it loads a SECOND copy of that model. This probe used to hardcode the bf16
+# orchestrator (65 GB) while the stack actually runs mixed9 (38 GB), and only the meter's
+# METER_ORCH_MODEL pin stopped it from triggering that load. Ask the endpoint what it serves.
+# Same rule as scripts/smoke-test-endpoints.sh and the dashboard's pickChatModel().
+orch_model() {  # prints the model id :9001 is actually serving, or nothing if it can't be discovered
+  if [ -n "${ORCH_MODEL:-}" ]; then printf '%s' "$ORCH_MODEL"; return 0; fi
+  # Split the JSON on commas/braces so each "id" lands on its own line, then take the first id that
+  # looks like a local model path.
+  curl -s -m 5 -H "Authorization: Bearer $WATCHDOG_KEY" "$ORCH_URL/v1/models" 2>/dev/null \
+    | tr ',{}' '\n' \
+    | sed -n 's/.*"id"[[:space:]]*:[[:space:]]*"\(\/[^"]*\)".*/\1/p' \
+    | head -1
+}
+
 probe_orchestrator() {  # 0 iff the orchestrator COMPLETES a tiny request (real inference, not just /models)
   command -v curl >/dev/null 2>&1 || return 0  # no curl → can't check; don't false-trigger
-  local code
+  local code model
+  model="$(orch_model)"
+  # No id means /v1/models itself did not answer (meter restarting, say). That is not evidence the
+  # orchestrator is wedged, and guessing an id here is exactly the second-copy bug above.
+  [ -n "$model" ] || return 0
   code="$(curl -s -m "$ORCH_PROBE_TIMEOUT" -o /dev/null -w '%{http_code}' "$ORCH_URL/v1/chat/completions" \
     -H 'content-type: application/json' \
     -H "Authorization: Bearer $WATCHDOG_KEY" \
-    --data "{\"model\":\"$ORCH_MODEL\",\"messages\":[{\"role\":\"user\",\"content\":\"ping\"}],\"max_tokens\":1}" 2>/dev/null || echo 000)"
+    --data "{\"model\":\"$model\",\"messages\":[{\"role\":\"user\",\"content\":\"ping\"}],\"max_tokens\":1}" 2>/dev/null || echo 000)"
   [ "$code" = "200" ]
+}
+
+# --- Orchestrator crash detection straight from the server log ---
+# mlx-lm leaks live Metal buffer descriptors while decoding and eventually throws
+#   RuntimeError: [metal::malloc] Resource limit (499000) exceeded.
+# which kills the server's single generation thread. 499000 is a COUNT of live Metal buffers, not
+# bytes — the machine is not out of memory when this fires. The process survives and keeps answering
+# /v1/models with 200 while every completion hangs forever, so the completion probe below only
+# notices after ORCH_BAD_LIMIT x ORCH_PROBE_INTERVAL (~10 min), and `orchestrator_served_recently`
+# can stretch that further by reading a pre-crash success as "busy, not wedged". That is how
+# 2026-08-24 cost ~36 minutes across four crashes. The traceback is unambiguous and free to grep
+# every tick, which brings recovery down to one tick.
+# Upstream: ml-explore/mlx-lm issues #831, #1185, #1332 — all open, no released fix, so restarting
+# is the only lever we have. Drop this block once a release fixes the leak.
+ORCH_LOG="${ORCH_LOG:-$HOME_DIR/ai/logs/orchestrator.log}"
+ORCH_CRASH_RE="${ORCH_CRASH_RE:-Exception in thread Thread-1 \(_generate\)|metal::malloc\] Resource limit}"
+
+orch_crash_in_new_log() {  # 0 iff the generation thread died in log written since the last tick
+  [ -f "$ORCH_LOG" ] || return 1
+  local size seen
+  size="$(wc -c < "$ORCH_LOG" 2>/dev/null | tr -d ' ')" || return 1
+  case "$size" in ''|*[!0-9]*) return 1 ;; esac
+  # First run, or the log was rotated/truncated: adopt the current end and scan nothing. Without
+  # this the first tick after deploying would restart on crashes that were recovered hours ago.
+  case "${orch_log_pos:-}" in
+    ''|*[!0-9]*) orch_log_pos="$size"; return 1 ;;
+  esac
+  if [ "$orch_log_pos" -gt "$size" ]; then orch_log_pos="$size"; return 1; fi
+  seen="$orch_log_pos"
+  orch_log_pos="$size"
+  [ "$size" -gt "$seen" ] || return 1
+  tail -c "+$(( seen + 1 ))" "$ORCH_LOG" 2>/dev/null | grep -qE "$ORCH_CRASH_RE"
 }
 
 orchestrator_served_recently() {  # 0 iff a successful orchestrator completion is in telemetry within the window
@@ -129,13 +179,33 @@ write_state() { printf 'status=%s\nlast_recover=%s\nmeter_bad=%s\n' "$1" "$2" "$
 # incident: process idle at 0% CPU). A real completion probe is the only true health test, but it ALSO
 # times out when the orchestrator is merely BUSY (mlx serializes), so a probe failure counts as
 # "wedged" only when no real orchestrator completion succeeded recently. Same pattern as the meter fix.
-orch_bad=0; orch_last_recover=0; orch_last_probe=0
+orch_bad=0; orch_last_recover=0; orch_last_probe=0; orch_log_pos=""
 # shellcheck disable=SC1090
 [ -f "$ORCH_STATE" ] && . "$ORCH_STATE" 2>/dev/null || true
-write_orch() { printf 'orch_bad=%s\norch_last_recover=%s\norch_last_probe=%s\n' "$1" "$2" "${3:-$orch_last_probe}" > "$ORCH_STATE"; }
+write_orch() {
+  printf 'orch_bad=%s\norch_last_recover=%s\norch_last_probe=%s\norch_log_pos=%s\n' \
+    "$1" "$2" "${3:-$orch_last_probe}" "${4:-${orch_log_pos:-}}" > "$ORCH_STATE"
+}
 
-if [ $(( now - orch_last_probe )) -lt "$ORCH_PROBE_INTERVAL" ]; then
-  : # not due yet — the probe is real inference, so it runs on its own interval, not every tick
+# Checked every tick (reading a few log bytes is free), and BEFORE the completion probe: a crashed
+# generation thread is proof of a wedge, so there is nothing to confirm by waiting.
+if orch_crash_in_new_log; then
+  if [ $(( now - orch_last_recover )) -lt "$COOLDOWN" ]; then
+    logln "  orchestrator generation thread crashed (mlx Metal buffer limit) — within ${COOLDOWN}s cooldown, no action this tick"
+    write_orch "$orch_bad" "$orch_last_recover"
+  elif [ "$DRYRUN" = "1" ]; then
+    logln "  [dry-run] orchestrator generation thread crashed (mlx Metal buffer limit) — would restart $ORCH_LABEL"
+    write_orch 0 "$now"
+  else
+    logln "  orchestrator CRASHED — mlx generation thread died on the Metal buffer limit; restarting $ORCH_LABEL"
+    launchctl kickstart -k "gui/$UID_NUM/$ORCH_LABEL" >> "$LOG" 2>&1 || logln "  orchestrator kickstart failed"
+    notify "Orchestrator crashed 🔧 — mlx hit its Metal buffer limit; restarted (reloads the 35B)"
+    write_orch 0 "$now"
+  fi
+elif [ $(( now - orch_last_probe )) -lt "$ORCH_PROBE_INTERVAL" ]; then
+  # Not due yet — the probe is real inference, so it runs on its own interval, not every tick.
+  # Still persist state so the log scan position advances and the next tick reads only new bytes.
+  write_orch "$orch_bad" "$orch_last_recover"
 elif { orch_last_probe="$now"; probe_orchestrator; }; then
   [ "${orch_bad:-0}" -gt 0 ] && { logln "orchestrator RECOVERED — serving completions"; notify "Orchestrator recovered ✅"; }
   write_orch 0 "$orch_last_recover"

@@ -123,6 +123,55 @@ tail -100 ~/ai/logs/developer.log
 tail -100 ~/ai/logs/reviewer.log
 ```
 
+## Requests hang for minutes while the endpoint still looks healthy
+
+Symptom: the dashboard shows the endpoint green and `/v1/models` answers instantly, but
+every chat request hangs until the client's own timeout. Clients report
+`UND_ERR_BODY_TIMEOUT` or `UND_ERR_HEADERS_TIMEOUT`, never an HTTP error.
+
+Look for a dead generation thread in the server log:
+
+```bash
+grep -n "Resource limit\|Exception in thread Thread-1" ~/ai/logs/orchestrator.log | tail
+```
+
+```
+RuntimeError: [metal::malloc] Resource limit (499000) exceeded.
+```
+
+**This is not an out-of-memory error.** 499000 is a cap on the *number* of live Metal
+buffers a process may hold, not their size — a probe allocating 499,000 tiny arrays throws
+at exactly that count with 2 MB in use. The cap is per process, so a second model server on
+the same Mac does not eat into it.
+
+The cause is a leak of live Metal buffer descriptors in mlx-lm's decode path, tracked
+upstream in [mlx-lm#831](https://github.com/ml-explore/mlx-lm/issues/831),
+[#1185](https://github.com/ml-explore/mlx-lm/issues/1185) and
+[#1332](https://github.com/ml-explore/mlx-lm/issues/1332). All three are open; there is no
+released fix. It kills the server's single generation thread while the HTTP thread keeps
+serving `/v1/models`, which is why nothing short of a real completion detects it.
+
+Restarting the server is the only remedy:
+
+```bash
+launchctl kickstart -k "gui/$(id -u)/com.localai.orchestrator"
+```
+
+`scripts/m2-watchdog.sh` now does this automatically. It greps the server log for the
+traceback every tick and restarts on first sight, instead of waiting out two failed
+completion probes (~9 minutes). Observed 2026-08-24: four crashes in 90 minutes under a
+long OpenCode session, 16 failed requests.
+
+**Reduce how often it fires** by keeping very long contexts off the orchestrator. Measured
+over that day's traffic, the orchestrator is much faster than the developer endpoint below
+150k tokens and much slower above it — which is also where it crashes:
+
+| Prompt size | Orchestrator | Developer |
+| --- | --- | --- |
+| 50–100k | 6.0s | 100.4s |
+| 100–150k | 23.9s | 83.0s |
+| >150k | 173.9s | 67.9s |
+
 ## Machine feels sluggish
 
 Check memory pressure:

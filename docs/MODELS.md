@@ -5,17 +5,29 @@
 ### Orchestrator — Machine 1
 
 ```text
-TheCluster/Qwen3.6-35B-A3B-Heretic-MLX-bf16
-Local path: ~/ai/models/orchestrator-qwen36-35b-a3b-heretic-bf16
-Endpoint: http://127.0.0.1:8001/v1
+TheCluster/Qwen3.6-35B-A3B-Heretic-MLX-mixed-9bit   (qwen3_5_moe, 40 layers, 256 experts, 38 GB)
+Local path: ~/ai/models/orchestrator-qwen36-35b-a3b-heretic-mixed9
+Endpoint: http://127.0.0.1:8001/v1   (metered on :9001)
 ```
 
-Optional fallback:
+This is what `com.localai.orchestrator` actually loads — the plist sets `ORCH_MODEL_PATH` to the
+mixed-9bit build, which is also what `METER_ORCH_MODEL` pins on `:9001`. The bf16 build below is
+still on disk as a fallback but is **not** served.
 
 ```text
-TheCluster/Qwen3.6-35B-A3B-Heretic-MLX-mixed-9bit
-Local path: ~/ai/models/orchestrator-qwen36-35b-a3b-heretic-mixed9
+TheCluster/Qwen3.6-35B-A3B-Heretic-MLX-bf16   (65 GB, fallback only)
+Local path: ~/ai/models/orchestrator-qwen36-35b-a3b-heretic-bf16
 ```
+
+> **Known failure: the generation thread dies under sustained long-context load.** mlx-lm leaks
+> live Metal buffer descriptors while decoding and eventually throws
+> `[metal::malloc] Resource limit (499000) exceeded` — a cap on the *number* of live Metal buffers,
+> not on memory. The process keeps answering `/v1/models` with 200 while every completion hangs, so
+> only a real completion detects it. Upstream: [mlx-lm#831](https://github.com/ml-explore/mlx-lm/issues/831),
+> [#1185](https://github.com/ml-explore/mlx-lm/issues/1185),
+> [#1332](https://github.com/ml-explore/mlx-lm/issues/1332) — all open, no released fix.
+> `scripts/m2-watchdog.sh` greps the server log every tick and restarts on first sight. Keep prompts
+> above ~150k tokens off this endpoint; see `docs/TROUBLESHOOTING.md` for the measured crossover.
 
 ### Developer — Machine 2
 
@@ -198,6 +210,14 @@ is already running and already metered.
 
 **Never point review or coding traffic at it.** mlx-vlm cannot enable thinking, and the code-review
 eval measured that at 89% -> 78% recall.
+
+Stop it when the batch finishes — it pins ~40 GB whether or not anything is calling it:
+
+```bash
+pkill -f 'mlx_vlm server.*--port 8010'
+```
+
+(Left running idle from 10:16 to 18:20 on 2026-08-24 after the Phase 8 batch; stopped by hand.)
 
 ## Kimi K2.6 — on disk, runnable, not yet served (as of 2026-08-24)
 
