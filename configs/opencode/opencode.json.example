@@ -1,6 +1,6 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "small_model": "glm-meter/glm-5.2",
+  "small_model": "local-orch//Users/kenallred/ai/models/orchestrator-qwen36-35b-a3b-heretic-mixed9",
   "compaction": {
     "auto": true,
     "prune": true,
@@ -8,12 +8,21 @@
   },
   "agent": {
     "review": {
-      "description": "Lean one-shot code reviewer for MMR — no tools, minimal context, smaller prompts.",
+      "description": "Lean one-shot code reviewer for MMR \u2014 no tools, minimal context, smaller prompts.",
       "prompt": "You are a precise senior code reviewer. Review ONLY the diff/code provided in the message and report concrete, actionable issues. Do not call tools.",
       "tools": {
-        "write": false, "edit": false, "patch": false, "bash": false,
-        "read": false, "grep": false, "glob": false, "list": false,
-        "webfetch": false, "task": false, "todowrite": false, "todoread": false
+        "write": false,
+        "edit": false,
+        "patch": false,
+        "bash": false,
+        "read": false,
+        "grep": false,
+        "glob": false,
+        "list": false,
+        "webfetch": false,
+        "task": false,
+        "todowrite": false,
+        "todoread": false
       }
     }
   },
@@ -21,51 +30,91 @@
     "local-orch": {
       "npm": "@ai-sdk/openai-compatible",
       "name": "Local Orchestrator (metered)",
-      "options": { "baseURL": "http://127.0.0.1:9001/v1", "apiKey": "opencode" },
+      "options": {
+        "baseURL": "http://127.0.0.1:9001/v1",
+        "apiKey": "opencode",
+        "timeout": 1800000,
+        "chunkTimeout": 300000
+      },
       "models": {
         "/Users/kenallred/ai/models/orchestrator-qwen36-35b-a3b-heretic-mixed9": {
-          "name": "Orchestrator · Qwen3.6-35B-A3B 9-bit (M1)",
-          "limit": { "context": 131072, "output": 16384 }
+          "name": "Orchestrator \u00b7 Qwen3.6-35B-A3B 9-bit (M1)",
+          "limit": {
+            "context": 131072,
+            "output": 32000
+          }
         }
       }
     },
     "local-dev": {
       "npm": "@ai-sdk/openai-compatible",
       "name": "Local Developer (metered)",
-      "options": { "baseURL": "http://127.0.0.1:9002/v1", "apiKey": "opencode" },
+      "options": {
+        "baseURL": "http://127.0.0.1:9002/v1",
+        "apiKey": "opencode",
+        "timeout": 1800000,
+        "chunkTimeout": 300000
+      },
       "models": {
         "/Users/admin/ai/models/developer-qwen38-27b-8bit": {
-          "name": "Developer · Qwen3.8-27B 8-bit (M2)",
-          "limit": { "context": 131072, "output": 16384 }
+          "name": "Developer \u00b7 Qwen3.8-27B 8-bit (M2)",
+          "limit": {
+            "context": 131072,
+            "output": 32000
+          }
         }
       }
     },
     "local-review": {
       "npm": "@ai-sdk/openai-compatible",
       "name": "Local Reviewer (metered, via review router)",
-      "options": { "baseURL": "http://127.0.0.1:9006/v1", "apiKey": "opencode" },
+      "options": {
+        "baseURL": "http://127.0.0.1:9006/v1",
+        "apiKey": "opencode",
+        "timeout": 1800000,
+        "chunkTimeout": 300000
+      },
       "models": {
         "/Users/admin/ai/models/developer-qwen38-27b-8bit": {
-          "name": "Reviewer · Qwen3.8-27B 8-bit (M2)",
-          "limit": { "context": 131072, "output": 16384 }
+          "name": "Reviewer \u00b7 Qwen3.8-27B 8-bit (M2)",
+          "limit": {
+            "context": 131072,
+            "output": 32000
+          }
         }
       }
     },
     "glm-meter": {
       "npm": "@ai-sdk/openai-compatible",
       "name": "Z.ai via meter (tracked)",
-      "options": { "baseURL": "http://127.0.0.1:9004/v1", "apiKey": "opencode" },
+      "options": {
+        "baseURL": "http://127.0.0.1:9004/v1",
+        "apiKey": "opencode"
+      },
       "models": {
-        "glm-5.2": { "name": "GLM-5.2 · metered", "limit": { "context": 1000000, "output": 65536 } }
+        "glm-5.2": {
+          "name": "GLM-5.2 \u00b7 metered",
+          "limit": {
+            "context": 1000000,
+            "output": 65536
+          }
+        }
       }
     },
     "deepseek-meter": {
       "npm": "@ai-sdk/openai-compatible",
       "name": "DeepSeek (via meter)",
-      "options": { "baseURL": "http://127.0.0.1:9005/v1", "apiKey": "opencode" },
+      "options": {
+        "baseURL": "http://127.0.0.1:9005/v1",
+        "apiKey": "opencode"
+      },
       "models": {
-        "deepseek-v4-pro": { "name": "DeepSeek v4 Pro" },
-        "deepseek-v4-flash": { "name": "DeepSeek v4 Flash" }
+        "deepseek-v4-pro": {
+          "name": "DeepSeek v4 Pro"
+        },
+        "deepseek-v4-flash": {
+          "name": "DeepSeek v4 Flash"
+        }
       }
     }
   },
@@ -95,5 +144,11 @@
       }
     }
   },
-  "plugin": ["superpowers@git+https://github.com/obra/superpowers.git"]
+  "plugin": [
+    "superpowers@git+https://github.com/obra/superpowers.git",
+    "/Users/kenallred/Developer/server-setup/configs/opencode/plugins/local-stall-alert.mjs"
+  ],
+  "tools": {
+    "local-ai-delegate_run_local_plan": false
+  }
 }

@@ -23,6 +23,9 @@ LOCAL_PROVIDERS = ("local-orch", "local-dev", "local-review")
 # Above roughly this size the orchestrator is slower than the developer endpoint AND is where it
 # crashed. See docs/dev-stack-models.md for the measured crossover.
 MAX_CONTEXT = 131_072
+# OpenCode clamps max_tokens at 32000 on the wire regardless of a larger limit.output, and the
+# orchestrator has been truncated at exactly that ceiling — so 32000 is both the floor and the cap.
+EXPECTED_OUTPUT = 32_000
 
 
 def config() -> dict:
@@ -39,7 +42,10 @@ def test_local_models_declare_a_context_cap() -> None:
             assert limit["context"] <= MAX_CONTEXT, (
                 f"{provider}/{model_id} allows {limit['context']} tokens, above the {MAX_CONTEXT} cap"
             )
-            assert limit.get("output"), f"{provider}/{model_id} has no limit.output"
+            assert limit.get("output") == EXPECTED_OUTPUT, (
+                f"{provider}/{model_id} caps output at {limit.get('output')}; the orchestrator has "
+                f"produced {EXPECTED_OUTPUT}-token turns and gets cut off below that"
+            )
 
 
 def test_local_model_ids_are_paths_the_servers_actually_serve() -> None:
@@ -70,3 +76,51 @@ def test_review_provider_points_at_the_router() -> None:
     """:9006 is the review router (M2 reviewer, spilling to M1); :9003 is the reviewer alone."""
     url = config()["provider"]["local-review"]["options"]["baseURL"]
     assert "9006" in url, f"local-review should use the review router on :9006, got {url}"
+
+
+def test_local_providers_set_their_own_timeouts() -> None:
+    """A wedged endpoint must fail on a bounded clock, and a slow one must not be cut off early.
+
+    Worst observed time-to-first-token on these endpoints is 209s, so a default chunk timeout in the
+    tens of seconds would kill healthy turns; and OpenCode does not retry a chunk timeout at all
+    (anomalyco/opencode#20466), so a killed turn is a stall the operator has to notice by hand.
+    """
+    for provider in LOCAL_PROVIDERS:
+        options = config()["provider"][provider]["options"]
+        assert options.get("timeout"), f"{provider} has no request timeout"
+        assert options.get("chunkTimeout", 0) >= 210_000, (
+            f"{provider} chunkTimeout is below the 209s worst-case first token seen on this stack"
+        )
+
+
+def test_instructions_do_not_duplicate_the_auto_loaded_agents_file() -> None:
+    """~/.config/opencode/AGENTS.md is auto-loaded; naming it again sent every house rule twice."""
+    instructions = config().get("instructions", [])
+    assert not any("AGENTS.md" in str(i) for i in instructions), (
+        "AGENTS.md is already auto-loaded from the OpenCode config dir; listing it in `instructions` "
+        "put 12,555 duplicated characters in every single request"
+    )
+
+
+def test_the_stall_alert_plugin_is_wired_up() -> None:
+    """Upstream failures end a turn silently; the plugin is the only thing that surfaces them."""
+    assert any("local-stall-alert" in p for p in config().get("plugin", []))
+
+
+def test_title_generation_does_not_go_to_a_paid_model() -> None:
+    """21,734 title generations had been going to a cloud model."""
+    assert config()["small_model"].startswith("local-")
+
+
+def test_only_tool_disables_that_actually_work_are_kept() -> None:
+    """Config should not carry patterns that were measured to do nothing.
+
+    OpenCode's `tools` block reaches MCP tools by their server prefix. Its own built-in
+    list_mcp_resources / list_mcp_resource_templates / read_mcp_resource are NOT reachable: `mcp*`,
+    `*resource*` and `*mcp_resource*` were each sent through a recording endpoint and left all
+    three in the tool list. Keeping such a pattern reads as coverage that does not exist.
+    """
+    tools = config().get("tools", {})
+    dead = [k for k in tools if "resource" in k or k.startswith("mcp")]
+    assert not dead, f"these patterns were measured to have no effect: {dead}"
+    assert tools.get("local-ai-delegate_run_local_plan") is False
