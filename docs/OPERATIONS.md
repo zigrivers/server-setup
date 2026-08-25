@@ -94,6 +94,23 @@ METER_PORTS="9002 9003 9006" scripts/install-launchd-machine1.sh m2-watchdog
 
 That example omits disabled GLM port 9004.
 
+### What else the watchdog covers
+
+`/v1/models` returning 200 proves the process is alive, not that it can generate. mlx's
+generation thread can die on its own (see the Metal buffer limit in
+`docs/TROUBLESHOOTING.md`) and leave a server that passes every route check while hanging
+on real work. Three separate checks close that gap:
+
+| Endpoint | How a wedge is detected | How it is restarted |
+| --- | --- | --- |
+| orchestrator (M1) | its server log is grepped for the crash every tick, plus a real completion probe every 5 min | `launchctl kickstart` |
+| developer (M2) | 3+ chat failures and zero successes in 15 min, read from the meter's telemetry | `ssh m2 pkill` — launchd `KeepAlive` reloads it |
+| reviewer (M2) | same | same |
+
+Tunable with `M2_WORKERS`, `M2_WEDGE_WINDOW`, `M2_WEDGE_FAILURES`, `M2_SSH_HOST`. The M2
+restart needs working key-based ssh to the `m2` host alias and no sudo — the workers are
+LaunchDaemons running as `admin`, so `admin` can signal them.
+
 ## Plan → execute workflow
 
 In a project repo:
