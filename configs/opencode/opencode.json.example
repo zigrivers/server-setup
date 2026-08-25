@@ -24,7 +24,7 @@
       "options": { "baseURL": "http://127.0.0.1:9001/v1", "apiKey": "opencode" },
       "models": {
         "/Users/kenallred/ai/models/orchestrator-qwen36-35b-a3b-heretic-mixed9": {
-          "name": "Orchestrator 35B MoE",
+          "name": "Orchestrator · Qwen3.6-35B-A3B 9-bit (M1)",
           "limit": { "context": 131072, "output": 16384 }
         }
       }
@@ -35,7 +35,7 @@
       "options": { "baseURL": "http://127.0.0.1:9002/v1", "apiKey": "opencode" },
       "models": {
         "/Users/admin/ai/models/developer-qwen38-27b-8bit": {
-          "name": "Developer 27B",
+          "name": "Developer · Qwen3.8-27B 8-bit (M2)",
           "limit": { "context": 131072, "output": 16384 }
         }
       }
@@ -46,17 +46,17 @@
       "options": { "baseURL": "http://127.0.0.1:9006/v1", "apiKey": "opencode" },
       "models": {
         "/Users/admin/ai/models/developer-qwen38-27b-8bit": {
-          "name": "Reviewer 27B",
+          "name": "Reviewer · Qwen3.8-27B 8-bit (M2)",
           "limit": { "context": 131072, "output": 16384 }
         }
       }
     },
     "glm-meter": {
       "npm": "@ai-sdk/openai-compatible",
-      "name": "GLM-5.2 (Z.ai via meter)",
+      "name": "Z.ai via meter (tracked)",
       "options": { "baseURL": "http://127.0.0.1:9004/v1", "apiKey": "opencode" },
       "models": {
-        "glm-5.2": { "name": "GLM-5.2", "limit": { "context": 1000000, "output": 65536 } }
+        "glm-5.2": { "name": "GLM-5.2 · metered", "limit": { "context": 1000000, "output": 65536 } }
       }
     },
     "deepseek-meter": {
