@@ -33,6 +33,70 @@ secret. Providers:
 > pins the right model per port (`METER_ORCH_MODEL`, `METER_DEV_MODEL`, `METER_REVIEW_MODEL`), which
 > masks a wrong id rather than fixing it — keep these accurate anyway.
 
+### Why local turns used to stop mid-task
+
+The symptom was OpenCode going quiet part-way through a job, needing a typed "continue". Measured
+2026-08-25 from OpenCode's own session database (58k assistant turns), its log, and the meter.
+
+**It was almost always the endpoint dying, not OpenCode losing its place.** Turns that never
+completed, over 7 days: glm-meter 0.9%, local-orch 0.0%, local-dev 38.1%. Broken down by hour,
+2026-08-25 00:00–04:00 shows 40 local turns and 40 failures — exactly the M2 wedge window. Earlier,
+5,167 of 5,430 `local-review` stream errors were `Bad Gateway` clustered on Aug 2–6, the M2 outage
+that went unreported for four days.
+
+What made it *look* like an OpenCode fault is that it fails silently: three retries, an
+`AI_RetryError: Failed after 3 attempts` line in its log, then the turn simply ends with nothing on
+screen. `configs/opencode/plugins/local-stall-alert.mjs` now raises a desktop notification on
+`session.error` so an outage announces itself.
+
+The second cause was real but rarer: the orchestrator hit its output ceiling and was cut off
+mid-work. Only 2 of 34 recorded "continue" nudges followed a local turn, and both had
+`finish=length`. `local-orch` truncates on 1.2% of turns against glm-5.2's 0.01%.
+
+Two upstream OpenCode bugs make both worse and **cannot be fixed from here**: SSE/chunk timeouts are
+not classified as retryable, so such a turn dies with no retry
+([#20466](https://github.com/anomalyco/opencode/issues/20466)); and a successful response carrying
+zero content reads as "task complete" ([#31430](https://github.com/anomalyco/opencode/issues/31430)).
+The second does not currently affect this stack — zero of 4,315 captured local responses were empty.
+
+### What each local setting is for
+
+| Setting | Value | Why |
+|---|---|---|
+| `limit.context` | 131,072 | Below the measured crossover where the orchestrator stops being the faster endpoint |
+| `limit.output` | 32,000 | The ceiling the orchestrator has actually hit; OpenCode clamps the wire value at 32,000 regardless of a higher number here |
+| `options.timeout` | 1,800,000 | 32,000 tokens at ~12 tok/s is ~45 min worst case; 30 min covers real work while still bounding a hang |
+| `options.chunkTimeout` | 300,000 | Gap *between* chunks. Worst observed time-to-first-token on these endpoints is 209s |
+| `compaction.reserved` | 16,000 | A thinking model needs room to write the summary |
+| `tools` | 1 disabled | `local-ai-delegate_run_local_plan` was never called once in 47,240 recorded tool calls, yet shipped in every request |
+| `small_model` | local-orch | 21,734 title generations were going to a paid cloud model |
+
+Not set: `steps`. Leaving it unset lets an agent iterate until the model stops, which is what you
+want for long local jobs — capping it forces a text-only summary mid-task, which looks exactly like
+the stall this section is about.
+
+### Keep the system prompt small
+
+Every local turn pays for the whole request up front. Measured with a throwaway recording endpoint,
+the request for the message "say hi" was 121 KB — an 81,046-character system prompt plus 19 tool
+definitions, about 29k tokens, roughly 20 seconds of prompt processing before the first token.
+
+15% of that system prompt was the same text twice. `~/.config/opencode/AGENTS.md` is a symlink to
+`new-mac/config/agents/AGENTS.md`, OpenCode auto-loads it, and `instructions` named the same file
+again by its real path — so every house rule was sent twice. Removing the `instructions` entry cut
+12,555 characters per request with nothing lost.
+
+If you add MCP servers, check what they cost here before keeping them: tool definitions alone were
+31 KB of that request.
+
+Four tools were never called once in 47,240 recorded tool calls. Only one of them can be turned
+off. `local-ai-delegate_run_local_plan` takes the documented `tools` entry because it carries its
+MCP server's prefix. The other three — `list_mcp_resources`, `list_mcp_resource_templates` and
+`read_mcp_resource` — are OpenCode built-ins that appear whenever any MCP server is configured, and
+**they cannot be disabled from config**: `mcp*`, `*resource*` and `*mcp_resource*` were each tested
+against a recording endpoint and left all three in the tool list. The only way to drop them is to
+remove every MCP server, which costs more than it saves.
+
 ### Why the local models carry a context cap
 
 The mlx servers leak Metal buffer descriptors while decoding and eventually die with
