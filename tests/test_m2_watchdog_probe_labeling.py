@@ -13,6 +13,8 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[1]
 SCRIPT = REPO / "scripts" / "m2-watchdog.sh"
 
+SERVED_MODEL = "/Users/kenallred/ai/models/orchestrator-qwen36-35b-a3b-heretic-mixed9"
+
 
 def run_watchdog(tmp_path: Path, *, extra_env: dict[str, str] | None = None) -> list[str]:
     """Run one watchdog tick with fake curl/nc; return the recorded curl invocations."""
@@ -23,12 +25,19 @@ def run_watchdog(tmp_path: Path, *, extra_env: dict[str, str] | None = None) -> 
 
     receipt = tmp_path / "curl-requests.txt"
     fake_curl = bin_dir / "curl"
+    # A probe asking for an http_code gets "200"; a plain GET of /v1/models gets a real model list,
+    # because the completion probe now reads the served model id from there rather than hardcoding
+    # a path (a path mlx is not already serving is an instruction to LOAD a second copy).
     fake_curl.write_text(
         textwrap.dedent(
             f"""\
             #!/bin/sh
             printf '%s\\n' "$*" >> "{receipt}"
-            printf '200'
+            case "$*" in
+              *http_code*) printf '200' ;;
+              */v1/models*) printf '{{"object":"list","data":[{{"id":"{SERVED_MODEL}","object":"model"}}]}}' ;;
+              *) printf '200' ;;
+            esac
             """
         )
     )
