@@ -188,6 +188,37 @@ worker_wedged() {  # $1 = upstream name; 0 iff the window holds chat failures an
   [ "$succs" -eq 0 ] && [ "$fails" -ge "$M2_WEDGE_FAILURES" ]
 }
 
+# --- Keep M2's checkout current ---
+# M2 runs its own clone of this repo at ~/ai/local-ai-stack and nothing ever pulls it. On
+# 2026-08-25 it was found 10 commits behind, so a launcher fix landed on 2026-08-25 was still
+# inert there eight days after the last change — invisible until a restart was expected to pick
+# something up and did not. Once a day is plenty; this is drift, not an outage.
+#
+# --ff-only on purpose: if M2's checkout has diverged (someone edited a script there), this stops
+# and says so rather than merging or discarding their work. Pulling never restarts anything either
+# — a launcher change only takes effect on the next model reload, which is a multi-minute outage
+# and the operator's call to schedule. When a launcher does change, say so.
+M2_SYNC_INTERVAL="${M2_SYNC_INTERVAL:-86400}"
+M2_REPO_DIR="${M2_REPO_DIR:-ai/local-ai-stack}"   # relative to M2's home
+M2_SYNC_STATE="${M2_SYNC_STATE:-$HOME_DIR/ai/logs/m2-watchdog-sync.state}"
+
+# Single-quoted so M1's shell expands nothing; __REPO__ is substituted below.
+M2_SYNC_REMOTE='
+cd "$HOME/__REPO__" 2>/dev/null || { echo NOREPO; exit 0; }
+git rev-parse --git-dir >/dev/null 2>&1 || { echo NOTGIT; exit 0; }
+before=$(git rev-parse --short HEAD)
+git pull -q --ff-only origin main >/dev/null 2>&1 || { echo PULLFAILED; exit 0; }
+after=$(git rev-parse --short HEAD)
+[ "$before" = "$after" ] && { echo "CURRENT $after"; exit 0; }
+echo "MOVED $before $after"
+git diff --name-only "$before" "$after" | grep "^scripts/start-" || true
+'
+
+sync_m2_checkout() {  # prints the remote report; non-zero only if ssh itself failed
+  ssh -o BatchMode=yes -o ConnectTimeout=10 "$M2_SSH_HOST" \
+    "${M2_SYNC_REMOTE//__REPO__/$M2_REPO_DIR}" 2>/dev/null
+}
+
 restart_m2_worker() {  # $1 = port of the wedged mlx server on M2
   # mlx_lm[.]server, not mlx_lm.server: the bracket keeps the pattern from matching the remote shell
   # that is running pkill, which carries the pattern text in its own command line.
@@ -300,6 +331,37 @@ if probe; then
     worker_state_out="${worker_state_out}${worker_var}=${worker_last}"$'\n'
   done
   printf '%s' "$worker_state_out" > "$WORKER_STATE"
+
+  # Pull M2's checkout at most once a day. Only reached when M2 is up, which is exactly when a
+  # pull can succeed.
+  last_sync=0
+  # shellcheck disable=SC1090
+  [ -f "$M2_SYNC_STATE" ] && . "$M2_SYNC_STATE" 2>/dev/null || true
+  case "$last_sync" in ''|*[!0-9]*) last_sync=0 ;; esac
+  if [ $(( now - last_sync )) -ge "$M2_SYNC_INTERVAL" ]; then
+    if [ "$DRYRUN" = "1" ]; then
+      logln "  [dry-run] M2 checkout sync is due — would pull $M2_REPO_DIR on $M2_SSH_HOST"
+    else
+      sync_report="$(sync_m2_checkout)" || sync_report="SSHFAILED"
+      case "${sync_report%%$'\n'*}" in
+        MOVED*)
+          # First line is "MOVED <before> <after>"; any further lines are changed launcher scripts.
+          read -r _moved before after <<< "${sync_report%%$'\n'*}"
+          changed="$(printf '%s' "$sync_report" | sed -n '2,$p' | tr '\n' ' ')"
+          logln "  M2 checkout updated ${before}..${after}${changed:+ (launchers changed: $changed)}"
+          # Only worth interrupting the operator when a restart is actually needed to apply it.
+          [ -n "$changed" ] && notify "M2 launchers updated 🔄 — restart its workers to apply: $changed"
+          ;;
+        CURRENT*)   : ;;               # already up to date, every other day — not worth a log line
+        PULLFAILED) logln "  M2 checkout would not fast-forward — it has local changes or has diverged; leaving it alone"
+                    notify "M2 checkout is stuck 🔧 — it will not fast-forward; look at ~/$M2_REPO_DIR on M2" ;;
+        NOREPO|NOTGIT) logln "  M2 has no git checkout at ~/$M2_REPO_DIR — nothing to sync" ;;
+        SSHFAILED)  logln "  could not reach $M2_SSH_HOST to sync its checkout" ;;
+        *)          logln "  unexpected reply from the M2 checkout sync: ${sync_report:-<empty>}" ;;
+      esac
+    fi
+    printf 'last_sync=%s\n' "$now" > "$M2_SYNC_STATE"
+  fi
 
   # M2's ports answer, but the meter can still be wedged on stale connections after a Thunderbolt link
   # flap (M2 up, yet every proxied request 502s — the exact 2026-06-29 incident). Detect by probing M2
