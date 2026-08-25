@@ -1,6 +1,11 @@
 {
   "$schema": "https://opencode.ai/config.json",
   "small_model": "glm-meter/glm-5.2",
+  "compaction": {
+    "auto": true,
+    "prune": true,
+    "reserved": 16000
+  },
   "agent": {
     "review": {
       "description": "Lean one-shot code reviewer for MMR — no tools, minimal context, smaller prompts.",
@@ -18,7 +23,10 @@
       "name": "Local Orchestrator (metered)",
       "options": { "baseURL": "http://127.0.0.1:9001/v1", "apiKey": "opencode" },
       "models": {
-        "/Users/kenallred/ai/models/orchestrator-qwen36-35b-a3b-heretic-bf16": { "name": "Orchestrator 35B MoE" }
+        "/Users/kenallred/ai/models/orchestrator-qwen36-35b-a3b-heretic-mixed9": {
+          "name": "Orchestrator 35B MoE",
+          "limit": { "context": 131072, "output": 16384 }
+        }
       }
     },
     "local-dev": {
@@ -26,7 +34,10 @@
       "name": "Local Developer (metered)",
       "options": { "baseURL": "http://127.0.0.1:9002/v1", "apiKey": "opencode" },
       "models": {
-        "llmfan46/Qwen3.6-27B-uncensored-heretic-v2": { "name": "Developer 27B" }
+        "/Users/admin/ai/models/developer-qwen38-27b-8bit": {
+          "name": "Developer 27B",
+          "limit": { "context": 131072, "output": 16384 }
+        }
       }
     },
     "local-review": {
@@ -34,7 +45,10 @@
       "name": "Local Reviewer (metered, via review router)",
       "options": { "baseURL": "http://127.0.0.1:9006/v1", "apiKey": "opencode" },
       "models": {
-        "llmfan46/Qwen3.6-27B-uncensored-heretic-v2": { "name": "Reviewer 27B" }
+        "/Users/admin/ai/models/developer-qwen38-27b-8bit": {
+          "name": "Reviewer 27B",
+          "limit": { "context": 131072, "output": 16384 }
+        }
       }
     },
     "glm-meter": {
