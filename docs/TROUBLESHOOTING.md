@@ -129,10 +129,12 @@ Symptom: the dashboard shows the endpoint green and `/v1/models` answers instant
 every chat request hangs until the client's own timeout. Clients report
 `UND_ERR_BODY_TIMEOUT` or `UND_ERR_HEADERS_TIMEOUT`, never an HTTP error.
 
-Look for a dead generation thread in the server log:
+**Every mlx endpoint is affected**, not just the orchestrator. Look for a dead generation thread in
+the relevant server log:
 
 ```bash
-grep -n "Resource limit\|Exception in thread Thread-1" ~/ai/logs/orchestrator.log | tail
+grep -n "Resource limit\|Exception in thread Thread-1" ~/ai/logs/orchestrator.log | tail   # M1
+ssh m2 'grep -c "Resource limit" ~/ai/logs/developer.log ~/ai/logs/reviewer.log'            # M2
 ```
 
 ```
@@ -151,16 +153,34 @@ upstream in [mlx-lm#831](https://github.com/ml-explore/mlx-lm/issues/831),
 released fix. It kills the server's single generation thread while the HTTP thread keeps
 serving `/v1/models`, which is why nothing short of a real completion detects it.
 
-Restarting the server is the only remedy:
+Restarting the server is the only remedy. On M1:
 
 ```bash
 launchctl kickstart -k "gui/$(id -u)/com.localai.orchestrator"
 ```
 
-`scripts/m2-watchdog.sh` now does this automatically. It greps the server log for the
-traceback every tick and restarts on first sight, instead of waiting out two failed
-completion probes (~9 minutes). Observed 2026-08-24: four crashes in 90 minutes under a
-long OpenCode session, 16 failed requests.
+On M2 the workers are LaunchDaemons with `KeepAlive SuccessfulExit=false`, so killing the
+process is enough — launchd loads a fresh one, and **no sudo is needed** because the daemon
+runs as `admin`:
+
+```bash
+ssh m2 "pkill -f 'mlx_lm[.]server.*--port 8002'"   # developer;  8003 = reviewer
+```
+
+(The `[.]` keeps the pattern from matching the shell that is running `pkill`.)
+
+`scripts/m2-watchdog.sh` now handles all three automatically, by two different routes:
+
+- **Orchestrator (M1):** greps its server log every tick and restarts on first sight of the
+  traceback, instead of waiting out two failed completion probes (~9 minutes).
+- **Developer and reviewer (M2):** judged from the meter's telemetry, since reading M2's logs
+  would mean an ssh on every tick. An upstream carrying 3+ chat failures and *zero* successes
+  over 15 minutes is wedged by definition; only the restart crosses the link. Failures
+  alongside successes are ordinary life on a busy server and are left alone.
+
+Observed 2026-08-24: four orchestrator crashes in 90 minutes under a long OpenCode session,
+16 failed requests. Observed 2026-08-24/25: developer and reviewer both crashed overnight and
+served nothing for seven hours, 126 failed requests, because nothing was watching them.
 
 **Reduce how often it fires** by keeping very long contexts off the orchestrator. Measured
 over that day's traffic, the orchestrator is much faster than the developer endpoint below

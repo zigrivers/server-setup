@@ -19,15 +19,20 @@ TheCluster/Qwen3.6-35B-A3B-Heretic-MLX-bf16   (65 GB, fallback only)
 Local path: ~/ai/models/orchestrator-qwen36-35b-a3b-heretic-bf16
 ```
 
-> **Known failure: the generation thread dies under sustained long-context load.** mlx-lm leaks
-> live Metal buffer descriptors while decoding and eventually throws
+> **Known failure, affecting EVERY mlx endpoint here — not only this one.** mlx-lm leaks live Metal
+> buffer descriptors while decoding and eventually throws
 > `[metal::malloc] Resource limit (499000) exceeded` — a cap on the *number* of live Metal buffers,
-> not on memory. The process keeps answering `/v1/models` with 200 while every completion hangs, so
-> only a real completion detects it. Upstream: [mlx-lm#831](https://github.com/ml-explore/mlx-lm/issues/831),
+> not on memory, so the machine is not out of RAM when it fires. It kills the server's generation
+> thread while the process keeps answering `/v1/models` with 200, so only a real completion detects
+> it. Upstream: [mlx-lm#831](https://github.com/ml-explore/mlx-lm/issues/831),
 > [#1185](https://github.com/ml-explore/mlx-lm/issues/1185),
-> [#1332](https://github.com/ml-explore/mlx-lm/issues/1332) — all open, no released fix.
-> `scripts/m2-watchdog.sh` greps the server log every tick and restarts on first sight. Keep prompts
-> above ~150k tokens off this endpoint; see `docs/TROUBLESHOOTING.md` for the measured crossover.
+> [#1332](https://github.com/ml-explore/mlx-lm/issues/1332) — all open, no released fix, so
+> restarting is the only lever.
+>
+> Seen on the orchestrator (2026-08-24, four crashes in 90 minutes) and on both M2 workers
+> (2026-08-24/25, seven hours serving nothing). `scripts/m2-watchdog.sh` now covers all three; see
+> `docs/TROUBLESHOOTING.md` for how it detects each and for the measured context crossover that
+> makes it fire less often.
 
 ### Developer — Machine 2
 

@@ -155,6 +155,46 @@ orch_crash_in_new_log() {  # 0 iff the generation thread died in log written sin
   tail -c "+$(( seen + 1 ))" "$ORCH_LOG" 2>/dev/null | grep -qE "$ORCH_CRASH_RE"
 }
 
+# --- M2 worker wedge detection ---
+# The developer and reviewer servers hit the SAME mlx Metal-buffer crash described above, and their
+# generation threads die the same way while /v1/models keeps returning 200. On 2026-08-24/25 both
+# wedged overnight and served nothing for seven hours (126 failed requests) because this watchdog
+# only ever looked at the orchestrator.
+#
+# Detection here is local and free rather than another log grep across the link: the meter already
+# records every client request, so an upstream carrying several failures and NO successes over the
+# window is wedged by definition. Only the restart crosses to M2, and it needs no sudo — the workers
+# are LaunchDaemons with KeepAlive SuccessfulExit=false, so killing the process makes launchd start
+# a fresh one.
+M2_WORKERS="${M2_WORKERS:-developer:8002 reviewer:8003}"
+M2_WEDGE_WINDOW="${M2_WEDGE_WINDOW:-900}"      # seconds of history the verdict is based on
+M2_WEDGE_FAILURES="${M2_WEDGE_FAILURES:-3}"    # failures needed, alongside zero successes
+M2_SSH_HOST="${M2_SSH_HOST:-m2}"               # ~/.ssh/config alias; key auth, never prompts
+WORKER_STATE="${WORKER_STATE:-$HOME_DIR/ai/logs/m2-watchdog-workers.state}"
+
+worker_wedged() {  # $1 = upstream name; 0 iff the window holds chat failures and no successes
+  command -v sqlite3 >/dev/null 2>&1 || return 1
+  [ -f "$TELEMETRY_DB" ] || return 1
+  local row fails succs
+  # One row of "fails|successes" so a single query decides it. Restricted to kind='chat' because
+  # only a real completion proves the generation thread is alive; /v1/models answers either way.
+  row="$(sqlite3 "$TELEMETRY_DB" \
+    "SELECT COALESCE(SUM(error_class<>'ok'),0)||'|'||COALESCE(SUM(error_class='ok'),0)
+       FROM requests
+      WHERE upstream='$1' AND kind='chat'
+        AND ts >= $(( (now - M2_WEDGE_WINDOW) * 1000 ));" 2>/dev/null)" || return 1
+  fails="${row%%|*}"; succs="${row##*|}"
+  case "${fails}${succs}" in ''|*[!0-9]*) return 1 ;; esac
+  [ "$succs" -eq 0 ] && [ "$fails" -ge "$M2_WEDGE_FAILURES" ]
+}
+
+restart_m2_worker() {  # $1 = port of the wedged mlx server on M2
+  # mlx_lm[.]server, not mlx_lm.server: the bracket keeps the pattern from matching the remote shell
+  # that is running pkill, which carries the pattern text in its own command line.
+  ssh -o BatchMode=yes -o ConnectTimeout=5 "$M2_SSH_HOST" \
+    "pkill -f 'mlx_lm[.]server.*--port $1'" >> "$LOG" 2>&1
+}
+
 orchestrator_served_recently() {  # 0 iff a successful orchestrator completion is in telemetry within the window
   command -v sqlite3 >/dev/null 2>&1 || return 1  # can't tell → treat as not-recent, lean on the probe
   [ -f "$TELEMETRY_DB" ] || return 1
@@ -232,6 +272,35 @@ fi
 # ---- M2 reachable directly ----
 if probe; then
   [ "$prev_status" = "down" ] && { logln "M2 RECOVERED — ports ${PORTS[*]} reachable"; notify "M2 worker recovered ✅"; }
+
+  # Individual workers can be wedged while the machine and its ports are perfectly reachable — the
+  # mlx generation thread dies but the socket stays open. Only checked here, inside the reachable
+  # branch: when M2 is down every request fails too, and that is a link problem, not a wedge.
+  # shellcheck disable=SC1090
+  [ -f "$WORKER_STATE" ] && . "$WORKER_STATE" 2>/dev/null || true
+  worker_state_out=""
+  for worker_spec in $M2_WORKERS; do
+    worker_name="${worker_spec%%:*}"; worker_port="${worker_spec##*:}"
+    worker_var="kick_$worker_name"
+    worker_last="${!worker_var:-0}"
+    case "$worker_last" in ''|*[!0-9]*) worker_last=0 ;; esac
+    if worker_wedged "$worker_name" && [ $(( now - worker_last )) -ge "$COOLDOWN" ]; then
+      if [ "$DRYRUN" = "1" ]; then
+        logln "  [dry-run] M2 $worker_name wedged (only failures for ${M2_WEDGE_WINDOW}s) — would restart its :$worker_port server"
+      else
+        logln "  M2 $worker_name WEDGED — only failures for ${M2_WEDGE_WINDOW}s; killing the :$worker_port server (launchd KeepAlive reloads it)"
+        if restart_m2_worker "$worker_port"; then
+          notify "M2 $worker_name unwedged 🔧 — mlx had hung; restarted (reloads the model)"
+        else
+          logln "  could not reach $M2_SSH_HOST to restart $worker_name — check ssh key auth"
+        fi
+      fi
+      worker_last="$now"
+    fi
+    worker_state_out="${worker_state_out}${worker_var}=${worker_last}"$'\n'
+  done
+  printf '%s' "$worker_state_out" > "$WORKER_STATE"
+
   # M2's ports answer, but the meter can still be wedged on stale connections after a Thunderbolt link
   # flap (M2 up, yet every proxied request 502s — the exact 2026-06-29 incident). Detect by probing M2
   # THROUGH the meter; require 2 consecutive bad ticks so a transient blip doesn't trigger a restart.
