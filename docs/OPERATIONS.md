@@ -111,6 +111,30 @@ Tunable with `M2_WORKERS`, `M2_WEDGE_WINDOW`, `M2_WEDGE_FAILURES`, `M2_SSH_HOST`
 restart needs working key-based ssh to the `m2` host alias and no sudo — the workers are
 LaunchDaemons running as `admin`, so `admin` can signal them.
 
+### Keeping M2's checkout current
+
+M2 runs its own clone of this repo at `~/ai/local-ai-stack`, and until 2026-08-25 nothing ever
+pulled it. It was found **10 commits behind**, so a launcher fix landed that morning was still
+inert there — invisible until a restart was expected to pick something up and didn't.
+
+The watchdog now pulls it **once a day**, when M2 is reachable:
+
+- `git pull --ff-only origin main`. If M2's checkout has diverged — someone edited a script
+  directly on the machine — it stops and notifies rather than merging or discarding that work.
+- **It never restarts a model server.** A launcher change only takes effect on the next reload,
+  which is a multi-minute outage and yours to schedule. When a `scripts/start-*.sh` changes, it
+  says so and names the files; other changes are logged silently.
+- An up-to-date checkout logs nothing at all, so the daily run stays quiet.
+
+Tunable with `M2_SYNC_INTERVAL` (seconds, default 86400), `M2_REPO_DIR` (relative to M2's home),
+`M2_SYNC_STATE`. Set `M2_SYNC_INTERVAL` high to disable it in practice.
+
+To apply a launcher change on M2 by hand:
+
+```bash
+ssh m2 "pkill -f 'mlx_lm[.]server.*--port 8002'"   # developer;  8003 = reviewer
+```
+
 ## Plan → execute workflow
 
 In a project repo:
