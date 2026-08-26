@@ -99,29 +99,31 @@ TELEMETRY_DB="${TELEMETRY_DB:-$HOME_DIR/ai/dashboard/telemetry.db}"
 # orchestrator (65 GB) while the stack actually runs mixed9 (38 GB), and only the meter's
 # METER_ORCH_MODEL pin stopped it from triggering that load. Ask the endpoint what it serves.
 # Same rule as scripts/smoke-test-endpoints.sh and the dashboard's pickChatModel().
-orch_model() {  # prints the model id :9001 is actually serving, or nothing if it can't be discovered
-  if [ -n "${ORCH_MODEL:-}" ]; then printf '%s' "$ORCH_MODEL"; return 0; fi
+endpoint_model() {  # $1 = meter base url; prints the model id that endpoint actually serves
   # Split the JSON on commas/braces so each "id" lands on its own line, then take the first id that
   # looks like a local model path.
-  curl -s -m 5 -H "Authorization: Bearer $WATCHDOG_KEY" "$ORCH_URL/v1/models" 2>/dev/null \
+  curl -s -m 5 -H "Authorization: Bearer $WATCHDOG_KEY" "$1/v1/models" 2>/dev/null \
     | tr ',{}' '\n' \
     | sed -n 's/.*"id"[[:space:]]*:[[:space:]]*"\(\/[^"]*\)".*/\1/p' \
     | head -1
 }
 
-probe_orchestrator() {  # 0 iff the orchestrator COMPLETES a tiny request (real inference, not just /models)
+probe_endpoint() {  # $1 = meter base url; 0 iff it COMPLETES a tiny request (real inference, not just /models)
   command -v curl >/dev/null 2>&1 || return 0  # no curl → can't check; don't false-trigger
-  local code model
-  model="$(orch_model)"
+  local base="$1" code model
+  model="${2:-$(endpoint_model "$1")}"
   # No id means /v1/models itself did not answer (meter restarting, say). That is not evidence the
-  # orchestrator is wedged, and guessing an id here is exactly the second-copy bug above.
+  # endpoint is wedged, and guessing an id here is exactly the second-copy bug above.
   [ -n "$model" ] || return 0
-  code="$(curl -s -m "$ORCH_PROBE_TIMEOUT" -o /dev/null -w '%{http_code}' "$ORCH_URL/v1/chat/completions" \
+  code="$(curl -s -m "$ORCH_PROBE_TIMEOUT" -o /dev/null -w '%{http_code}' "$base/v1/chat/completions" \
     -H 'content-type: application/json' \
     -H "Authorization: Bearer $WATCHDOG_KEY" \
     --data "{\"model\":\"$model\",\"messages\":[{\"role\":\"user\",\"content\":\"ping\"}],\"max_tokens\":1}" 2>/dev/null || echo 000)"
   [ "$code" = "200" ]
 }
+
+orch_model()        { if [ -n "${ORCH_MODEL:-}" ]; then printf '%s' "$ORCH_MODEL"; else endpoint_model "$ORCH_URL"; fi; }
+probe_orchestrator() { probe_endpoint "$ORCH_URL" "$(orch_model)"; }
 
 # --- Orchestrator crash detection straight from the server log ---
 # mlx-lm leaks live Metal buffer descriptors while decoding and eventually throws
@@ -161,16 +163,42 @@ orch_crash_in_new_log() {  # 0 iff the generation thread died in log written sin
 # wedged overnight and served nothing for seven hours (126 failed requests) because this watchdog
 # only ever looked at the orchestrator.
 #
-# Detection here is local and free rather than another log grep across the link: the meter already
-# records every client request, so an upstream carrying several failures and NO successes over the
-# window is wedged by definition. Only the restart crosses to M2, and it needs no sudo — the workers
-# are LaunchDaemons with KeepAlive SuccessfulExit=false, so killing the process makes launchd start
-# a fresh one.
-M2_WORKERS="${M2_WORKERS:-developer:8002 reviewer:8003}"
-M2_WEDGE_WINDOW="${M2_WEDGE_WINDOW:-900}"      # seconds of history the verdict is based on
+# Two independent checks, because each misses what the other catches:
+#
+#   1. A real completion probe through the meter, on its own interval. This is the only check that
+#      works while M2 is IDLE. Before 2026-08-25 there was none: M2's health was read purely from
+#      whatever the user's own traffic happened to reveal, so a wedge on an unused endpoint sat
+#      undiscovered until they next tried it. It also keeps the dashboard honest — the orchestrator
+#      always looked green only because its probe kept its "last seen" fresh, while healthy M2
+#      endpoints decayed to grey after six idle hours and read as down.
+#   2. Telemetry from real client traffic: an upstream carrying several failures and NO successes
+#      over the window is wedged by definition. Catches wedges a one-token probe is too small to
+#      trip — a server that answers "ping" but dies on a 30k-token prompt.
+#
+# Only the restart crosses to M2, and it needs no sudo — the workers are LaunchDaemons with
+# KeepAlive SuccessfulExit=false, so killing the process makes launchd start a fresh one.
+#
+# Spec is name:mlx_port:meter_port. The mlx port identifies the process to kill ON M2; the meter
+# port is what we probe, so the probe lands in telemetry like any other request and the dashboard
+# row for that upstream stays current.
+M2_WORKERS="${M2_WORKERS:-developer:8002:9002 reviewer:8003:9003}"
+M2_WEDGE_WINDOW="${M2_WEDGE_WINDOW:-900}"      # seconds of history the telemetry verdict is based on
 M2_WEDGE_FAILURES="${M2_WEDGE_FAILURES:-3}"    # failures needed, alongside zero successes
+M2_PROBE_INTERVAL="${M2_PROBE_INTERVAL:-300}"  # a real generation, so not every 60s tick
+M2_BAD_LIMIT="${M2_BAD_LIMIT:-2}"              # consecutive failed probes before the expensive reload
 M2_SSH_HOST="${M2_SSH_HOST:-m2}"               # ~/.ssh/config alias; key auth, never prompts
 WORKER_STATE="${WORKER_STATE:-$HOME_DIR/ai/logs/m2-watchdog-workers.state}"
+
+worker_served_recently() {  # $1 = upstream; 0 iff real client traffic succeeded within the busy window
+  command -v sqlite3 >/dev/null 2>&1 || return 1
+  [ -f "$TELEMETRY_DB" ] || return 1
+  local last
+  last="$(sqlite3 "$TELEMETRY_DB" \
+    "SELECT COALESCE(MAX(ts),0) FROM requests
+      WHERE upstream='$1' AND error_class='ok' AND client<>'$WATCHDOG_KEY';" 2>/dev/null || echo 0)"
+  case "$last" in ''|*[!0-9]*) last=0 ;; esac
+  [ $(( now * 1000 - last )) -lt $(( ORCH_BUSY_WINDOW * 1000 )) ]
+}
 
 worker_wedged() {  # $1 = upstream name; 0 iff the window holds chat failures and no successes
   command -v sqlite3 >/dev/null 2>&1 || return 1
@@ -311,24 +339,58 @@ if probe; then
   [ -f "$WORKER_STATE" ] && . "$WORKER_STATE" 2>/dev/null || true
   worker_state_out=""
   for worker_spec in $M2_WORKERS; do
-    worker_name="${worker_spec%%:*}"; worker_port="${worker_spec##*:}"
-    worker_var="kick_$worker_name"
-    worker_last="${!worker_var:-0}"
-    case "$worker_last" in ''|*[!0-9]*) worker_last=0 ;; esac
-    if worker_wedged "$worker_name" && [ $(( now - worker_last )) -ge "$COOLDOWN" ]; then
-      if [ "$DRYRUN" = "1" ]; then
-        logln "  [dry-run] M2 $worker_name wedged (only failures for ${M2_WEDGE_WINDOW}s) — would restart its :$worker_port server"
+    IFS=: read -r worker_name worker_port worker_meter <<< "$worker_spec"
+    worker_kick_var="kick_$worker_name"; worker_probe_var="probe_$worker_name"; worker_bad_var="bad_$worker_name"
+    worker_last="${!worker_kick_var:-0}"
+    worker_last_probe="${!worker_probe_var:-0}"
+    worker_bad="${!worker_bad_var:-0}"
+    for _v in worker_last worker_last_probe worker_bad; do
+      case "${!_v}" in ''|*[!0-9]*) eval "$_v=0" ;; esac
+    done
+    worker_is_wedged=0
+
+    # (1) Real completion probe. The only check that works while M2 is idle, and the thing that
+    #     keeps this upstream's dashboard row from decaying to grey and reading as down.
+    if [ -n "$worker_meter" ] && [ $(( now - worker_last_probe )) -ge "$M2_PROBE_INTERVAL" ]; then
+      worker_last_probe="$now"
+      if probe_endpoint "http://127.0.0.1:$worker_meter"; then
+        [ "$worker_bad" -gt 0 ] && { logln "M2 $worker_name RECOVERED — serving completions"; notify "M2 $worker_name recovered ✅"; }
+        worker_bad=0
+      elif worker_served_recently "$worker_name"; then
+        # mlx serializes, so a busy server times out a probe. Real traffic succeeding recently is
+        # proof it is alive; same reasoning as the orchestrator path above.
+        logln "  M2 $worker_name completion probe timed out but it served recently — busy, not wedged"
+        worker_bad=0
       else
-        logln "  M2 $worker_name WEDGED — only failures for ${M2_WEDGE_WINDOW}s; killing the :$worker_port server (launchd KeepAlive reloads it)"
+        worker_bad=$(( worker_bad + 1 ))
+        if [ "$worker_bad" -ge "$M2_BAD_LIMIT" ]; then
+          worker_is_wedged=1
+        else
+          logln "  M2 $worker_name completion probe failing (x$worker_bad) — watching before the (expensive) reload"
+        fi
+      fi
+    fi
+
+    # (2) Telemetry from real client traffic — catches a wedge too big for a one-token probe to trip.
+    worker_wedged "$worker_name" && worker_is_wedged=1
+
+    if [ "$worker_is_wedged" = "1" ] && [ $(( now - worker_last )) -ge "$COOLDOWN" ]; then
+      if [ "$DRYRUN" = "1" ]; then
+        logln "  [dry-run] M2 $worker_name wedged — would restart its :$worker_port server"
+      else
+        logln "  M2 $worker_name WEDGED — killing the :$worker_port server (launchd KeepAlive reloads it)"
         if restart_m2_worker "$worker_port"; then
           notify "M2 $worker_name unwedged 🔧 — mlx had hung; restarted (reloads the model)"
         else
           logln "  could not reach $M2_SSH_HOST to restart $worker_name — check ssh key auth"
         fi
       fi
-      worker_last="$now"
+      worker_last="$now"; worker_bad=0
     fi
-    worker_state_out="${worker_state_out}${worker_var}=${worker_last}"$'\n'
+    worker_state_out="${worker_state_out}${worker_kick_var}=${worker_last}
+${worker_probe_var}=${worker_last_probe}
+${worker_bad_var}=${worker_bad}
+"
   done
   printf '%s' "$worker_state_out" > "$WORKER_STATE"
 

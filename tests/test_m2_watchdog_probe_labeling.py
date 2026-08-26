@@ -73,9 +73,13 @@ def test_every_probe_identifies_itself_as_the_watchdog(tmp_path: Path) -> None:
 def test_orchestrator_probe_goes_through_the_meter(tmp_path: Path) -> None:
     requests = run_watchdog(tmp_path)
     completions = [r for r in requests if "chat/completions" in r]
-    assert len(completions) == 1
-    # :9001 is the meter's orchestrator port; :8001 is the model server behind it.
-    assert "http://127.0.0.1:9001/v1/chat/completions" in completions[0]
+    # The M2 workers are probed on the same tick, so this asserts where the orchestrator's probe
+    # goes rather than that it is the only one: :9001 is the meter's orchestrator port, :8001 is
+    # the model server behind it, and probing :8001 directly would keep the request out of the
+    # dashboard entirely.
+    orchestrator = [c for c in completions if ":9001/v1/chat/completions" in c]
+    assert len(orchestrator) == 1, f"expected exactly one orchestrator probe, got {completions}"
+    assert not [c for c in completions if ":8001/" in c], "must not bypass the meter"
 
 
 def test_orchestrator_probe_is_throttled_between_ticks(tmp_path: Path) -> None:
