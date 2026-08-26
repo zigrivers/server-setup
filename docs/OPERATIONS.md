@@ -103,13 +103,28 @@ on real work. Three separate checks close that gap:
 
 | Endpoint | How a wedge is detected | How it is restarted |
 | --- | --- | --- |
-| orchestrator (M1) | its server log is grepped for the crash every tick, plus a real completion probe every 5 min | `launchctl kickstart` |
-| developer (M2) | 3+ chat failures and zero successes in 15 min, read from the meter's telemetry | `ssh m2 pkill` — launchd `KeepAlive` reloads it |
+| orchestrator (M1) | server log grepped for the crash every tick, plus a real completion probe every 5 min | `launchctl kickstart` |
+| developer (M2) | real completion probe every 5 min, **plus** 3+ chat failures with zero successes in 15 min from telemetry | `ssh m2 pkill` — launchd `KeepAlive` reloads it |
 | reviewer (M2) | same | same |
 
-Tunable with `M2_WORKERS`, `M2_WEDGE_WINDOW`, `M2_WEDGE_FAILURES`, `M2_SSH_HOST`. The M2
-restart needs working key-based ssh to the `m2` host alias and no sudo — the workers are
-LaunchDaemons running as `admin`, so `admin` can signal them.
+The two M2 checks are deliberately independent, because each misses what the other catches:
+
+- **The probe is the only check that works while M2 is idle.** Before 2026-08-26 M2's health was
+  read purely from the user's own traffic, so a wedge on an unused endpoint sat undiscovered until
+  they next tried it. The overnight outage of 2026-08-24/25 was caught only because an OpenCode
+  session happened to be hammering it.
+- **Telemetry catches what a one-token probe is too small to trip** — a server that answers "ping"
+  but dies on a 30k-token prompt.
+
+The probe goes **through the meter**, not straight at M2, so it lands in telemetry like any other
+request. That also fixes a reporting bug: the dashboard dot decays to grey after six idle hours, so
+healthy-but-unused M2 endpoints read as down while the orchestrator always looked green purely
+because its own probe kept its "last seen" fresh.
+
+Tunable with `M2_WORKERS` (`name:mlx_port:meter_port`), `M2_PROBE_INTERVAL`, `M2_BAD_LIMIT`,
+`M2_WEDGE_WINDOW`, `M2_WEDGE_FAILURES`, `M2_SSH_HOST`. The M2 restart needs working key-based ssh
+to the `m2` host alias and no sudo — the workers are LaunchDaemons running as `admin`, so `admin`
+can signal them.
 
 ### Keeping M2's checkout current
 
