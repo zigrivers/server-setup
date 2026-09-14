@@ -266,3 +266,18 @@ message). Keep the weekly cadence.
   taken). Check with `lsof -i :8009` first.
 - **Do not run A2/A3 while the reviewer is mid-review**: the 27B is memory-bandwidth-bound and a
   second copy halves both servers' tok/s for the duration.
+
+## Outcome log
+
+- **2026-09-14 — A1 done.** `~/ai/venv-mlx-main` on M2: mlx-lm 0.32.0 (main @ `d8f7f88`), mlx 0.32.2.
+- **2026-09-14 — A2 RED as expected.** `scripts/repro-metal-leak.sh`, 27B q8 on `:8009`, stock
+  0.31.3: generation thread died within ≈ 9 min (`Resource limit (499000) exceeded`).
+- **2026-09-14 — A3 still RED.** Same run on `main`: died at 527 s — the same point. #1845 is
+  confirmed unfixed for `qwen3_5`. Only visible difference: `main` raises
+  `RuntimeError("generation thread died")` to the client instead of hanging.
+- **A4 skipped by the plan's own rule** — no crash fix on M2 means no reason to switch the
+  Reviewer's runtime, so no eval was run. The eval config is in place
+  (`local-ai-dashboard/eval/modeleval-2026-09-runtime-main.json`) for when #1845 closes.
+- **A5 not started.** A6 (Orchestrator, whose crashes are long-*prompt* not long-completion)
+  remains the open question and needs its own approval.
+- **Track C** delegated to the local stack via `plans/2026-09-14-blocker-watch-pr1788.md`.

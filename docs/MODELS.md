@@ -24,10 +24,11 @@ Local path: ~/ai/models/orchestrator-qwen36-35b-a3b-heretic-bf16
 > `[metal::malloc] Resource limit (499000) exceeded` — a cap on the *number* of live Metal buffers,
 > not on memory, so the machine is not out of RAM when it fires. It kills the server's generation
 > thread while the process keeps answering `/v1/models` with 200, so only a real completion detects
-> it. Upstream: [mlx-lm#831](https://github.com/ml-explore/mlx-lm/issues/831),
-> [#1185](https://github.com/ml-explore/mlx-lm/issues/1185),
-> [#1332](https://github.com/ml-explore/mlx-lm/issues/1332) — all open, no released fix, so
-> restarting is the only lever.
+> it. Upstream: two sites fixed on `main` 2026-08-27 but unreleased; the one that hits these
+> hybrid models, [#1845](https://github.com/ml-explore/mlx-lm/issues/1845), is still open.
+> **Measured 2026-09-14:** mlx-lm `main` still crashes the 27B at the same point as 0.31.3
+> (`scripts/repro-metal-leak.sh`; details in `docs/TROUBLESHOOTING.md`), so restarting is
+> still the only lever.
 >
 > Seen on the orchestrator (2026-08-24, four crashes in 90 minutes) and on both M2 workers
 > (2026-08-24/25, seven hours serving nothing). `scripts/m2-watchdog.sh` now covers all three; see
@@ -241,6 +242,29 @@ The one open question is layout, deferred 2026-08-24: at ~454 GB resident it can
 the Developer and Reviewer (55 GB). Serving it means either moving those two to M1 — clients are
 unaffected, since they address meter ports and only the meter's target changes — or stopping them
 while Kimi is loaded.
+
+## Qwen3.8-Flash-Next — the tracked next upgrade (BLOCKED on mlx-lm PR #1788)
+
+```text
+Qwen/Qwen3.8-Flash-Next   (qwen4_exp, 125B total / 6B active + 51B n-gram embedding, 262k ctx, qwen-community-1.0)
+mlx-community/Qwen3.8-Flash-Next-4bit   (111 GB, converted with mlx-vlm main)
+Role candidates: all three — it supersedes both the 35B-A3B and the 27B
+```
+
+Vendor numbers against the served Qwen3.8-27B: SWE-bench Pro 62.5 vs 61.7, DeepSWE 1.1 58.7 vs
+42.2, SWE-bench Multilingual 81.0 vs 73.8, LiveCodeBench v6 91.9 vs 90.3, Toolathlon 73.5 vs
+67.1. Quality up across the board; speed is **not** a given — the PR author reports 17–21 tok/s
+at 8-bit on an M3 Ultra, the same as today's 27B, on an unoptimised branch.
+
+Blocked: `qwen4_exp` has no mlx-lm code. [PR #1788](https://github.com/ml-explore/mlx-lm/pull/1788)
+was still fixing correctness bugs on 2026-09-12. mlx-vlm 0.7.0 does load it, but the mlx-vlm
+server could not enable thinking when last measured here (89% → 78% review recall on the
+bulk lane) — re-check before trusting that path. `scripts/check-mlx-blockers.sh` watches the PR.
+
+Also checked 2026-09-14 and not viable: GLM-5.3 (identical `indexer_types` to 5.2 → same PR
+#1410 blocker), DeepSeek-V4.1-Flash (new `deepseek_v41` arch, 553 GB at 4-bit), Kimi K3 (2.8T,
+`kimi_k3` on main since 2026-09-01, 350 GB pruned build — would need M2 alone), Gemma 4
+26B-A4B (loads, but LiveCodeBench v6 80 vs the 27B's 90).
 
 ## Experimental MTP lane
 

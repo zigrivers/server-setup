@@ -70,6 +70,16 @@ LaunchAgent (autostarts at login). It grounds chat completions for projects that
 collection and is a no-op for everything else. Health: `curl -s :9200/healthz`. Add/refresh a
 project: `scripts/rag-add-project.sh <name>`. Full guide: [`rag-proxy.md`](rag-proxy.md).
 
+## Upstream blocker watch
+
+`scripts/check-mlx-blockers.sh` runs weekly (`com.localai.mlx-blocker-watch`) and checks the
+upstream items keeping models off this stack: mlx-lm PR #1410 (GLM-5.2/5.3 IndexShare),
+`mlx_lm/models/deepseek_v4.py` (DeepSeek-V4), PR #1788 (Qwen3.8-Flash-Next, `qwen4_exp`), and
+whether PyPI has an `mlx-lm` newer than 0.31.3. It logs one state line per run to
+`~/ai/logs/mlx-blockers.log` and sends a `launchpad notify` only when something unblocks.
+Run it by hand with `bash scripts/check-mlx-blockers.sh; echo $?` — 0 nothing new, 10 something
+unblocked, 1 could not reach GitHub/PyPI.
+
 ## Endpoint smoke test
 
 From Machine 1:
