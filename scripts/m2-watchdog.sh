@@ -135,8 +135,10 @@ probe_orchestrator() { probe_endpoint "$ORCH_URL" "$(orch_model)"; }
 # can stretch that further by reading a pre-crash success as "busy, not wedged". That is how
 # 2026-08-24 cost ~36 minutes across four crashes. The traceback is unambiguous and free to grep
 # every tick, which brings recovery down to one tick.
-# Upstream: ml-explore/mlx-lm issues #831, #1185, #1332 — all open, no released fix, so restarting
-# is the only lever we have. Drop this block once a release fixes the leak.
+# Upstream: ml-explore/mlx-lm #1845 (open) is the site that hits our hybrid models; two other sites
+# were fixed on main 2026-08-27 but `main` still crashed the 27B at the same point when measured
+# 2026-09-14 (docs/TROUBLESHOOTING.md). Restarting is the only lever we have. Drop this block once
+# a release fixes the leak.
 ORCH_LOG="${ORCH_LOG:-$HOME_DIR/ai/logs/orchestrator.log}"
 ORCH_CRASH_RE="${ORCH_CRASH_RE:-Exception in thread Thread-1 \(_generate\)|metal::malloc\] Resource limit}"
 

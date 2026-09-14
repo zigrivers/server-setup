@@ -146,12 +146,40 @@ buffers a process may hold, not their size — a probe allocating 499,000 tiny a
 at exactly that count with 2 MB in use. The cap is per process, so a second model server on
 the same Mac does not eat into it.
 
-The cause is a leak of live Metal buffer descriptors in mlx-lm's decode path, tracked
-upstream in [mlx-lm#831](https://github.com/ml-explore/mlx-lm/issues/831),
-[#1185](https://github.com/ml-explore/mlx-lm/issues/1185) and
-[#1332](https://github.com/ml-explore/mlx-lm/issues/1332). All three are open; there is no
-released fix. It kills the server's single generation thread while the HTTP thread keeps
-serving `/v1/models`, which is why nothing short of a real completion detects it.
+The cause is a leak of live Metal buffer descriptors in mlx-lm's decode path. It kills the
+server's single generation thread while the HTTP thread keeps serving `/v1/models`, which is
+why nothing short of a real completion detects it.
+
+**Upstream state (checked 2026-09-14).** Two leak sites were fixed on mlx-lm `main` on
+2026-08-27 ([#1662](https://github.com/ml-explore/mlx-lm/issues/1662),
+[#1332](https://github.com/ml-explore/mlx-lm/issues/1332)), but no release carries them —
+0.31.3 (April) is still the newest on PyPI. A third site,
+[#1845](https://github.com/ml-explore/mlx-lm/issues/1845), is **open** and is the one that
+bites the hybrid SSM models served here (`qwen3_5`, `qwen3_5_moe`): the batched decode loop
+leaks one buffer per SSM layer per generated token, so a single completion dies at roughly
+`499000 / (ssm_layers − 1)` tokens — about 10.6k tokens on the 27B. A workaround PR
+([#1872](https://github.com/ml-explore/mlx-lm/pull/1872)) was closed unmerged 2026-09-10.
+
+**Measured, not assumed.** `scripts/repro-metal-leak.sh` asks a spare server for one 16k-token
+completion. On M2 with the Reviewer's weights (`developer-qwen38-27b-8bit`), temperature 0,
+thinking off:
+
+| runtime | outcome |
+|---|---|
+| mlx-lm 0.31.3 (stock venv) | generation thread died after ≈ 9 min |
+| mlx-lm `main` @ `d8f7f88` (2026-09-14, mlx 0.32.2, `~/ai/venv-mlx-main` on M2) | generation thread died after 527 s — same point |
+
+So upgrading to `main` does **not** fix the workers. Its one visible improvement is that the
+HTTP handler now raises `RuntimeError("generation thread died")` instead of hanging the request
+until the client times out. Not worth a runtime switch on its own. The trial venv stays on M2
+for re-testing when #1845 closes: activate it and rerun the script.
+
+```bash
+# spare port, never a production endpoint — the request kills its decode thread
+bash scripts/repro-metal-leak.sh http://127.0.0.1:8009/v1 /Users/admin/ai/models/developer-qwen38-27b-8bit 16000 ~/ai/logs/trial-8009.log
+```
+
+Exit 0 means the completion finished (leak not hit); exit 2 means the server crashed.
 
 Restarting the server is the only remedy. On M1:
 
