@@ -181,7 +181,24 @@ bash scripts/repro-metal-leak.sh http://127.0.0.1:8009/v1 /Users/admin/ai/models
 
 Exit 0 means the completion finished (leak not hit); exit 2 means the server crashed.
 
-Restarting the server is the only remedy. On M1:
+**Short completions reach it too, under concurrency.** The leaked chain lives on the *batch's*
+cache, which lives as long as any sequence is decoding. With several clients in flight the batch
+never drains, so steps add up across requests. On 2026-09-27 an 8-client enrichment run of short
+completions (primary-intel-history Phase 8) crashed the orchestrator 16 times, every ~27 min —
+`499000 / (30 − 1)` ≈ 17.2k decode steps for its 30 linear-attention layers.
+
+**M1 orchestrator: patched at launch (2026-09-27).** `scripts/start-orchestrator.sh` runs
+`scripts/mlx_server_1845.py`, which applies the root-cause fix proposed in #1845's body —
+`advance()` accumulates a Python int that the fields fold in on read — then starts
+`mlx_lm.server` unchanged. It patches only the exact leaking `advance()` of 0.31.3 and logs
+`mlx_server_1845: ArraysCache.advance patched` (or `NOT patched`) at startup. Measured with the
+tiny random-weight `qwen3_next` repro from #1845 on this venv (mlx-lm 0.31.3, mlx 0.31.2):
+unpatched crashed at 14,214 tokens (predicted 14,257); patched ran 20,000 clean; greedy output
+identical. Tests: `~/ai/local-ai-stack/.venv/bin/python -m pytest tests/test_mlx_server_1845.py`.
+Rollback: restore `exec mlx_lm.server \` in the start script and kickstart. Plan:
+`plans/2026-09-27-orchestrator-1845-shim.md`.
+
+Elsewhere (the M2 workers), restarting the server is the only remedy. On M1:
 
 ```bash
 launchctl kickstart -k "gui/$(id -u)/com.localai.orchestrator"
