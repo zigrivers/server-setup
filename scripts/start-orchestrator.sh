@@ -41,7 +41,10 @@ echo "  Model: $MODEL"
 echo "  URL:   http://$HOST:$PORT/v1"
 
 echo "Log: $HOME/ai/logs/orchestrator.log"
-exec mlx_lm.server \
+# mlx_lm.server plus the mlx-lm #1845 leak fix (see the script's docstring). Rollback: put
+# `exec mlx_lm.server \` back on this line. launchd runs this through the ~/ai symlink, so resolve it.
+SHIM="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/mlx_server_1845.py"
+exec python "$SHIM" \
   --model "$MODEL" \
   --host "$HOST" \
   --port "$PORT" \
