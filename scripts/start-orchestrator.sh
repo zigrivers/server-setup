@@ -43,8 +43,10 @@ echo "  URL:   http://$HOST:$PORT/v1"
 echo "Log: $HOME/ai/logs/orchestrator.log"
 # mlx_lm.server plus the mlx-lm #1845 leak fix (see the script's docstring). Rollback: put
 # `exec mlx_lm.server \` back on this line. launchd runs this through the ~/ai symlink, so resolve it.
+# `exec -a mlx_lm.server` keeps the process named what m2-watchdog's pkill and the dashboard's
+# ps parser match on; without it a wedged worker can't be killed and vanishes from the dashboard.
 SHIM="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/mlx_server_1845.py"
-exec python "$SHIM" \
+exec -a mlx_lm.server python "$SHIM" \
   --model "$MODEL" \
   --host "$HOST" \
   --port "$PORT" \
