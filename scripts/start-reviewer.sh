@@ -48,7 +48,10 @@ fi
 
 echo "Starting Reviewer on $HOST:$PORT (model: $MODEL)"
 echo "Log: $HOME/ai/logs/reviewer.log"
-exec mlx_lm.server \
+# mlx_lm.server plus the mlx-lm #1845 leak fix (see the script's docstring). Rollback: put
+# `exec mlx_lm.server \` back on this line.
+SHIM="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/mlx_server_1845.py"
+exec python "$SHIM" \
   --model "$MODEL" \
   --host "$HOST" \
   --port "$PORT" \
