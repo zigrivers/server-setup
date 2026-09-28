@@ -28,8 +28,9 @@ Local path: ~/ai/models/orchestrator-qwen36-35b-a3b-heretic-bf16
 > hybrid models, [#1845](https://github.com/ml-explore/mlx-lm/issues/1845), is still open.
 > **Measured 2026-09-14:** mlx-lm `main` still crashes the 27B at the same point as 0.31.3
 > (`scripts/repro-metal-leak.sh`; details in `docs/TROUBLESHOOTING.md`).
-> **Since 2026-09-27 the M1 orchestrator launches through `scripts/mlx_server_1845.py`**, which
-> applies #1845's proposed root-cause fix at startup; the M2 workers still rely on restarts.
+> **Since 2026-09-27 every `mlx_lm.server` here (M1 orchestrator, M2 developer and reviewer)
+> launches through `scripts/mlx_server_1845.py`**, which applies #1845's proposed root-cause fix
+> at startup; restarts remain the fallback if it ever logs `NOT patched`.
 >
 > Seen on the orchestrator (2026-08-24, four crashes in 90 minutes) and on both M2 workers
 > (2026-08-24/25, seven hours serving nothing). `scripts/m2-watchdog.sh` now covers all three; see
