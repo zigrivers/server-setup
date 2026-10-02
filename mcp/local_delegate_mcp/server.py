@@ -6,9 +6,9 @@ import subprocess
 import urllib.request
 from pathlib import Path
 
-from mcp.server.fastmcp import FastMCP
+from mcp.server.mcpserver import MCPServer
 
-mcp = FastMCP("local-ai-delegate")
+mcp = MCPServer("local-ai-delegate")
 
 
 def allowed_roots() -> list[Path]:
