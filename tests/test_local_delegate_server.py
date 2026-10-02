@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 # The repo's mcp/ directory would shadow the installed `mcp` package if the
 # repo root were on sys.path (namespace-package resolution). Strip it before
-# loading the server module, which does `from mcp.server.fastmcp import FastMCP`.
+# loading the server module, which does `from mcp.server.mcpserver import MCPServer`.
 sys.path = [p for p in sys.path if Path(p or ".").resolve() != ROOT]
 
 _spec = importlib.util.spec_from_file_location(
@@ -203,3 +203,53 @@ def test_review_model_falls_back_to_first_without_path_entry(monkeypatch):
     _fake_models_response(monkeypatch, ["only/hf-repo-id"])
     monkeypatch.delenv("LOCAL_REVIEW_MODEL", raising=False)
     assert server._review_model("http://h:1/v1") == "only/hf-repo-id"
+
+
+def test_bridge_is_mcp2_server():
+    from mcp.server.mcpserver import MCPServer
+
+    assert isinstance(server.mcp, MCPServer)
+
+
+def test_stdio_initialize_handshake():
+    """The process agents launch must answer the MCP initialize handshake."""
+    import json
+    import select
+
+    server_py = ROOT / "mcp" / "local_delegate_mcp" / "server.py"
+    request = {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": "initialize",
+        "params": {
+            "protocolVersion": "2025-11-25",
+            "capabilities": {},
+            "clientInfo": {"name": "probe", "version": "0"},
+        },
+    }
+    proc = subprocess.Popen(
+        [sys.executable, str(server_py)],
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    try:
+        assert proc.stdin is not None and proc.stdout is not None and proc.stderr is not None
+        proc.stdin.write(json.dumps(request) + "\n")
+        proc.stdin.flush()
+        ready, _, _ = select.select([proc.stdout], [], [], 10)
+        if not ready:
+            proc.kill()
+            raise AssertionError(f"no initialize response\n{proc.stderr.read()}")
+        line = proc.stdout.readline()
+        if not line:
+            raise AssertionError(f"empty initialize response\n{proc.stderr.read()}")
+        payload = json.loads(line)
+        assert payload["id"] == 1
+        assert payload["result"]["serverInfo"]["name"] == "local-ai-delegate"
+        assert payload["result"]["protocolVersion"]
+    finally:
+        if proc.poll() is None:
+            proc.kill()
+            proc.wait(timeout=5)
