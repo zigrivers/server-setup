@@ -66,7 +66,7 @@ disk (`~/ai/models/reviewer-mimo-v2.6-flash-mxfp4-q8`) as the fastest second-opi
 | `kimi-k26-dq3km-q8` (438 GB, M2) | loads, but scores below Qwen3.8-27B on SWE-bench Pro and fills the whole machine |
 | `*-mtp-drafter` files | mlx-lm's `--draft-model` cannot load them (issue #1462); oMLX uses the heads inside the `*-mtp` builds instead |
 
-They are still on disk until the operator deletes them (~1 TB).
+Deleted 2026-10-21 (~1 TB freed; the GLM-5.2 copy on M1 sits in the Trash until emptied). `scripts/check-mlx-blockers.sh` still watches the upstream PRs, so a merge would mean re-downloading, not flipping a switch.
 
 ## Embeddings (unchanged)
 
