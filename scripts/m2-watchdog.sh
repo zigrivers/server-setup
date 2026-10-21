@@ -102,9 +102,11 @@ TELEMETRY_DB="${TELEMETRY_DB:-$HOME_DIR/ai/dashboard/telemetry.db}"
 endpoint_model() {  # $1 = meter base url; prints the model id that endpoint actually serves
   # Split the JSON on commas/braces so each "id" lands on its own line, then take the first id that
   # looks like a local model path.
+  # mlx_lm.server reports an absolute path; oMLX reports the model's directory name. Take the first
+  # id either way — the meter pins what each endpoint serves, so the id is a selector, not a load.
   curl -s -m 5 -H "Authorization: Bearer $WATCHDOG_KEY" "$1/v1/models" 2>/dev/null \
     | tr ',{}' '\n' \
-    | sed -n 's/.*"id"[[:space:]]*:[[:space:]]*"\(\/[^"]*\)".*/\1/p' \
+    | sed -n 's/.*"id"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' \
     | head -1
 }
 
@@ -249,11 +251,13 @@ sync_m2_checkout() {  # prints the remote report; non-zero only if ssh itself fa
     "${M2_SYNC_REMOTE//__REPO__/$M2_REPO_DIR}" 2>/dev/null
 }
 
-restart_m2_worker() {  # $1 = port of the wedged mlx server on M2
-  # mlx_lm[.]server, not mlx_lm.server: the bracket keeps the pattern from matching the remote shell
-  # that is running pkill, which carries the pattern text in its own command line.
+restart_m2_worker() {  # $1 = port of the wedged model server on M2
+  # Kill whatever LISTENS on the port rather than matching a process name: oMLX shows up in ps as
+  # a bare `omlx-server` with no port in its arguments, and mlx_lm.server (the rollback path) is
+  # found the same way. launchd's KeepAlive starts a fresh one. The remote shell itself never
+  # listens on the port, so it cannot kill its own session.
   ssh -o BatchMode=yes -o ConnectTimeout=5 "$M2_SSH_HOST" \
-    "pkill -f 'mlx_lm[.]server.*--port $1'" >> "$LOG" 2>&1
+    "pids=\$(lsof -ti tcp:$1 -sTCP:LISTEN); [ -n \"\$pids\" ] && kill \$pids" >> "$LOG" 2>&1
 }
 
 orchestrator_served_recently() {  # 0 iff a successful orchestrator completion is in telemetry within the window

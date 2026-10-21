@@ -107,11 +107,11 @@ def test_an_upstream_with_only_failures_is_restarted(tmp_path: Path) -> None:
     make_telemetry(wd.telemetry, [("developer", "timeout", ago) for ago in (60, 120, 180, 240)])
     wd.tick()
     assert "developer WEDGED" in wd.log()
-    kills = [c for c in wd.ssh() if "pkill" in c]
+    kills = [c for c in wd.ssh() if "kill" in c]
     assert kills, "expected a kill over ssh"
-    assert "--port 8002" in kills[0]
-    # The pattern must not match the remote shell that is running pkill, or it kills its own session.
-    assert "mlx_lm[.]server" in kills[0]
+    # Killed by LISTENING port (works for oMLX and mlx_lm.server alike); the remote shell running
+    # the kill never listens on the port, so it cannot kill its own session.
+    assert "lsof -ti tcp:8002 -sTCP:LISTEN" in kills[0]
 
 
 def test_a_working_upstream_is_left_alone(tmp_path: Path) -> None:
@@ -124,7 +124,7 @@ def test_a_working_upstream_is_left_alone(tmp_path: Path) -> None:
     )
     wd.tick()
     assert "WEDGED" not in wd.log()
-    assert not [c for c in wd.ssh() if "pkill" in c]
+    assert not [c for c in wd.ssh() if "kill" in c]
 
 
 def test_a_quiet_upstream_is_left_alone(tmp_path: Path) -> None:
@@ -133,7 +133,7 @@ def test_a_quiet_upstream_is_left_alone(tmp_path: Path) -> None:
     make_telemetry(wd.telemetry, [])
     wd.tick()
     assert "WEDGED" not in wd.log()
-    assert not [c for c in wd.ssh() if "pkill" in c]
+    assert not [c for c in wd.ssh() if "kill" in c]
 
 
 def test_one_or_two_failures_are_not_enough(tmp_path: Path) -> None:
@@ -156,9 +156,9 @@ def test_a_restart_is_not_repeated_every_tick(tmp_path: Path) -> None:
     wd = Watchdog(tmp_path)
     make_telemetry(wd.telemetry, [("developer", "timeout", ago) for ago in (60, 120, 180, 240)])
     wd.tick()
-    assert len([c for c in wd.ssh() if "pkill" in c]) == 1
+    assert len([c for c in wd.ssh() if "kill" in c]) == 1
     wd.tick()  # telemetry still looks wedged — the model is still loading
-    assert len([c for c in wd.ssh() if "pkill" in c]) == 1
+    assert len([c for c in wd.ssh() if "kill" in c]) == 1
 
 
 def test_both_workers_are_watched(tmp_path: Path) -> None:
@@ -167,8 +167,8 @@ def test_both_workers_are_watched(tmp_path: Path) -> None:
     make_telemetry(wd.telemetry, [("reviewer", "timeout", ago) for ago in (60, 120, 180, 240)])
     wd.tick()
     assert "reviewer WEDGED" in wd.log()
-    kills = [c for c in wd.ssh() if "pkill" in c]
-    assert kills and "--port 8003" in kills[0]
+    kills = [c for c in wd.ssh() if "kill" in c]
+    assert kills and "lsof -ti tcp:8003 -sTCP:LISTEN" in kills[0]
 
 
 def test_an_unreachable_m2_is_not_called_a_wedge(tmp_path: Path) -> None:
@@ -179,4 +179,4 @@ def test_an_unreachable_m2_is_not_called_a_wedge(tmp_path: Path) -> None:
     (wd.bin_dir / "nc").chmod(0o755)
     wd.tick(M2_WATCHDOG_DRYRUN="1")
     assert "WEDGED" not in wd.log()
-    assert not [c for c in wd.ssh() if "pkill" in c]
+    assert not [c for c in wd.ssh() if "kill" in c]

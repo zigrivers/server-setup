@@ -104,7 +104,7 @@ class Watchdog:
     def kills(self) -> list[str]:
         if not self.ssh_calls.exists():
             return []
-        return [c for c in self.ssh_calls.read_text().splitlines() if "pkill" in c]
+        return [c for c in self.ssh_calls.read_text().splitlines() if "kill" in c]
 
 
 def test_the_probe_goes_through_the_meter_so_the_dashboard_sees_it(tmp_path: Path) -> None:
@@ -141,7 +141,7 @@ def test_an_idle_wedge_is_caught_without_any_client_traffic(tmp_path: Path) -> N
     assert wd.kills() == []
     wd.tick()
     assert "WEDGED" in wd.log()
-    assert any("--port 8002" in k for k in wd.kills())
+    assert any("tcp:8002" in k for k in wd.kills())
 
 
 def test_a_busy_endpoint_is_not_called_wedged(tmp_path: Path) -> None:
@@ -151,7 +151,7 @@ def test_a_busy_endpoint_is_not_called_wedged(tmp_path: Path) -> None:
     wd.tick()
     wd.tick()
     assert "busy, not wedged" in wd.log()
-    assert not any("--port 8002" in k for k in wd.kills()), "restarting a busy server throws away its work"
+    assert not any("tcp:8002" in k for k in wd.kills()), "restarting a busy server throws away its work"
 
 
 def test_probes_are_throttled_to_their_own_interval(tmp_path: Path) -> None:
