@@ -1,65 +1,19 @@
 #!/usr/bin/env bash
+# Machine 2 Reviewer launcher (launchd: com.localai.reviewer).
+# Default server is oMLX (scripts/omlx-serve.sh). Rollback to mlx_lm.server + the #1845 shim with
+#   LOCAL_AI_SERVER=mlx_lm  (scripts/start-reviewer-mlx_lm.sh, unchanged).
 set -euo pipefail
-
+HERE="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
 REPO_DIR="${LOCAL_AI_REPO:-$HOME/ai/local-ai-stack}"
-source "$REPO_DIR/.venv/bin/activate"
-mkdir -p "$HOME/ai/logs"
-
-if [ -f "$REPO_DIR/.env" ]; then
-  set -a; source "$REPO_DIR/.env"; set +a
+if [ -f "$REPO_DIR/.env" ]; then set -a; source "$REPO_DIR/.env"; set +a; fi
+if [ "${LOCAL_AI_SERVER:-omlx}" = "mlx_lm" ]; then
+  exec "$HERE/start-reviewer-mlx_lm.sh"
 fi
-
-HOST="${WORKER_HOST:-10.10.10.2}"
-PORT="${REVIEW_PORT:-8003}"
-# NOTE: the authoritative model choice lives in .env (sourced above) as
-# DEV_MODEL_PATH / REVIEW_MODEL_PATH. This default is only the fallback if .env is absent.
-MODEL="${REVIEW_MODEL_PATH:-$HOME/ai/models/developer-qwen38-27b-8bit}"
-# Explicit, byte-bounded prompt/prefix KV cache (mlx_lm default: size 10, bytes unbounded).
-PROMPT_CACHE_SIZE="${PROMPT_CACHE_SIZE:-10}"
-PROMPT_CACHE_BYTES="${PROMPT_CACHE_BYTES:-12GB}"
-# Optional speculative decoding: set DRAFT_MODEL (a small model sharing this model's tokenizer).
-# Off by default → zero behavior change. NOT for the MoE orchestrator; measure acceptance first.
-DRAFT_ARGS=()
-if [ -n "${DRAFT_MODEL:-}" ]; then
-  DRAFT_ARGS=(--draft-model "$DRAFT_MODEL" --num-draft-tokens "${NUM_DRAFT_TOKENS:-3}")
-fi
-
-# mlx_lm.server's own --max-tokens default is 512, and it applies to any request that does not
-# send max_tokens of its own. OpenCode and the Phase 8 enrichment script both send one, so this is
-# a floor for everything else (curl probes, smoke tests, new clients) rather than a cap on them.
-MAX_TOKENS="${MLX_MAX_TOKENS:-8192}"
-# Chat-template arguments, passed to the model's Jinja template as JSON — this is how to set
-# something like {"enable_thinking": false} for a whole endpoint instead of per request.
-# UNSET BY DEFAULT ON PURPOSE: turning thinking off measured 89% -> 78% recall on the code-review
-# eval, so it belongs on a bulk-classification lane, never on the reviewer or developer.
-TEMPLATE_ARGS=()
-if [ -n "${MLX_CHAT_TEMPLATE_ARGS:-}" ]; then
-  TEMPLATE_ARGS=(--chat-template-args "$MLX_CHAT_TEMPLATE_ARGS")
-fi
-
-# Abort only if OUR mlx_lm server is already answering here (avoid a duplicate). A bare lsof
-# check false-positives on unrelated listeners sharing the port (e.g. a Docker container on
-# 0.0.0.0:PORT), which would crash-loop under launchd. Exit 0 (not 1) so "already running" isn't
-# treated as a crash.
-if curl -s --max-time 3 "http://$HOST:$PORT/v1/models" 2>/dev/null | grep -q '"data"'; then
-  echo "An mlx_lm server is already responding on $HOST:$PORT — not starting a duplicate."
-  exit 0
-fi
-
-echo "Starting Reviewer on $HOST:$PORT (model: $MODEL)"
-echo "Log: $HOME/ai/logs/reviewer.log"
-# mlx_lm.server plus the mlx-lm #1845 leak fix (see the script's docstring). Rollback: put
-# `exec mlx_lm.server \` back on this line.
-# `exec -a mlx_lm.server` keeps the process named what m2-watchdog's pkill and the dashboard's
-# ps parser match on; without it a wedged worker can't be killed and vanishes from the dashboard.
-SHIM="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/mlx_server_1845.py"
-exec -a mlx_lm.server python "$SHIM" \
-  --model "$MODEL" \
-  --host "$HOST" \
-  --port "$PORT" \
-  --max-tokens "$MAX_TOKENS" \
-  ${TEMPLATE_ARGS[@]+"${TEMPLATE_ARGS[@]}"} \
-  --prompt-cache-size "$PROMPT_CACHE_SIZE" \
-  --prompt-cache-bytes "$PROMPT_CACHE_BYTES" \
-  ${DRAFT_ARGS[@]+"${DRAFT_ARGS[@]}"} \
-  >> "$HOME/ai/logs/reviewer.log" 2>&1
+# The reviewer is a DIFFERENT model family from the developer on purpose (a reviewer sharing the
+# author's weights shares its blind spots): MiMo-V2.6-Flash, 309B total / 15B active, 156 GB.
+# Set OMLX_REVIEW_MODEL to swap it (e.g. back to the 27B oQ8e-mtp build while MiMo is evaluated).
+export ROLE=reviewer
+export PORT="${REVIEW_PORT:-8003}"
+export HOST="${WORKER_HOST:-10.10.10.2}"
+export MODEL="${OMLX_REVIEW_MODEL:-$HOME/ai/models/reviewer-mimo-v2.6-flash-mxfp4-q8}"
+exec "$HERE/omlx-serve.sh"
