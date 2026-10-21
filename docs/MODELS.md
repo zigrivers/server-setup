@@ -34,18 +34,28 @@ Alibaba's own 2.4T flagship); no mid-size open model has evidence of beating it.
 ### Reviewer — Machine 2 (`http://10.10.10.2:8003/v1`, meter `:9003`)
 
 ```text
-mlx-community/MiMo-V2.6-Flash-RL-mxfp4-q8   309B total / 15B active MoE, MIT, 156 GB on disk (~170 GB loaded)
-Local path: ~/ai/models/reviewer-mimo-v2.6-flash-mxfp4-q8
-Model id:   reviewer-mimo-v2.6-flash-mxfp4-q8
+Jundot/Qwen3.8-27B-oQ8e-mtp            same weights as the developer, via a reviewer-named symlink
+Local path: ~/ai/models/reviewer-qwen38-27b-oq8e-mtp -> developer-qwen38-27b-oq8e-mtp
+Model id:   reviewer-qwen38-27b-oq8e-mtp
 ```
 
-Why: the reviewer was the same 27B weights as the developer loaded twice, so it shared the author's
-blind spots and, at 20 tok/s, timed out on real reviews (the `local_review` tool had been rerouted
-to the orchestrator because of it). MiMo is a different model family, 2.5x faster to decode, and
-vendor-reported well ahead on agentic coding (Terminal-Bench 2.1 87.6 vs 73.0). Independent scores
-do not exist yet, so it is gated by the code-review eval in the dashboard repo
-(`eval/results/2026-10-21-*`). Override with `OMLX_REVIEW_MODEL=~/ai/models/developer-qwen38-27b-oq8e-mtp`
-to fall back to the 27B.
+Why: the plan was to move the reviewer to a different model family. The candidate,
+MiMo-V2.6-Flash (309B / 15B active, 156 GB, MIT), loads and runs on oMLX at 44 tok/s, but on the
+code-review eval (19 cases, temperature 0, 2026-10-21) it caught 15/18 planted bugs with thinking
+(83%) against the 27B's 17/18 (94%), and 14/18 without. The harness's rule is quality first, so the
+27B keeps the slot. What changed is speed: with MTP on oMLX the 27B's thinking review has a median
+of 85 s instead of timing out, which is what made the role usable again. MiMo's weights stay on
+disk (`~/ai/models/reviewer-mimo-v2.6-flash-mxfp4-q8`) as the fastest second-opinion candidate
+(83% at 6 s median) should a speed-first lane be wanted: `OMLX_REVIEW_MODEL` swaps it in.
+
+## Measured gates (2026-10-21)
+
+| Gate | Result |
+|---|---|
+| Tool-call eval, orchestrator (38 cases) | base oQ4e-mtp on oMLX 97% / 97% (think / no-think); heretic on mlx_lm 100% / 100% |
+| Code-review eval, orchestrator | base oQ4e-mtp on oMLX **94%** think, **89%** no-think (p50 0.6 s) |
+| Code-review eval, reviewer | Qwen3.8-27B oQ8e-mtp think **94%**; MiMo think 83%, no-think 78% |
+| Soak, oMLX orchestrator | 60 min x 8 clients: 1,130 requests, 0 errors, RSS flat; MTP build 30 min: 642 requests, 0 errors |
 
 ## Removed from the plan
 
