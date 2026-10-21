@@ -24,9 +24,9 @@ Machine 2 — Inference worker
 
 | Role | Machine | Endpoint | Default model |
 |---|---:|---|---|
-| Orchestrator | Machine 1 | `http://127.0.0.1:8001/v1` | `Qwen3.6-35B-A3B Heretic BF16` |
-| Developer | Machine 2 | `http://10.10.10.2:8002/v1` | `Qwen3.6-27B Heretic2 NEO-CODE mixed-9.4bit` |
-| Reviewer | Machine 2 | `http://10.10.10.2:8003/v1` | `Qwen3.6-27B Heretic BF16` |
+| Orchestrator | Machine 1 | `http://127.0.0.1:8001/v1` | `orchestrator-qwen36-35b-a3b-oq4e-mtp` (Qwen3.6-35B-A3B base, MTP) |
+| Developer | Machine 2 | `http://10.10.10.2:8002/v1` | `developer-qwen38-27b-oq8e-mtp` (Qwen3.8-27B 8-bit, MTP) |
+| Reviewer | Machine 2 | `http://10.10.10.2:8003/v1` | `reviewer-mimo-v2.6-flash-mxfp4-q8` (MiMo-V2.6-Flash) |
 | Experimental | Machine 2 | `http://10.10.10.2:8004/v1` | MTP-preserved 35B-A3B candidate |
 
 ## Why split Orchestrator onto Machine 1?
@@ -63,4 +63,8 @@ Human merges
 
 ## Important implementation detail
 
-`mlx_lm.server` expects the `model` value in chat requests to be an actual model path or Hugging Face repo ID. It does not understand arbitrary aliases like `local` or `default` unless you put a proxy in front of it.
+All three roles are served by oMLX (`docs/OMLX.md`, since 2026-10-21). The `model` value in chat
+requests is the model's directory name as listed by `GET /v1/models`; an unknown id gets a 404.
+The meter still pins each endpoint's id (`METER_*_MODEL`) so a stale client id is rewritten rather
+than refused. With the mlx_lm rollback path the id is the absolute model path, and mlx_lm.server
+would LOAD whatever path a client sends, which is why the pin exists.
