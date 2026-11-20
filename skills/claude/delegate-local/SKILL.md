@@ -1,8 +1,8 @@
 ---
 name: delegate-local
-description: Create or validate a plan, then delegate execution to the local multi-agent stack
+description: Create or validate a plan, then delegate execution to the local multi-agent stack. Use when the user asks to hand implementation work to the local AI stack.
 argument-hint: [task description or plan file]
-allowed-tools: Read, Grep, Glob, Bash(git status), Bash(pwd), local-ai-delegate__local_ai_status, local-ai-delegate__run_local_plan, local-ai-delegate__git_local_summary
+allowed-tools: Read, Grep, Glob, Bash(git status), Bash(pwd), mcp__local-ai-delegate__local_ai_status, mcp__local-ai-delegate__run_local_plan, mcp__local-ai-delegate__git_local_summary
 ---
 
 You are the frontier architect and reviewer.
