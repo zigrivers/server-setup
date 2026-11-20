@@ -29,7 +29,9 @@ Model id:   developer-qwen38-27b-oq8e-mtp
 
 Why: Qwen3.8-27B scores 86.0% on the independent Vals.ai SWE-bench Verified leaderboard (above
 Alibaba's own 2.4T flagship); no mid-size open model has evidence of beating it. MTP lifts it from
-20 to 47 tok/s with identical output at temperature 0.
+20 to 47 tok/s with identical output at temperature 0. Larger Flash-tier MoE models score higher on
+the same archived Vals board (GLM-5.3-Flash 92.0%, DeepSeek V4 Flash 0731 88.8%), but they are trial
+candidates, not upgrades.
 
 ### Reviewer — Machine 2 (`http://10.10.10.2:8003/v1`, meter `:9003`)
 
@@ -49,6 +51,9 @@ disk (`~/ai/models/reviewer-mimo-v2.6-flash-mxfp4-q8`) as the fastest second-opi
 (83% at 6 s median) should a speed-first lane be wanted: `OMLX_REVIEW_MODEL` swaps it in.
 
 ## Measured gates (2026-10-21)
+
+The eval harness behind these gates is in the dashboard repo:
+`~/Developer/local-ai-dashboard/src/toolcalleval` and `src/modeleval`.
 
 | Gate | Result |
 |---|---|

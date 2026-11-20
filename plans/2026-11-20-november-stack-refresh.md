@@ -1,6 +1,7 @@
 # November 2026 stack refresh
 
-Status: **awaiting approval**. Nothing in this plan has been implemented.
+Status: **approved 2026-11-20 and implemented** (groups A-D). Corrections made during the work are
+listed under "Changes from the plan" at the end.
 
 ## Goal
 
@@ -178,3 +179,17 @@ Covered by group D. `docs/OPERATIONS.md` gains one line on the new watchdog beha
   depends on it.
 - Research confidence is medium for the watch-list models: no single-M3-Ultra decode speed is
   published for DeepSeek V4.1 Flash, so any trial must measure locally first.
+
+## Changes from the plan
+
+- Machine 2 came back online on 2026-11-20 during the work; the Blocker section is history.
+- Group C was wrong about the bridge. Its venv (`~/Developer/server-setup/.venv`) already ran
+  MCP Python SDK 2.2.0 with `mcp>=2,<3`; the research had read the stale `~/ai/local-ai-stack`
+  clone. The libraries were updated inside their current major versions instead of capped at 1.x.
+- The DeepSeek probe in `scripts/check-mlx-blockers.sh` was removed, not repaired: the V4 weights
+  are deleted and the V4.1 loader is already upstream.
+- The watchdog restarts the meter at most once per outage. If Machine 2 drops inside the cooldown
+  of an earlier recovery, that outage gets no meter restart; the meter-wedged path covers the
+  return. That path is unchanged code and has no new test.
+- D1: oMLX 0.8.0 was trialled side by side with 0.7.2 and not adopted: it loses two planted bugs
+  on the code-review eval with MTP on. Details in `docs/OMLX.md`.

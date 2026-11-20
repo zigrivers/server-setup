@@ -68,6 +68,36 @@ kill $(lsof -ti tcp:8002 -sTCP:LISTEN)
 Then set `METER_*_MODEL` in `~/ai/dashboard/dashboard.env` back to the absolute model paths and
 kickstart `com.localai.dashboard.meter`.
 
+## 0.8.0 trial (2026-11-20): not adopted
+
+oMLX 0.8.0 was installed in a separate environment (`~/ai/omlx/.venv-0.8.0`) and served the same
+orchestrator weights on port 8013 next to production 0.7.2 on 8001. Results are in
+`~/Developer/local-ai-dashboard/eval/results/` (`toolcall-2026-11-20-omlx-080`,
+`2026-11-20-omlx-080`, `-repeats`, `-mtpoff`).
+
+| Gate | 0.7.2 | 0.8.0 |
+|---|---|---|
+| Tool-call eval (38 cases), think / no-think | 100% / 97% | 100% / 97% |
+| Code-review eval, no-think, three runs | 16/18, 16/18, 16/18 | 14/18, 14/18, 14/18 |
+| Code-review eval, think, three runs | 16/18, 16/18, 17/18 | 14/18, 16/18, 15/18 |
+| Code-review eval, no-think, MTP off | — | 16/18 |
+
+With MTP on, 0.8.0 misses two planted bugs that 0.7.2 catches, every run; with MTP off it matches
+0.7.2. So MTP output in 0.8.0 is no longer identical to plain decoding for this model. `local_review`
+runs the orchestrator without thinking, which is the mode that regressed. Speed was about the same
+(p50 0.5 s against 0.6 s). The harness rule is quality first, so production stays on 0.7.2.
+
+Two things to know before the next trial:
+
+- 0.8.0 rewrites `~/.omlx/model_settings.json` to `version: 2` with renamed keys, and that file is
+  shared by every oMLX server of the same user. Back up `~/.omlx` first and restore it before
+  0.7.2 restarts. (Done on 2026-11-20; backup in
+  `~/.local/state/agent-instruction-backups/2026-11-20/dot-omlx-before-0.8.0`.)
+- `modeleval` needs a `judge` entry in its config. Without one it stops after collecting answers;
+  write `[]` to `judged.json` in the output directory and run it again with `--rescore`.
+
+Re-test on 0.8.1 or later with the same four configs (`eval/*omlx-080*.json`).
+
 ## Upgrading oMLX
 
 ```bash

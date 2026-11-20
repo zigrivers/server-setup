@@ -27,11 +27,14 @@ secret. Providers:
 > The `-meter` suffix avoids colliding with OpenCode's built-in `deepseek`/`zai` providers, which
 > would otherwise bypass the meter and bill your key directly.
 
-> **Local model ids** are whatever `curl 127.0.0.1:<port>/v1/models` returns on your machines —
-> `mlx_lm.server` wants a real path or HF id, and treats it as an instruction to **load** that
-> model, not to select one. A stale id here is how the stack ends up serving two copies. The meter
-> pins the right model per port (`METER_ORCH_MODEL`, `METER_DEV_MODEL`, `METER_REVIEW_MODEL`), which
-> masks a wrong id rather than fixing it — keep these accurate anyway.
+> **Local model ids.** Since 2026-10-21 the endpoints run oMLX and serve
+> `orchestrator-qwen36-35b-a3b-oq4e-mtp`, `developer-qwen38-27b-oq8e-mtp` and
+> `reviewer-qwen38-27b-oq8e-mtp` (see [`MODELS.md`](MODELS.md)). The absolute paths in the table
+> above and in `configs/opencode/opencode.json.example` are the earlier `mlx_lm.server` ids. They
+> still work only because the meter pins the right model per port (`METER_ORCH_MODEL`,
+> `METER_DEV_MODEL`, `METER_REVIEW_MODEL`) and rewrites a stale id. Sent straight to an 800x port,
+> oMLX answers a path id with 404. On the `mlx_lm.server` rollback path an id is an instruction to
+> **load** that model, which is how the stack once served two copies.
 
 ### Why local turns used to stop mid-task
 

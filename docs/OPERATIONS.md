@@ -93,7 +93,8 @@ scripts/smoke-test-endpoints.sh
 `com.localai.m2-watchdog` checks meter routes 9002, 9003, 9004, and 9006 at
 `/v1/models`. Ports 9004 and 9006 back the required `opencode-glm` and
 `opencode-local` MMR channels. The existing two-failure debounce, cooldown, and
-shared meter restart apply to every route.
+shared meter restart apply to every route. When Machine 2 goes down, the watchdog restarts the
+meter at most once per outage, on the change into the down state, not again on every cooldown.
 
 If a provider route is intentionally disabled, reinstall the watchdog with the
 remaining routes. This persists the override in the rendered LaunchAgent:
@@ -114,7 +115,7 @@ on real work. Three separate checks close that gap:
 | Endpoint | How a wedge is detected | How it is restarted |
 | --- | --- | --- |
 | orchestrator (M1) | server log grepped for the crash every tick, plus a real completion probe every 5 min | `launchctl kickstart` |
-| developer (M2) | real completion probe every 5 min, **plus** 3+ chat failures with zero successes in 15 min from telemetry | `ssh m2 pkill` — launchd `KeepAlive` reloads it |
+| developer (M2) | real completion probe every 5 min, **plus** 3+ chat failures with zero successes in 15 min from telemetry | `ssh m2` kills the port's listener — launchd `KeepAlive` reloads it |
 | reviewer (M2) | same | same |
 
 The two M2 checks are deliberately independent, because each misses what the other catches:
@@ -157,7 +158,7 @@ Tunable with `M2_SYNC_INTERVAL` (seconds, default 86400), `M2_REPO_DIR` (relativ
 To apply a launcher change on M2 by hand:
 
 ```bash
-ssh m2 "pkill -f 'mlx_lm[.]server.*--port 8002'"   # developer;  8003 = reviewer
+ssh m2 'kill $(lsof -ti tcp:8002 -sTCP:LISTEN)'   # developer;  8003 = reviewer
 ```
 
 ## Plan → execute workflow
