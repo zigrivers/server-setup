@@ -10,19 +10,19 @@ Two Mac Studios (M3 Ultra, 512 GB each) serving open-weight models over an OpenA
 Machine 1 is the control plane; Machine 2 is the inference worker on 10.10.10.2.
 
 ENDPOINTS — always use the 9xxx "meter" ports, never the raw 800x ports.
-  http://127.0.0.1:9001/v1   orchestrator  Qwen3.6-35B-A3B (MoE, 8-bit)   fast, general
+  http://127.0.0.1:9001/v1   orchestrator  Qwen3.6-35B-A3B (MoE, oQ4e ~4.7-bit, MTP)   fast, general
   http://127.0.0.1:9002/v1   developer     Qwen3.8-27B (8-bit)            code writing
   http://127.0.0.1:9003/v1   reviewer      Qwen3.8-27B (8-bit)            code review, max 2 in flight
   http://127.0.0.1:9006/v1   review router prefers reviewer, spills to orchestrator when busy
   http://127.0.0.1:9004/v1   GLM           PAID cloud (z.ai) — costs money
   http://127.0.0.1:9005/v1   DeepSeek      PAID cloud — costs money
   http://127.0.0.1:9200/v1   RAG proxy     = developer, with retrieval injected (see RAG below)
-All three local models: 262,144-token context. Roughly 12-20 tokens/sec generation.
+All three local models: 262,144-token context. Measured speeds are in `docs/MODELS.md`.
 
 RULE 1 — DISCOVER THE MODEL ID, NEVER GUESS IT.
-  GET {endpoint}/v1/models and use the id that starts with "/" (a filesystem path).
-  The server LOADS whatever id you send. An unknown id is fetched from HuggingFace (fails, or
-  worse, downloads); a stale-but-real id loads a SECOND copy of old weights into memory.
+  GET {endpoint}/v1/models and use the id it lists (a directory name such as
+  orchestrator-qwen36-35b-a3b-oq4e-mtp).
+  An unknown id returns 404 on oMLX (the meter rewrites stale ids on the 9xxx ports).
   Omitting "model" entirely is also safe — the endpoint uses its default.
 
 RULE 2 — SEND A ROUTING LABEL AS THE API KEY, NOT A SECRET.
@@ -52,8 +52,7 @@ RAG (optional, project-grounded answers):
   gate, your prompt is forwarded unchanged. Unknown collection = plain passthrough, no error.
 
 EXAMPLE
-  MODEL=$(curl -s http://127.0.0.1:9003/v1/models | python3 -c \
-    'import json,sys; print(next(m["id"] for m in json.load(sys.stdin)["data"] if m["id"].startswith("/")))')
+  MODEL=$(curl -s http://127.0.0.1:9003/v1/models | python3 -c 'import json,sys; print(json.load(sys.stdin)["data"][0]["id"])')
   curl -s http://127.0.0.1:9003/v1/chat/completions \
     -H 'Content-Type: application/json' -H 'Authorization: Bearer my-agent' \
     -d "{\"model\":\"$MODEL\",\"max_tokens\":1200,\"messages\":[{\"role\":\"user\",\"content\":\"...\"}]}"
@@ -64,13 +63,16 @@ Do not send anything through it you would not want stored on this machine.
 
 ## Why each rule is there
 
-**Rule 1** is the one that actually bites. `mlx_lm.server` treats the `model` field as a load
-instruction, not a selector. Two real incidents on this stack: clients still sending the reviewer's
-pre-swap HuggingFace id kept getting the old slow weights after an upgrade, and the repo's own
-smoke test loaded a second 65 GB copy on Machine 1 while reporting "OK". The meter now pins the
-local endpoints (`METER_DEV_MODEL` / `METER_REVIEW_MODEL` in `~/ai/dashboard/dashboard.env`), which
-protects traffic through 9xxx — the raw 800x ports have no such guard, which is the other reason to
-use the meter ports.
+**Rule 1** is the one that actually bites. Under oMLX (the default runtime since 2026-10-21, see
+`docs/OMLX.md`) the id is the model's directory name, and an unknown id gets a 404. The meter pins
+the local endpoints (`METER_DEV_MODEL` / `METER_REVIEW_MODEL` in `~/ai/dashboard/dashboard.env`) and
+rewrites a stale id on the 9xxx ports. The raw 800x ports have no such guard, which is the other
+reason to use the meter ports.
+
+The pin dates from `mlx_lm.server`, which is now the rollback path only. That server treats the
+`model` field as a load instruction, not a selector. Two real incidents on this stack: clients still
+sending the reviewer's pre-swap HuggingFace id kept getting the old slow weights after an upgrade,
+and the repo's own smoke test loaded a second 65 GB copy on Machine 1 while reporting "OK".
 
 **Rule 2**: `src/meter/upstreams.ts` maps the bearer token to a client label for the dashboard's
 attribution views. Anything matching `^sk[-_]` is rejected as a label so a leaked provider key never
@@ -80,7 +82,8 @@ lands in telemetry.
 because it is large. Numbers come from the model-comparison harness in `local-ai-dashboard`
 (`src/modeleval/`, 18 planted bugs, 4 clean cases, temperature 0), not from a single prompt. The
 failure mode when the budget is too small is an empty or mid-thought `content`, not a short answer —
-which reads like a broken endpoint if you are not expecting it.
+which reads like a broken endpoint if you are not expecting it. The MCP bridge's `local_review`
+tool turns thinking off on purpose to stay fast, so treat it as a quick second opinion.
 
 **Reviewer concurrency**: `:9003` is capped at 2 in-flight requests (`METER_REVIEWER_MAX_INFLIGHT`)
 so a fan-out cannot thrash one Mac Studio. Excess requests queue rather than fail. `:9006` is the

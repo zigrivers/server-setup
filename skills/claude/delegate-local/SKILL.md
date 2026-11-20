@@ -26,7 +26,9 @@ Workflow:
    - Documentation updates
    - Risks and edge cases
 4. Show the plan and ask for approval before execution.
-5. After approval, call `local-ai-delegate__run_local_plan` with:
+5. After approval, call `mcp__local-ai-delegate__local_ai_status` first. If developer or
+   reviewer is FAIL, stop and report instead of running the plan. Otherwise call
+   `mcp__local-ai-delegate__run_local_plan` with:
    - `plan_file`
    - `workspace`
    - `in_place=false`

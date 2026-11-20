@@ -36,15 +36,10 @@ mcp/local_delegate_mcp/
 scripts/
   launchers, installers, download helpers, status checks, benchmark helpers
 
-.agents/skills/
-  delegate-local/          Antigravity CLI skill for plan → local execution
-  local-review/            Antigravity CLI skill for local second-opinion review
-  local-ai-status/         Antigravity CLI skill for checking endpoints
-
-skills/claude/
-  delegate-local/          Claude Code skill for plan → local execution
-  local-review/            Claude Code skill for local second-opinion review
-  local-ai-status/         Claude Code skill for checking endpoints
+skills/claude/             the single source of the three skills for every agent
+  delegate-local/          plan → local execution
+  local-review/            local second-opinion review
+  local-ai-status/         checking endpoints
 
 configs/
   env examples, endpoint examples, launchd templates
@@ -97,7 +92,7 @@ Copy the environment template:
 cp configs/env.machine1.example .env
 ```
 
-Edit `.env` and confirm the model paths match your actual machines.
+Edit `.env` and confirm each model id matches what that endpoint's `GET /v1/models` returns.
 
 Start the Orchestrator on Machine 1:
 
@@ -136,7 +131,7 @@ You approve the merge.
 
 - Local agents should only work inside git repos or isolated worktrees.
 - Do not expose MLX servers to the public internet.
-- Do not use `model=local` with `mlx_lm.server`; use the full model path.
+- Do not use `model=local`; use the exact id from `GET /v1/models`.
 - Do not let agents run destructive shell commands outside a disposable workspace.
 - Do not auto-commit security, auth, payment, migration, or deployment changes.
 

@@ -1,5 +1,8 @@
 # HTML Guides
 
+> **Historical (June 2026, pre-oMLX).** Model names, paths and launch commands here are
+> superseded by `docs/MODELS.md`, `docs/OMLX.md` and `docs/OPERATIONS.md`.
+
 This folder contains standalone HTML guides generated for the setup:
 
 - `local_ai_infrastructure_overview.html`

@@ -37,10 +37,11 @@ Verdict).
 
 - `scope`: `uncommitted` (working tree vs HEAD), `staged`, or `since-main`.
 - `instructions`: optional focus areas passed to the reviewer.
-- **Targets the orchestrator** (`ORCH_BASE_URL`, the fast MoE on localhost)
-  by default — NOT the dense reviewer on 8003, which generates at ~10 tok/s
-  and times out on substantive reviews. Override with `LOCAL_REVIEW_BASE_URL`
-  to force a specific endpoint.
+- **Targets the orchestrator** (`ORCH_BASE_URL`, the fast MoE on Machine 1)
+  by default, NOT the reviewer on 8003, so a review still works when
+  Machine 2 is down. (The choice was made before oMLX, when the reviewer
+  generated at ~10 tok/s and timed out on substantive reviews.) Override with
+  `LOCAL_REVIEW_BASE_URL` to force a specific endpoint.
 - The model id is discovered at call time from `GET {base}/models`, so no
   model name needs to be configured.
 - Output is capped via `LOCAL_REVIEW_MAX_TOKENS` (default 3000). The
@@ -75,7 +76,7 @@ Configure via environment when registering the server (see
 `scripts/register-mcp-claude.sh` and `scripts/register-mcp-codex.sh`):
 
 ```text
-LOCAL_AI_ALLOWED_ROOTS=$HOME/ai/workspaces:$HOME/code:$HOME/Developer:$HOME/projects:<repo>
+LOCAL_AI_ALLOWED_ROOTS=$HOME/ai/workspaces:$HOME/code:$HOME/Developer:$HOME/projects:$HOME/Documents/dev-projects:<repo>
 LOCAL_AI_DEFAULT_WORKSPACE=$HOME/ai/workspaces
 ```
 
@@ -84,7 +85,8 @@ resolved through `~` expansion and then realpath. If `workspace="."` or
 empty is passed, `LOCAL_AI_DEFAULT_WORKSPACE` is used.
 
 If no allowed roots are configured **and** none of the default fallbacks
-(`~/ai/workspaces`, `~/code`, `~/Developer`, `~/projects`) exist, every
+(`~/ai/workspaces`, `~/code`, `~/Developer`, `~/projects`,
+`~/Documents/dev-projects`) exist, every
 call to `git_local_summary` / `run_local_plan` fails with a clear error.
 
 ## Endpoint configuration
@@ -115,16 +117,16 @@ do this.
 ## Registering with Claude Code
 
 ```bash
-cd ~/ai/local-ai-stack
+cd ~/Developer/server-setup
 scripts/register-mcp-claude.sh
 claude mcp list
 ```
 
 Inside Claude Code, `/mcp` shows the registered server. Tool calls are
-prefixed: `local-ai-delegate__local_ai_status`,
-`local-ai-delegate__git_local_summary`,
-`local-ai-delegate__local_review`,
-`local-ai-delegate__run_local_plan`.
+prefixed: `mcp__local-ai-delegate__local_ai_status`,
+`mcp__local-ai-delegate__git_local_summary`,
+`mcp__local-ai-delegate__local_review`,
+`mcp__local-ai-delegate__run_local_plan`.
 
 The repo's three Claude skills (`delegate-local`, `local-review`,
 `local-ai-status`) reference these tools by their prefixed names in their
@@ -133,7 +135,7 @@ The repo's three Claude skills (`delegate-local`, `local-review`,
 ## Registering with Codex
 
 ```bash
-cd ~/ai/local-ai-stack
+cd ~/Developer/server-setup
 scripts/register-mcp-codex.sh
 $EDITOR ~/.codex/config.toml
 ```
@@ -157,8 +159,8 @@ So Codex reaches for the local stack unprompted, add this to the (global)
 
 A local MLX stack is available via the `local-ai-delegate` MCP server:
 
-- `local_review` — send the current git diff to the local Reviewer model
-  for a second opinion. Use it before merging non-trivial changes, then
+- `local_review` — send the current git diff to the local Orchestrator model
+  (Machine 1) for a second opinion. Use it before merging non-trivial changes, then
   state where you agree, disagree, and what it missed. Treat it as input,
   not a verdict.
 - `run_local_plan` — execute an approved plan file with the local
@@ -174,8 +176,8 @@ The endpoints are OpenAI-compatible if direct calls are ever needed
 ## Smoke testing the MCP server directly
 
 ```bash
-~/ai/local-ai-stack/.venv/bin/python \
-  ~/ai/local-ai-stack/mcp/local_delegate_mcp/server.py
+~/Developer/server-setup/.venv/bin/python \
+  ~/Developer/server-setup/mcp/local_delegate_mcp/server.py
 ```
 
 The server waits for stdio input. Press Ctrl-C — if it started without

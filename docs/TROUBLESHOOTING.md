@@ -1,15 +1,17 @@
 # Troubleshooting
 
-## Hugging Face 404 for `local` or `default`
+## 404 for `local`, `default`, or a stale model id
 
-Cause: request used `"model": "local"` or `"model": "default"` against `mlx_lm.server`.
+Cause: the request's `"model"` value is not the id the endpoint serves. oMLX returns 404 for an
+unknown id. On the `mlx_lm.server` rollback path the same mistake shows up as a Hugging Face 404,
+because that server tries to load whatever id it is sent.
 
-Fix: use the full model path as seen by the server machine.
+Fix: use the exact id from `GET /v1/models` on that endpoint.
 
 ```text
-ORCH_MODEL=$HOME/ai/models/orchestrator-qwen36-35b-a3b-heretic-bf16
-DEV_MODEL=$HOME/ai/models/developer-qwen36-27b-heretic2-mixed94
-REVIEW_MODEL=$HOME/ai/models/reviewer-qwen36-27b-heretic-bf16
+ORCH_MODEL=orchestrator-qwen36-35b-a3b-oq4e-mtp
+DEV_MODEL=developer-qwen38-27b-oq8e-mtp
+REVIEW_MODEL=reviewer-qwen38-27b-oq8e-mtp
 ```
 
 ## `zsh: no matches found: huggingface_hub[hf_xet]`
@@ -247,8 +249,6 @@ Check memory pressure:
 memory_pressure
 ```
 
-If Machine 1 is sluggish, switch the Orchestrator from BF16 to mixed-9bit.
-
 ## Orchestrator answers ~50% instant 403/404 (port hijack by Docker)
 
 **Symptom (2026-08-12, real incident):** the dashboard showed a ~50% orchestrator
@@ -257,7 +257,7 @@ orchestrator's own log showed nothing but 200s. Direct `curl` to
 `127.0.0.1:8001` intermittently got 403/404/dropped connections.
 
 **Cause:** a Docker container (OrbStack) published `0.0.0.0:8001->8001`
-(`nibble-research-engine-1`, itself unhealthy). mlx_lm.server binds
+(`nibble-research-engine-1`, itself unhealthy). The orchestrator binds
 `127.0.0.1:8001` specifically; with a second wildcard listener on the same
 port, macOS distributes incoming loopback connections between BOTH listeners —
 roughly half of all requests landed on the container, which instantly rejected

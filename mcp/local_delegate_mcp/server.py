@@ -42,7 +42,7 @@ def resolve_allowed(path: str, *, must_exist: bool = True) -> Path:
     roots = allowed_roots()
     if not roots:
         raise ValueError("No allowed roots configured. Set LOCAL_AI_ALLOWED_ROOTS.")
-    if not any(str(p).startswith(str(root)) for root in roots):
+    if not any(p.is_relative_to(root) for root in roots):
         raise ValueError(
             f"Path is outside allowed roots: {p}\nAllowed roots: {', '.join(str(r) for r in roots)}"
         )
@@ -186,6 +186,8 @@ def local_ai_status() -> str:
                 lines.append(f"{name}: OK {url} HTTP {r.status}")
         except Exception as e:
             lines.append(f"{name}: FAIL {url} {type(e).__name__}: {e}")
+    if lines[0].startswith("orchestrator: OK") and any(": FAIL " in line for line in lines[1:]):
+        lines.append("note: local_review uses the orchestrator and still works; run_local_plan needs developer and reviewer.")
     return "\n".join(lines)
 
 
@@ -217,7 +219,14 @@ def local_review(workspace: str = ".", scope: str = "uncommitted", instructions:
 
     status = run(["git", "status", "--short"], ws, timeout=60)
     base_url = _review_base_url()
-    model = _review_model(base_url)
+    try:
+        model = _review_model(base_url)
+    except (TimeoutError, OSError, ValueError) as e:
+        return (
+            f"Local review could not find a model at {base_url} "
+            f"({type(e).__name__}: {e}). Check local_ai_status, or set "
+            f"LOCAL_REVIEW_BASE_URL or LOCAL_REVIEW_MODEL."
+        )
 
     user_parts = []
     if instructions:

@@ -26,7 +26,7 @@ For non-trivial changes:
    - Machine 1 Orchestrator: `http://127.0.0.1:8001/v1`
    - Machine 2 Developer: `http://10.10.10.2:8002/v1`
    - Machine 2 Reviewer: `http://10.10.10.2:8003/v1`
-7. Do not replace full model paths with aliases like `local` or `default` when calling `mlx_lm.server`.
+7. Use the exact model id from `GET /v1/models`; never aliases like `local` or `default`.
 
 ## Planning requirements
 

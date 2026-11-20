@@ -25,11 +25,11 @@ For non-trivial work:
 ## Architecture reminders
 
 - Machine 1 is the daily-driver control plane.
-- Machine 1 runs the BF16 Orchestrator locally on `127.0.0.1:8001`.
+- Machine 1 runs the Orchestrator (Qwen3.6-35B-A3B oQ4e-mtp, served by oMLX) locally on `127.0.0.1:8001`.
 - Machine 2 is the inference worker on Thunderbolt Bridge IP `10.10.10.2`.
 - Machine 2 runs Developer on `8002` and Reviewer on `8003`.
 - Optional experimental MTP lane may run on `8004`.
-- `mlx_lm.server` expects the `model` field to be a real path or HF repo id. Do not use `local` unless a separate aliasing proxy is added.
+- The `model` field must be the exact id from `GET /v1/models` (a directory name under oMLX). Do not use `local` or `default`.
 
 ## Plan requirements
 

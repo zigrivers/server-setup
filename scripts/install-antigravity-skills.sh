@@ -6,7 +6,7 @@ mkdir -p "$HOME/.gemini/antigravity-cli/skills"
 
 for skill in delegate-local local-review local-ai-status; do
   rm -rf "$HOME/.gemini/antigravity-cli/skills/$skill"
-  cp -R "$REPO_DIR/.agents/skills/$skill" "$HOME/.gemini/antigravity-cli/skills/$skill"
+  cp -R "$REPO_DIR/skills/claude/$skill" "$HOME/.gemini/antigravity-cli/skills/$skill"
 done
 
 echo "Installed Antigravity skills:"

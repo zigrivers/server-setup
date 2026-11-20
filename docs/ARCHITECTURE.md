@@ -26,14 +26,14 @@ Machine 2 — Inference worker
 |---|---:|---|---|
 | Orchestrator | Machine 1 | `http://127.0.0.1:8001/v1` | `orchestrator-qwen36-35b-a3b-oq4e-mtp` (Qwen3.6-35B-A3B base, MTP) |
 | Developer | Machine 2 | `http://10.10.10.2:8002/v1` | `developer-qwen38-27b-oq8e-mtp` (Qwen3.8-27B 8-bit, MTP) |
-| Reviewer | Machine 2 | `http://10.10.10.2:8003/v1` | `reviewer-mimo-v2.6-flash-mxfp4-q8` (MiMo-V2.6-Flash) |
+| Reviewer | Machine 2 | `http://10.10.10.2:8003/v1` | `reviewer-qwen38-27b-oq8e-mtp` (Qwen3.8-27B 8-bit, MTP; same weights as the Developer) |
 | Experimental | Machine 2 | `http://10.10.10.2:8004/v1` | MTP-preserved 35B-A3B candidate |
 
 ## Why split Orchestrator onto Machine 1?
 
 Machine 1 is already the cockpit: it runs Claude Code, Codex, VS Code/Cursor, the MCP bridge, git worktrees, and LangGraph. Running the Orchestrator locally keeps planning/routing close to the tools and frees Machine 2 for execution-heavy models.
 
-Machine 2 should be treated as a model execution appliance: Developer, Reviewer, optional Security Reviewer, optional Kimi/MTP experiments.
+Machine 2 should be treated as a model execution appliance: Developer, Reviewer, optional Security Reviewer, optional MTP experiments.
 
 ## Data flow
 

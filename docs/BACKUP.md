@@ -104,7 +104,7 @@ Things that don't live in `~/ai/` but matter for the stack:
 - `~/.claude/skills/` — populated by `scripts/install-claude-skills.sh`
   from the repo. Source of truth is `skills/claude/` in the repo.
 - `~/.gemini/antigravity-cli/skills/` — populated by `scripts/install-antigravity-skills.sh`
-  from the repo. Source of truth is `.agents/skills/` in the repo.
+  from the repo. Source of truth is `skills/claude/` in the repo.
 - `~/.gemini/antigravity-cli/mcp_config.json` — populated by `scripts/register-mcp-antigravity.sh`.
 - `~/Library/LaunchAgents/com.localai.{orchestrator,workers}.plist` —
   rendered by the install-launchd scripts.

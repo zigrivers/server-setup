@@ -88,6 +88,61 @@ def test_local_review_outside_allowed_roots_rejected(tmp_path, monkeypatch):
         server.local_review(workspace="/private/etc")
 
 
+def test_sibling_directory_of_allowed_root_rejected(tmp_path, monkeypatch):
+    # /a/proj-evil shares a string prefix with /a/proj but is not inside it.
+    (tmp_path / "proj").mkdir()
+    (tmp_path / "proj-evil").mkdir()
+    monkeypatch.setenv("LOCAL_AI_ALLOWED_ROOTS", str(tmp_path / "proj"))
+    assert server.resolve_allowed(str(tmp_path / "proj")) == (tmp_path / "proj").resolve()
+    with pytest.raises(ValueError, match="outside allowed roots"):
+        server.resolve_allowed(str(tmp_path / "proj-evil"))
+
+
+def _fake_status_endpoints(monkeypatch, down):
+    import io, urllib.request
+
+    def fake_urlopen(url, timeout=3):
+        if any(port in url for port in down):
+            raise OSError("timed out")
+        r = io.BytesIO(b"{}")
+        r.status = 200
+        return r
+
+    monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
+    monkeypatch.setenv("ORCH_BASE_URL", "http://127.0.0.1:8001/v1")
+    monkeypatch.setenv("DEV_BASE_URL", "http://10.10.10.2:8002/v1")
+    monkeypatch.setenv("REVIEW_BASE_URL", "http://10.10.10.2:8003/v1")
+
+
+def test_status_notes_what_still_works_when_a_worker_is_down(monkeypatch):
+    _fake_status_endpoints(monkeypatch, down=[":8002", ":8003"])
+    out = server.local_ai_status()
+    assert "orchestrator: OK" in out and "developer: FAIL" in out
+    assert "note: local_review uses the orchestrator and still works" in out
+    assert "run_local_plan needs developer and reviewer" in out
+
+
+def test_status_has_no_note_when_all_up_or_orchestrator_down(monkeypatch):
+    _fake_status_endpoints(monkeypatch, down=[])
+    assert "note:" not in server.local_ai_status()
+    _fake_status_endpoints(monkeypatch, down=[":8001", ":8002"])
+    assert "note:" not in server.local_ai_status()
+
+
+def test_local_review_model_discovery_error_returns_clear_message(git_repo, monkeypatch):
+    (git_repo / "a.txt").write_text("changed\n")
+    monkeypatch.setenv("LOCAL_REVIEW_BASE_URL", "http://127.0.0.1:8001/v1")
+
+    def boom(base, timeout=10):
+        raise OSError("connection refused")
+
+    monkeypatch.setattr(server, "_review_model", boom)
+    out = server.local_review(workspace=str(git_repo))
+    assert "http://127.0.0.1:8001/v1" in out
+    assert "connection refused" in out
+    assert "local_ai_status" in out
+
+
 def test_review_base_url_explicit_override_wins(monkeypatch):
     monkeypatch.setenv("LOCAL_REVIEW_BASE_URL", "http://example:9/v1")
     monkeypatch.setenv("ORCH_BASE_URL", "http://127.0.0.1:8001/v1")

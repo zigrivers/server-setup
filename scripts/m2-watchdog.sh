@@ -4,7 +4,7 @@ set -uo pipefail
 # M1-side health watchdog for the local AI stack. Installed as a launchd StartInterval agent
 # (com.localai.m2-watchdog) that fires ~every 60s and performs SAFE recovery only (best-effort
 # Wake-on-LAN + restarts of LOCAL launchd services; cooldown-gated so it never thrashes). It covers:
-#   1. M2 worker reachability (nc) → WoL + meter restart if M2 dropped.
+#   1. M2 worker reachability (nc) → WoL each cooldown, and at most one meter restart per outage.
 #   2. The meter wedging on stale connections after a link flap (M2 up but the proxy 502s) → meter restart.
 #   3. The M1 orchestrator wedging (answers /models but hangs on /chat/completions after long uptime) →
 #      orchestrator restart, distinguishing a true wedge from a merely-busy server via telemetry.
@@ -493,8 +493,13 @@ else
   sleep 5
 fi
 
-# 2) clear a wedged meter (stale connection state after M2 sleep/wake)
-if [ "$DRYRUN" = "1" ]; then
+# 2) clear a wedged meter (stale connection state after M2 sleep/wake) — only when M2 first drops.
+# Restarting it on every cooldown expiry of a long outage (2,776 restarts in November 2026) just
+# crashes the meter on EADDRINUSE and loses telemetry. When M2 returns, the meter-wedged path
+# above restarts the meter if it is still stuck.
+if [ "$prev_status" = "down" ]; then
+  logln "  M2 was already down — not restarting the meter again"
+elif [ "$DRYRUN" = "1" ]; then
   logln "  [dry-run] would kickstart meter ($METER_LABEL)"
 else
   logln "  restarting meter ($METER_LABEL) to clear stale connections"
@@ -512,7 +517,7 @@ elif [ "$LINK_ONLY" = "1" ]; then
   logln "  STILL DOWN — M2 is awake via $M2_ALT_HOST but $M2_HOST is unreachable; check the Thunderbolt cable/bridge0"
   notify "M2 link still down 🔌 — M2 is awake; check the Thunderbolt cable"; write_state down "$now"
 else
-  logln "  STILL DOWN after WoL + meter restart — likely asleep/off; manual wake may be needed"
+  logln "  STILL DOWN after WoL — likely asleep/off; manual wake may be needed"
   notify "M2 still down ❌ — may need a manual wake"; write_state down "$now"
 fi
 exit 0

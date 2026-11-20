@@ -1,22 +1,20 @@
 #!/usr/bin/env bash
 set -uo pipefail
 
-# Weekly watch on the two upstream blockers keeping models off this stack (2026-08-09):
+# Weekly watch on the upstream blockers keeping models off this stack (2026-08-09):
 #
-#   GLM-5.2      needs mlx-lm PR #1410 (DSA cross-layer indexer sharing). GLM-5.2 ships indexer
-#                weights on 21 of 78 layers; stock mlx-lm builds one per layer -> 285 missing.
-#   DeepSeek-V4  needs an mlx_lm/models/deepseek_v4.py, which does not exist upstream at all.
 #   Qwen3.8-Flash-Next (added 2026-09-14) needs mlx-lm PR #1788 (qwen4_exp). Beats the served
 #                Qwen3.8-27B on every coding benchmark; would replace all three roles. Weights are
 #                NOT on disk — a merge means "download and evaluate", not "flip a switch".
 #
-# The first two sets of weights are already downloaded (~/ai/models/glm-5.2-4bit on M1,
-# ~admin/ai/models/DeepSeek-V4-Flash-4bit on M2), so a merge is the only thing standing between
-# here and running them. Notifies once per state CHANGE, not every week, so a quiet week is silent.
+# Dropped 2026-11-20: the GLM-5.2 watch (mlx-lm PR #1410 is merged) and the DeepSeek-V4 watch
+# (those weights are deleted, and mlx_lm/models/deepseek_v41 is already upstream for V4.1).
+# Also notifies on the first mlx-lm release newer than the baseline below.
+# Notifies once per state CHANGE, not every week, so a quiet week is silent.
 #
 # Exit codes: 0 nothing changed · 10 something unblocked · 1 could not check (network/API).
 
-BASELINE_MLX_LM="0.31.3"          # the release that lacks all three
+BASELINE_MLX_LM="0.32.2"          # notify on the first release newer than this
 STATE_FILE="${MLX_WATCH_STATE:-$HOME/ai/dashboard/mlx-blockers.state}"
 LOG_FILE="${MLX_WATCH_LOG:-$HOME/ai/logs/mlx-blockers.log}"
 mkdir -p "$(dirname "$STATE_FILE")" "$(dirname "$LOG_FILE")"
@@ -25,29 +23,26 @@ log() { printf '%s %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*" >> "$LOG_FILE"; }
 
 api() { curl -sS --max-time 30 -H 'Accept: application/vnd.github+json' "$1"; }
 
-pr_state="$(api https://api.github.com/repos/ml-explore/mlx-lm/pulls/1410 \
-  | python3 -c 'import json,sys; d=json.load(sys.stdin); print("merged" if d.get("merged") else d.get("state","?"))' 2>/dev/null)"
-dsv4="$(api https://api.github.com/repos/ml-explore/mlx-lm/contents/mlx_lm/models/deepseek_v4.py \
-  | python3 -c 'import json,sys; print("present" if json.load(sys.stdin).get("name") else "absent")' 2>/dev/null)"
 pr1788="$(api https://api.github.com/repos/ml-explore/mlx-lm/pulls/1788 \
   | python3 -c 'import json,sys; d=json.load(sys.stdin); print("merged" if d.get("merged") else d.get("state","?"))' 2>/dev/null)"
 latest="$(curl -sS --max-time 30 https://pypi.org/pypi/mlx-lm/json \
   | python3 -c 'import json,sys; print(json.load(sys.stdin)["info"]["version"])' 2>/dev/null)"
 
-if [ -z "$pr_state" ] || [ -z "$dsv4" ] || [ -z "$pr1788" ] || [ -z "$latest" ]; then
-  log "CHECK FAILED (pr=${pr_state:-?} deepseek_v4=${dsv4:-?} pr1788=${pr1788:-?} mlx-lm=${latest:-?}) — network or API problem"
+if [ -z "$pr1788" ] || [ -z "$latest" ]; then
+  log "CHECK FAILED (pr1788=${pr1788:-?} mlx-lm=${latest:-?}) — network or API problem"
   exit 1
 fi
 
-current="pr1410=$pr_state deepseek_v4=$dsv4 pr1788=$pr1788 mlx-lm=$latest"
+current="pr1788=$pr1788 mlx-lm=$latest"
 previous="$(cat "$STATE_FILE" 2>/dev/null || true)"
 log "$current"
 
 news=()
-[ "$pr_state" = "merged" ] && news+=("GLM-5.2: mlx-lm PR #1410 merged")
-[ "$dsv4" = "present" ] && news+=("DeepSeek-V4: deepseek_v4.py is upstream")
 [ "$pr1788" = "merged" ] && news+=("Qwen3.8-Flash-Next: mlx-lm PR #1788 merged")
-[ "$latest" != "$BASELINE_MLX_LM" ] && news+=("mlx-lm $latest released (was $BASELINE_MLX_LM)")
+# sort -V puts the higher version last; "newer" means latest differs and sorts after the baseline.
+[ "$latest" != "$BASELINE_MLX_LM" ] \
+  && [ "$(printf '%s\n' "$BASELINE_MLX_LM" "$latest" | sort -V | tail -1)" = "$latest" ] \
+  && news+=("mlx-lm $latest released (was $BASELINE_MLX_LM)")
 
 if [ "$current" = "$previous" ]; then
   exit 0                      # nothing changed since last week — stay quiet
