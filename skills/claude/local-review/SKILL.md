@@ -1,8 +1,8 @@
 ---
 name: local-review
-description: Use the local AI stack for a second opinion on the current git diff or project state
+description: Get a second-opinion review of the current git diff from the local AI stack. Use when the user asks for a local review or a local model's opinion on their changes.
 argument-hint: [optional file, area, or diff description]
-allowed-tools: Read, Grep, Glob, Bash(git diff), Bash(git status), local-ai-delegate__local_review, local-ai-delegate__git_local_summary, local-ai-delegate__local_ai_status
+allowed-tools: Read, Grep, Glob, Bash(git diff), Bash(git status), mcp__local-ai-delegate__local_review, mcp__local-ai-delegate__git_local_summary, mcp__local-ai-delegate__local_ai_status
 ---
 
 Use the local AI stack as a second-opinion reviewer.
@@ -12,7 +12,7 @@ Process:
 1. Identify the relevant workspace (absolute path).
 2. Inspect git status and git diff yourself first.
 3. Call `local-ai-delegate__local_review` with that workspace.
-   - scope: `uncommitted` by default; `since-main` when reviewing a branch.
+   - scope: `uncommitted` by default; `staged` for staged changes only; `since-main` when reviewing a branch.
    - If the user gave a focus area in $ARGUMENTS, pass it as `instructions`.
    - If the tool errors, check `local-ai-delegate__local_ai_status` and report.
 4. Present the local reviewer's findings verbatim (clearly attributed to the
