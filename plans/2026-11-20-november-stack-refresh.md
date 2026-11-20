@@ -191,4 +191,5 @@ Covered by group D. `docs/OPERATIONS.md` gains one line on the new watchdog beha
 - The watchdog restarts the meter at most once per outage. If Machine 2 drops inside the cooldown
   of an earlier recovery, that outage gets no meter restart; the meter-wedged path covers the
   return. That path is unchanged code and has no new test.
-- D1: oMLX 0.8.0 was trialled side by side with 0.7.2; see `docs/OMLX.md`.
+- D1: oMLX 0.8.0 was trialled side by side with 0.7.2 and not adopted: it loses two planted bugs
+  on the code-review eval with MTP on. Details in `docs/OMLX.md`.
